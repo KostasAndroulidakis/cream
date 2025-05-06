@@ -10,7 +10,7 @@ class Wallet:
         self.history = history if history is not None else []
 
 
-class Transcation:
+class Transaction:
 
     def __init__(self, *, amount: float, entity: str, datetime: datetime, description: str):
         self.amount = amount
@@ -19,7 +19,7 @@ class Transcation:
         self.description = description
 
 
-class Incoming(Transcation):
+class Incoming(Transaction):
 
     def __init__(self, *, source: str, **kwargs):
         super().__init__(entity = source, **kwargs)
@@ -29,7 +29,7 @@ class Incoming(Transcation):
         return self.entity
 
 
-class Outgoing(Transcation):
+class Outgoing(Transaction):
 
     def __init__(self, *, target: str, **kwargs):
         super().__init__(entity = target, **kwargs)
