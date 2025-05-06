@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-from transaction import Incoming, Outgoing
+from .transaction import Incoming, Outgoing
 
 class Wallet:
 
     def __init__(self, *, balance: float = 0.0, history: list | None = None):
         self.balance = balance
         self.history = history if history is not None else []
+        self.initial_balance = balance
 
     def add_transaction(self, transaction):
         """Add a transaction to history and update balance"""
@@ -39,9 +40,9 @@ class Wallet:
         return self.balance
 
     def recalculate_balance(self) -> float:
-        """Verify balance matches transaction history"""
-        # Start with zero balance
-        calculated_balance = 0.0
+        """Verify balance matches transaction history plus initial balance"""
+        # Start with initial balance
+        calculated_balance = self.initial_balance
 
         # Add up all transactions
         for transaction in self.history:
