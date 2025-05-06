@@ -35,5 +35,17 @@ class Outgoing(Transcation):
         super().__init__(entity = target, **kwargs)
 
     @property
-    def source(self) -> str:
+    def target(self) -> str:
         return self.entity
+
+
+class Salary(Incoming):
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+
+class Entity():
+
+    def __init__(self):
+        ...
