@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Any
 
 
 class Transaction:
@@ -14,7 +15,7 @@ class Transaction:
 
 class Incoming(Transaction):
 
-    def __init__(self, *, source: str, **kwargs):
+    def __init__(self, *, source: str, **kwargs: Any):
         super().__init__(entity = source, **kwargs)
 
     @property
@@ -24,7 +25,7 @@ class Incoming(Transaction):
 
 class Outgoing(Transaction):
 
-    def __init__(self, *, target: str, **kwargs):
+    def __init__(self, *, target: str, **kwargs: Any):
         super().__init__(entity = target, **kwargs)
 
     @property
@@ -34,5 +35,4 @@ class Outgoing(Transaction):
 
 class Salary(Incoming):
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+    ...
