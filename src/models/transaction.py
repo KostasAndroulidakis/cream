@@ -6,8 +6,9 @@ from typing import Any
 
 class Transaction:
 
-    def __init__(self, *, amount: float, entity: str, datetime: datetime, description: str):
+    def __init__(self, *, amount: float, category: str, entity: str, datetime: datetime, description: str):
         self.amount = amount
+        self.category = category
         self.entity = entity
         self.datetime = datetime
         self.description = description
@@ -25,8 +26,8 @@ class Incoming(Transaction):
 
 class Outgoing(Transaction):
 
-    def __init__(self, *, target: str, **kwargs: Any):
-        super().__init__(entity = target, **kwargs)
+    def __init__(self, *, target: str, amount: float, **kwargs: Any):
+        super().__init__(entity = target, amount = -amount, **kwargs)
 
     @property
     def target(self) -> str:

@@ -4,7 +4,7 @@ from transaction import Transaction
 from typing import Any
 
 
-class Entity():
+class Entity:
 
     def __init__(self, name: str):
         self.name = name
