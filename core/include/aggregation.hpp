@@ -20,6 +20,8 @@ inline std::unordered_map<int64_t, Money> sum_by_category(
 }
 
 // Sum transactions by wallet
+// Note: Returns transaction sums only, does NOT include wallet initial_balance.
+// For full wallet balance, use Wallet::calculate_balance() instead.
 inline std::unordered_map<int64_t, Money> sum_by_wallet(
     const std::vector<Transaction>& transactions) {
     std::unordered_map<int64_t, Money> result;
@@ -27,6 +29,28 @@ inline std::unordered_map<int64_t, Money> sum_by_wallet(
         result[tx.wallet_id] += tx.amount;
     }
     return result;
+}
+
+// Get total income (sum of all positive amounts)
+inline Money total_income(const std::vector<Transaction>& transactions) {
+    Money total;
+    for (const auto& tx : transactions) {
+        if (tx.is_income()) {
+            total += tx.amount;
+        }
+    }
+    return total;
+}
+
+// Get total expenses (sum of absolute values of negative amounts)
+inline Money total_expenses(const std::vector<Transaction>& transactions) {
+    Money total;
+    for (const auto& tx : transactions) {
+        if (tx.is_expense()) {
+            total += tx.amount.abs();
+        }
+    }
+    return total;
 }
 
 // Get total for a time period

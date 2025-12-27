@@ -5,6 +5,7 @@
 #include "transaction.hpp"
 #include "wallet.hpp"
 #include "category.hpp"
+#include "aggregation.hpp"
 #include <vector>
 
 namespace cream {
@@ -83,24 +84,12 @@ public:
 
     // Get total income
     Money get_total_income() const {
-        Money total;
-        for (const auto& tx : transactions_) {
-            if (tx.is_income()) {
-                total += tx.amount;
-            }
-        }
-        return total;
+        return total_income(transactions_);
     }
 
     // Get total expenses
     Money get_total_expenses() const {
-        Money total;
-        for (const auto& tx : transactions_) {
-            if (tx.is_expense()) {
-                total += tx.amount.abs();
-            }
-        }
-        return total;
+        return total_expenses(transactions_);
     }
 
     void clear() {

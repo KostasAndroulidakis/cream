@@ -179,7 +179,10 @@ PYBIND11_MODULE(cream_py, m) {
 
     // Aggregation functions
     m.def("sum_by_category", &cream::sum_by_category);
-    m.def("sum_by_wallet", &cream::sum_by_wallet);
+    m.def("sum_by_wallet", &cream::sum_by_wallet,
+          "Sum transactions by wallet (excludes initial_balance)");
+    m.def("total_income", &cream::total_income);
+    m.def("total_expenses", &cream::total_expenses);
     m.def("sum_in_period", &cream::sum_in_period);
     m.def("income_in_period", &cream::income_in_period);
     m.def("expenses_in_period", &cream::expenses_in_period);

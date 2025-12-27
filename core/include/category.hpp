@@ -2,9 +2,11 @@
 #define CREAM_CATEGORY_HPP
 
 #include <cstdint>
-#include <string>
-#include <vector>
 #include <optional>
+#include <stdexcept>
+#include <string>
+#include <unordered_set>
+#include <vector>
 
 namespace cream {
 
@@ -45,7 +47,8 @@ inline const char* category_type_to_string(CategoryType type) {
 
 inline CategoryType category_type_from_string(const std::string& str) {
     if (str == "income") return CategoryType::Income;
-    return CategoryType::Expense;
+    if (str == "expense") return CategoryType::Expense;
+    throw std::invalid_argument("Unknown category type: " + str);
 }
 
 // Find all children of a category
@@ -61,18 +64,33 @@ inline std::vector<Category> get_children(const Category& parent,
 }
 
 // Get full path from root to category
+// Returns empty vector if a cycle is detected
 inline std::vector<Category> get_ancestors(const Category& cat,
                                            const std::vector<Category>& all_categories) {
     std::vector<Category> ancestors;
     std::optional<int64_t> current_parent_id = cat.parent_id;
+    std::unordered_set<int64_t> visited;
+    visited.insert(cat.id);
 
     while (current_parent_id.has_value()) {
+        // Cycle detection
+        if (visited.count(current_parent_id.value()) > 0) {
+            return {};  // Return empty on cycle
+        }
+        visited.insert(current_parent_id.value());
+
+        bool found = false;
         for (const auto& c : all_categories) {
             if (c.id == current_parent_id.value()) {
                 ancestors.insert(ancestors.begin(), c);
                 current_parent_id = c.parent_id;
+                found = true;
                 break;
             }
+        }
+        // Parent not found in list - stop traversal
+        if (!found) {
+            break;
         }
     }
     return ancestors;

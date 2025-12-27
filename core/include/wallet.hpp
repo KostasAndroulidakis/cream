@@ -4,6 +4,7 @@
 #include "money.hpp"
 #include "transaction.hpp"
 #include <cstdint>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -59,7 +60,7 @@ inline WalletType wallet_type_from_string(const std::string& str) {
     if (str == "cash") return WalletType::Cash;
     if (str == "digital") return WalletType::Digital;
     if (str == "stash") return WalletType::Stash;
-    return WalletType::Bank;
+    throw std::invalid_argument("Unknown wallet type: " + str);
 }
 
 } // namespace cream
