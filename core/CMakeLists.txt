@@ -15,13 +15,9 @@ set(PYBIND11_FINDPYTHON ON)
 # Include directories
 include_directories(${CMAKE_SOURCE_DIR}/include)
 
-# Core library sources (exclude bindings.cpp)
-file(GLOB_RECURSE CORE_SOURCES "src/*.cpp")
-list(FILTER CORE_SOURCES EXCLUDE REGEX ".*bindings\\.cpp$")
-
-# Create static library
-add_library(cream_core STATIC ${CORE_SOURCES})
-target_include_directories(cream_core PUBLIC ${CMAKE_SOURCE_DIR}/include)
+# Header-only library
+add_library(cream_core INTERFACE)
+target_include_directories(cream_core INTERFACE ${CMAKE_SOURCE_DIR}/include)
 
 # Python bindings
 if(BUILD_PYTHON_BINDINGS)

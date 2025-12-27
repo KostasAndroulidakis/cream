@@ -1,7 +1,7 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/operators.h>
-#include "cream/core.hpp"
-#include "cream/money.hpp"
+#include "core.hpp"
+#include "money.hpp"
 
 namespace py = pybind11;
 
