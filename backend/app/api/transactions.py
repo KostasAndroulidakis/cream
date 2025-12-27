@@ -9,6 +9,7 @@ from app.services.authorization import (
     get_transaction as get_user_transaction,
     get_wallet as verify_wallet_ownership,
     get_user_wallet_ids,
+    verify_category_access,
 )
 from app.services.helpers import apply_update
 from app.services.validation import validate_transaction
@@ -55,6 +56,10 @@ def create_transaction(
     # Verify user owns the wallet
     verify_wallet_ownership(transaction_in.wallet_id, user_id, db)
 
+    # Verify user has access to the category (user-owned or system default)
+    if transaction_in.category_id is not None:
+        verify_category_access(transaction_in.category_id, user_id, db)
+
     transaction = Transaction(**transaction_in.model_dump())
     db.add(transaction)
     db.commit()
@@ -95,6 +100,10 @@ def update_transaction(
     if not validation_result.is_valid:
         errors = [{"field": e.field, "message": e.message} for e in validation_result.errors]
         raise HTTPException(status_code=422, detail=errors)
+
+    # Verify user has access to the new category if being changed
+    if "category_id" in update_data and update_data["category_id"] is not None:
+        verify_category_access(update_data["category_id"], user_id, db)
 
     apply_update(transaction, transaction_in)
     db.commit()

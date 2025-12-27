@@ -30,9 +30,12 @@ Found 26 issues (7 HIGH, 15 MEDIUM, 4 LOW) during code review.
 
 ## Security Issues
 
-- [ ] **#12 HIGH** `api/transactions.py:76` - `category_id` not validated to belong to user before creation.
-- [ ] **#13 HIGH** `api/categories.py:55` - `parent_id` could reference another user's category, no validation.
-- [ ] **#14 MEDIUM** Multiple files - `model_dump()` converts all fields, could expose sensitive data if added to schemas.
+- [x] **#12 HIGH** `api/transactions.py:76` - `category_id` not validated to belong to user before creation.
+  - Fixed: Added `verify_category_access()` in `create_transaction` and `update_transaction`
+- [x] **#13 HIGH** `api/categories.py:55` - `parent_id` could reference another user's category, no validation.
+  - Fixed: Added `verify_category_access()` in `create_category` and `update_category`
+- [x] **#14 MEDIUM** Multiple files - `model_dump()` converts all fields, could expose sensitive data if added to schemas.
+  - Reviewed: Not a current vulnerability. Input schemas (Create/Update) don't contain sensitive fields. Output schemas (Read) explicitly define exposed fields.
 
 ## Performance Issues
 
@@ -65,12 +68,12 @@ Found 26 issues (7 HIGH, 15 MEDIUM, 4 LOW) during code review.
 | ---------- | ------ | -------- | ----- | ----- |
 | SRP Violations | 2 | 4 | 0 | 5/6 |
 | SSOT Violations | 1 | 3 | 1 | 4/5 |
-| Security Issues | 2 | 1 | 0 | 0/3 |
+| Security Issues | 2 | 1 | 0 | 3/3 ✅ |
 | Performance Issues | 2 | 1 | 0 | 0/3 |
 | Error Handling | 0 | 4 | 0 | 0/4 |
 | Type/Validation | 0 | 2 | 0 | 0/2 |
 | Other | 0 | 0 | 3 | 1/3 |
-| **TOTAL** | **7** | **15** | **4** | **10/26** |
+| **TOTAL** | **7** | **15** | **4** | **13/26** |
 
 ## New Services Created
 

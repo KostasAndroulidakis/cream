@@ -5,7 +5,7 @@ from app.database import get_db
 from app.models import Category
 from app.schemas import CategoryCreate, CategoryRead, CategoryUpdate
 from app.services.auth import get_current_user_id
-from app.services.authorization import get_category
+from app.services.authorization import get_category, verify_category_access
 from app.services.helpers import apply_update
 
 router = APIRouter()
@@ -28,6 +28,10 @@ def create_category(
     user_id: int = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    # Verify user has access to the parent category if specified
+    if category_in.parent_id is not None:
+        verify_category_access(category_in.parent_id, user_id, db)
+
     category = Category(user_id=user_id, **category_in.model_dump())
     db.add(category)
     db.commit()
@@ -52,6 +56,12 @@ def update_category(
     db: Session = Depends(get_db),
 ):
     category = get_category(category_id, user_id, db, require_ownership=True)
+
+    # Verify user has access to the new parent category if being changed
+    update_data = category_in.model_dump(exclude_unset=True)
+    if "parent_id" in update_data and update_data["parent_id"] is not None:
+        verify_category_access(update_data["parent_id"], user_id, db)
+
     apply_update(category, category_in)
     db.commit()
     db.refresh(category)
