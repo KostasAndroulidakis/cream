@@ -6,6 +6,7 @@
 #include "money.hpp"
 #include "transaction.hpp"
 #include "wallet.hpp"
+#include "category.hpp"
 
 namespace py = pybind11;
 
@@ -94,4 +95,34 @@ PYBIND11_MODULE(cream_py, m) {
             return "Wallet(id=" + std::to_string(w.id) +
                    ", name=\"" + w.name + "\")";
         });
+
+    // CategoryType enum
+    py::enum_<cream::CategoryType>(m, "CategoryType")
+        .value("Income", cream::CategoryType::Income)
+        .value("Expense", cream::CategoryType::Expense);
+
+    // Category struct
+    py::class_<cream::Category>(m, "Category")
+        .def(py::init<>())
+        .def(py::init<int64_t, std::optional<int64_t>, std::optional<int64_t>,
+                      std::string, cream::CategoryType>(),
+             py::arg("id"), py::arg("user_id"), py::arg("parent_id"),
+             py::arg("name"), py::arg("type"))
+        .def_readwrite("id", &cream::Category::id)
+        .def_readwrite("user_id", &cream::Category::user_id)
+        .def_readwrite("parent_id", &cream::Category::parent_id)
+        .def_readwrite("name", &cream::Category::name)
+        .def_readwrite("type", &cream::Category::type)
+        .def("is_system_default", &cream::Category::is_system_default)
+        .def("is_root", &cream::Category::is_root)
+        .def("is_income", &cream::Category::is_income)
+        .def("is_expense", &cream::Category::is_expense)
+        .def("__repr__", [](const cream::Category& c) {
+            return "Category(id=" + std::to_string(c.id) +
+                   ", name=\"" + c.name + "\")";
+        });
+
+    // Category helper functions
+    m.def("get_children", &cream::get_children);
+    m.def("get_ancestors", &cream::get_ancestors);
 }
