@@ -70,6 +70,7 @@ Removed C++ core in favor of pure Python validation.
 | Deleted C++ core | ~2000 |
 
 **Validation rules implemented:**
+
 - Amount must not be zero
 - Amount must be >= 0.0001 and <= 999,999,999.9999
 - `occurred_at` must not be in the future
