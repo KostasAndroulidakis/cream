@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import User
-from app.schemas import UserCreate, UserRead
+from app.schemas import UserCreate, UserRead, LoginRequest, TokenResponse
 from app.services.auth import hash_password, verify_password, create_access_token
 
 router = APIRouter()
@@ -29,11 +29,11 @@ def signup(user_in: UserCreate, db: Session = Depends(get_db)):
     return user
 
 
-@router.post("/login")
-def login(username: str, password: str, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.username == username).first()
-    if not user or not verify_password(password, user.password_hash):
+@router.post("/login", response_model=TokenResponse)
+def login(credentials: LoginRequest, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.username == credentials.username).first()
+    if not user or not verify_password(credentials.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
     token = create_access_token({"sub": str(user.id)})
-    return {"access_token": token, "token_type": "bearer"}
+    return TokenResponse(access_token=token)
