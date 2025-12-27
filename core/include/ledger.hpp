@@ -1,7 +1,7 @@
 #ifndef CREAM_LEDGER_HPP
 #define CREAM_LEDGER_HPP
 
-#include "money.hpp"
+#include "types.hpp"
 #include "transaction.hpp"
 #include "wallet.hpp"
 #include "category.hpp"

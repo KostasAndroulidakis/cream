@@ -2,13 +2,11 @@
 #define CREAM_TRANSACTION_HPP
 
 #include "money.hpp"
+#include "types.hpp"
 #include <cstdint>
 #include <string>
-#include <chrono>
 
 namespace cream {
-
-using Timestamp = std::chrono::system_clock::time_point;
 
 struct Transaction {
     int64_t id;
