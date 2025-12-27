@@ -1,0 +1,8 @@
+CompileFlags:
+  Add:
+    - "-Iinclude"
+    - "-I/opt/homebrew/include"
+    - "-I/opt/homebrew/opt/pybind11/include"
+    - "-I/opt/homebrew/opt/python@3.13/Frameworks/Python.framework/Versions/3.13/include/python3.13"
+    - "-std=c++17"
+  CompilationDatabase: /Users/kanon/Downloads/DEV/cream/build
