@@ -5,7 +5,7 @@
 using namespace cream;
 
 // Helper to create timestamps
-Timestamp make_timestamp(int days_offset) {
+static Timestamp make_timestamp(int days_offset) {
     return std::chrono::system_clock::now() + std::chrono::hours(24 * days_offset);
 }
 
