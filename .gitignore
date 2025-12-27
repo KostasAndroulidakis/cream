@@ -178,4 +178,4 @@ cython_debug/
 
 # Claude
 CLAUDE.md
-.claude
+claude/
