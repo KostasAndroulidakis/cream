@@ -5,9 +5,8 @@ Personal finance tracker app.
 ## Tech Stack
 
 | Layer | Technology |
-|-------|------------|
-| Core Engine | C++ (validation, Money arithmetic) |
-| Backend | Python, FastAPI (API, DB, statistics, reports) |
+| ------- | ------------ |
+| Backend | Python, FastAPI |
 | Frontend | React, TypeScript |
 | Database | PostgreSQL |
 
@@ -21,10 +20,8 @@ Personal finance tracker app.
          │
          ▼
 ┌─────────────────┐
-│    Backend      │  FastAPI (orchestrator)
-│  ┌───────────┐  │
-│  │ C++ Core  │  │  pybind11 bindings
-│  └───────────┘  │
+│    Backend      │  FastAPI
+│   (Python)      │
 └────────┬────────┘
          │
          ▼
@@ -33,48 +30,40 @@ Personal finance tracker app.
 └─────────────────┘
 ```
 
-- **C++ Core**: Compute engine for validation and Money arithmetic. No DB/web access.
-- **FastAPI**: Orchestrator. Handles HTTP, manages DB, statistics, and reports.
-- **React**: UI layer, communicates via REST or WebSocket.
-- **PostgreSQL**: ACID-compliant storage with Alembic migrations.
-
-### Separation of Concerns
-
-| Layer | Responsibilities |
-|-------|------------------|
-| **Backend (Python)** | HTTP/API, Authentication, DB read/write, Statistics (SQL aggregations), Reports (SQL queries) |
-| **C++ Core** | Transaction validation, Money type (precise decimal arithmetic), Complex in-memory calculations |
-
-The C++ core is a **compute-only** library. It receives data as input, performs calculations, and returns results. It has **no access** to the database or network.
+- **FastAPI**: Handles HTTP, authentication, business logic, statistics, and reports.
+- **React**: UI layer, communicates via REST API.
+- **PostgreSQL**: ACID-compliant storage with precise decimal arithmetic.
 
 ## Project Structure
 
 ```text
 cream/
-├── core/           # C++ engine
-│   ├── src/
-│   ├── include/
-│   ├── tests/
-│   └── CMakeLists.txt
+├── docs/           # Documentation
+│   ├── VISION.md
+│   ├── REQUIREMENTS.md
+│   ├── ARCHITECTURE.md
+│   ├── DOMAIN.md
+│   └── API.md
 │
 ├── backend/        # Python/FastAPI
 │   ├── app/
-│   │   ├── api/
-│   │   ├── models/     # SQLAlchemy
-│   │   ├── schemas/    # Pydantic
-│   │   └── services/
-│   ├── migrations/     # Alembic
+│   │   ├── api/        # HTTP route handlers
+│   │   ├── models/     # SQLAlchemy ORM
+│   │   ├── schemas/    # Pydantic validation
+│   │   └── services/   # Business logic
+│   ├── tests/          # pytest test suite
+│   ├── migrations/     # Alembic migrations
 │   └── pyproject.toml
 │
-├── frontend/       # React/TypeScript
+├── frontend/       # React/TypeScript (planned)
 │   ├── src/
 │   └── package.json
 │
-└── database/       # SQL schemas
-    └── schema.sql
+└── database/
+    └── schema.sql  # Reference schema
 ```
 
-## Database Schema (MVP)
+## Database Schema
 
 ```text
 ┌─────────┐       ┌─────────────┐
@@ -97,12 +86,34 @@ cream/
 
 ## MVP Features
 
-- User signup/login
+- User signup/login (JWT authentication)
 - Create and manage wallets
 - Record income/expense transactions
 - Categorize transactions (hierarchical categories)
 - View balance per wallet
-- Dashboard with summary
+- Statistics and reports
+
+## API Endpoints
+
+| Endpoint | Description |
+| ---------- | ------------- |
+| `POST /api/v1/auth/signup` | User registration |
+| `POST /api/v1/auth/login` | User login (returns JWT) |
+| `GET/POST/PATCH/DELETE /api/v1/wallets` | Wallet CRUD |
+| `GET/POST/PATCH/DELETE /api/v1/categories` | Category CRUD |
+| `GET/POST/PATCH/DELETE /api/v1/transactions` | Transaction CRUD |
+| `GET /api/v1/statistics` | Aggregated statistics |
+| `GET /api/v1/statistics/report` | Period-based reports |
+
+## Development
+
+```bash
+# From backend/ directory
+pip install -e ".[dev]"           # Install dependencies
+uvicorn app.main:app --reload     # Run dev server
+pytest                            # Run tests (121 tests)
+alembic upgrade head              # Apply migrations
+```
 
 ## Future Features
 
@@ -111,31 +122,4 @@ cream/
 - Recurring transactions
 - Budgets and spending limits
 - Receipt attachments
-- Reports and exports
-
-## Specification
-
-### Wallets
-
-Track balances across:
-
-- Bank Accounts
-- Digital Wallets (PayPal, Google Pay, etc.)
-- Cash/Personal Wallets
-- Stashes
-
-### Transactions
-
-- Amount (positive for income, negative for expense)
-- Category
-- Wallet
-- Date and time
-- Description
-
-### Program Flow
-
-1. Login/Signup screen
-2. Dashboard: balances, recent transactions, month summary
-3. Add/edit transactions
-4. Manage categories and wallets
-5. Generate reports
+- Data export (CSV, JSON)

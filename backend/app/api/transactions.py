@@ -5,6 +5,7 @@ from app.database import get_db
 from app.models import Transaction, Wallet
 from app.schemas import TransactionCreate, TransactionRead, TransactionUpdate
 from app.services.auth import get_current_user_id
+from app.services.validation import validate_transaction
 
 router = APIRouter()
 
@@ -58,6 +59,17 @@ def create_transaction(
     user_id: int = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    # Validate transaction data
+    validation_result = validate_transaction(
+        amount=transaction_in.amount,
+        occurred_at=transaction_in.occurred_at,
+        wallet_id=transaction_in.wallet_id,
+        category_id=transaction_in.category_id,
+    )
+    if not validation_result.is_valid:
+        errors = [{"field": e.field, "message": e.message} for e in validation_result.errors]
+        raise HTTPException(status_code=422, detail=errors)
+
     # Verify user owns the wallet
     verify_wallet_ownership(transaction_in.wallet_id, user_id, db)
 
@@ -86,7 +98,23 @@ def update_transaction(
 ):
     transaction = get_user_transaction(transaction_id, user_id, db)
 
-    for key, value in transaction_in.model_dump(exclude_unset=True).items():
+    # Get values for validation (use existing if not provided)
+    update_data = transaction_in.model_dump(exclude_unset=True)
+    amount = update_data.get("amount", transaction.amount)
+    occurred_at = update_data.get("occurred_at", transaction.occurred_at)
+    category_id = update_data.get("category_id", transaction.category_id)
+
+    # Validate updated transaction data
+    validation_result = validate_transaction(
+        amount=amount,
+        occurred_at=occurred_at,
+        category_id=category_id,
+    )
+    if not validation_result.is_valid:
+        errors = [{"field": e.field, "message": e.message} for e in validation_result.errors]
+        raise HTTPException(status_code=422, detail=errors)
+
+    for key, value in update_data.items():
         setattr(transaction, key, value)
 
     db.commit()
