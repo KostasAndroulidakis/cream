@@ -9,6 +9,7 @@
 #include "category.hpp"
 #include "ledger.hpp"
 #include "validation.hpp"
+#include "aggregation.hpp"
 
 namespace py = pybind11;
 
@@ -175,4 +176,13 @@ PYBIND11_MODULE(cream_py, m) {
 
     // Convenience function
     m.def("validate_transaction", &cream::validate_transaction);
+
+    // Aggregation functions
+    m.def("sum_by_category", &cream::sum_by_category);
+    m.def("sum_by_wallet", &cream::sum_by_wallet);
+    m.def("sum_in_period", &cream::sum_in_period);
+    m.def("income_in_period", &cream::income_in_period);
+    m.def("expenses_in_period", &cream::expenses_in_period);
+    m.def("count_by_category", &cream::count_by_category);
+    m.def("average_amount", &cream::average_amount);
 }
