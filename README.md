@@ -5,9 +5,9 @@ Personal finance tracker app.
 ## Tech Stack
 
 | Layer | Technology |
-| -------- | ------------ |
-| Core Engine | C++ (ledger, rules, aggregation, validation) |
-| Backend | Python, FastAPI |
+|-------|------------|
+| Core Engine | C++ (validation, Money arithmetic) |
+| Backend | Python, FastAPI (API, DB, statistics, reports) |
 | Frontend | React, TypeScript |
 | Database | PostgreSQL |
 
@@ -33,10 +33,19 @@ Personal finance tracker app.
 └─────────────────┘
 ```
 
-- **C++ Core**: Finance engine (ledger, validation, calculations). No DB/web access.
-- **FastAPI**: Orchestrator. Handles HTTP, calls C++ engine, manages DB.
+- **C++ Core**: Compute engine for validation and Money arithmetic. No DB/web access.
+- **FastAPI**: Orchestrator. Handles HTTP, manages DB, statistics, and reports.
 - **React**: UI layer, communicates via REST or WebSocket.
 - **PostgreSQL**: ACID-compliant storage with Alembic migrations.
+
+### Separation of Concerns
+
+| Layer | Responsibilities |
+|-------|------------------|
+| **Backend (Python)** | HTTP/API, Authentication, DB read/write, Statistics (SQL aggregations), Reports (SQL queries) |
+| **C++ Core** | Transaction validation, Money type (precise decimal arithmetic), Complex in-memory calculations |
+
+The C++ core is a **compute-only** library. It receives data as input, performs calculations, and returns results. It has **no access** to the database or network.
 
 ## Project Structure
 
