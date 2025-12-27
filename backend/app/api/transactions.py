@@ -5,31 +5,15 @@ from app.database import get_db
 from app.models import Transaction, Wallet
 from app.schemas import TransactionCreate, TransactionRead, TransactionUpdate
 from app.services.auth import get_current_user_id
+from app.services.authorization import (
+    get_transaction as get_user_transaction,
+    get_wallet as verify_wallet_ownership,
+    get_user_wallet_ids,
+)
+from app.services.helpers import apply_update
 from app.services.validation import validate_transaction
 
 router = APIRouter()
-
-
-def verify_wallet_ownership(wallet_id: int, user_id: int, db: Session) -> Wallet:
-    """Verify that the user owns the wallet."""
-    wallet = db.query(Wallet).filter(Wallet.id == wallet_id).first()
-    if not wallet:
-        raise HTTPException(status_code=404, detail="Wallet not found")
-    if wallet.user_id != user_id:
-        raise HTTPException(status_code=403, detail="Access denied")
-    return wallet
-
-
-def get_user_transaction(transaction_id: int, user_id: int, db: Session) -> Transaction:
-    """Get a transaction and verify the user owns its wallet."""
-    transaction = db.query(Transaction).filter(Transaction.id == transaction_id).first()
-    if not transaction:
-        raise HTTPException(status_code=404, detail="Transaction not found")
-    # Verify user owns the wallet
-    wallet = db.query(Wallet).filter(Wallet.id == transaction.wallet_id).first()
-    if not wallet or wallet.user_id != user_id:
-        raise HTTPException(status_code=403, detail="Access denied")
-    return transaction
 
 
 @router.get("", response_model=list[TransactionRead])
@@ -39,13 +23,11 @@ def list_transactions(
     db: Session = Depends(get_db),
 ):
     """List transactions for user's wallets."""
-    # Get all wallet IDs owned by user
-    user_wallet_ids = [w.id for w in db.query(Wallet.id).filter(Wallet.user_id == user_id).all()]
+    user_wallet_ids = get_user_wallet_ids(user_id, db)
 
     query = db.query(Transaction).filter(Transaction.wallet_id.in_(user_wallet_ids))
 
     if wallet_id is not None:
-        # Verify user owns this specific wallet
         if wallet_id not in user_wallet_ids:
             raise HTTPException(status_code=403, detail="Access denied")
         query = query.filter(Transaction.wallet_id == wallet_id)
@@ -114,9 +96,7 @@ def update_transaction(
         errors = [{"field": e.field, "message": e.message} for e in validation_result.errors]
         raise HTTPException(status_code=422, detail=errors)
 
-    for key, value in update_data.items():
-        setattr(transaction, key, value)
-
+    apply_update(transaction, transaction_in)
     db.commit()
     db.refresh(transaction)
     return transaction

@@ -1,38 +1,14 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import Category
 from app.schemas import CategoryCreate, CategoryRead, CategoryUpdate
 from app.services.auth import get_current_user_id
+from app.services.authorization import get_category
+from app.services.helpers import apply_update
 
 router = APIRouter()
-
-
-def get_accessible_category(category_id: int, user_id: int, db: Session) -> Category:
-    """Helper to get a category and verify access.
-
-    System default categories (user_id is None) are accessible to all.
-    User categories are only accessible to their owner.
-    """
-    category = db.query(Category).filter(Category.id == category_id).first()
-    if not category:
-        raise HTTPException(status_code=404, detail="Category not found")
-    if category.user_id is not None and category.user_id != user_id:
-        raise HTTPException(status_code=403, detail="Access denied")
-    return category
-
-
-def get_user_category(category_id: int, user_id: int, db: Session) -> Category:
-    """Helper to get a user-owned category (not system defaults)."""
-    category = db.query(Category).filter(Category.id == category_id).first()
-    if not category:
-        raise HTTPException(status_code=404, detail="Category not found")
-    if category.user_id is None:
-        raise HTTPException(status_code=403, detail="Cannot modify system default category")
-    if category.user_id != user_id:
-        raise HTTPException(status_code=403, detail="Access denied")
-    return category
 
 
 @router.get("", response_model=list[CategoryRead])
@@ -60,12 +36,12 @@ def create_category(
 
 
 @router.get("/{category_id}", response_model=CategoryRead)
-def get_category(
+def get_category_endpoint(
     category_id: int,
     user_id: int = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
-    return get_accessible_category(category_id, user_id, db)
+    return get_category(category_id, user_id, db, allow_system=True)
 
 
 @router.patch("/{category_id}", response_model=CategoryRead)
@@ -75,11 +51,8 @@ def update_category(
     user_id: int = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
-    category = get_user_category(category_id, user_id, db)
-
-    for key, value in category_in.model_dump(exclude_unset=True).items():
-        setattr(category, key, value)
-
+    category = get_category(category_id, user_id, db, require_ownership=True)
+    apply_update(category, category_in)
     db.commit()
     db.refresh(category)
     return category
@@ -91,6 +64,6 @@ def delete_category(
     user_id: int = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
-    category = get_user_category(category_id, user_id, db)
+    category = get_category(category_id, user_id, db, require_ownership=True)
     db.delete(category)
     db.commit()

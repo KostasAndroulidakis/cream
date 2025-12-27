@@ -1,22 +1,14 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import Wallet
 from app.schemas import WalletCreate, WalletRead, WalletUpdate
 from app.services.auth import get_current_user_id
+from app.services.authorization import get_wallet as get_user_wallet
+from app.services.helpers import apply_update
 
 router = APIRouter()
-
-
-def get_user_wallet(wallet_id: int, user_id: int, db: Session) -> Wallet:
-    """Helper to get a wallet and verify ownership."""
-    wallet = db.query(Wallet).filter(Wallet.id == wallet_id).first()
-    if not wallet:
-        raise HTTPException(status_code=404, detail="Wallet not found")
-    if wallet.user_id != user_id:
-        raise HTTPException(status_code=403, detail="Access denied")
-    return wallet
 
 
 @router.get("", response_model=list[WalletRead])
@@ -57,10 +49,7 @@ def update_wallet(
     db: Session = Depends(get_db),
 ):
     wallet = get_user_wallet(wallet_id, user_id, db)
-
-    for key, value in wallet_in.model_dump(exclude_unset=True).items():
-        setattr(wallet, key, value)
-
+    apply_update(wallet, wallet_in)
     db.commit()
     db.refresh(wallet)
     return wallet

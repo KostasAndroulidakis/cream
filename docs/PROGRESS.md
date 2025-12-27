@@ -59,16 +59,6 @@
 | Statistics | 10 |
 | Validation | 29 |
 
-## Architecture Refactoring (Completed)
-
-Removed C++ core in favor of pure Python validation.
-
-| Change | Lines |
-| --- | --- |
-| Added `validation.py` + tests | ~180 |
-| API integration | ~15 |
-| Deleted C++ core | ~2000 |
-
 **Validation rules implemented:**
 
 - Amount must not be zero
