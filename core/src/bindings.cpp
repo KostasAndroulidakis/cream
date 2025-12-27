@@ -7,6 +7,7 @@
 #include "transaction.hpp"
 #include "wallet.hpp"
 #include "category.hpp"
+#include "ledger.hpp"
 
 namespace py = pybind11;
 
@@ -125,4 +126,22 @@ PYBIND11_MODULE(cream_py, m) {
     // Category helper functions
     m.def("get_children", &cream::get_children);
     m.def("get_ancestors", &cream::get_ancestors);
+
+    // Ledger class
+    py::class_<cream::Ledger>(m, "Ledger")
+        .def(py::init<>())
+        .def("add_transaction", &cream::Ledger::add_transaction)
+        .def("add_wallet", &cream::Ledger::add_wallet)
+        .def("add_category", &cream::Ledger::add_category)
+        .def("transactions", &cream::Ledger::transactions)
+        .def("wallets", &cream::Ledger::wallets)
+        .def("categories", &cream::Ledger::categories)
+        .def("get_transactions_by_wallet", &cream::Ledger::get_transactions_by_wallet)
+        .def("get_transactions_by_category", &cream::Ledger::get_transactions_by_category)
+        .def("get_transactions_in_range", &cream::Ledger::get_transactions_in_range)
+        .def("get_wallet_balance", &cream::Ledger::get_wallet_balance)
+        .def("get_total_balance", &cream::Ledger::get_total_balance)
+        .def("get_total_income", &cream::Ledger::get_total_income)
+        .def("get_total_expenses", &cream::Ledger::get_total_expenses)
+        .def("clear", &cream::Ledger::clear);
 }
