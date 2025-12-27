@@ -13,8 +13,8 @@ CREATE TABLE users (
     password_hash VARCHAR(255) NOT NULL,
     first_name    VARCHAR(100) NOT NULL,
     last_name     VARCHAR(100) NOT NULL,
-    created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at    TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at    TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Wallets
@@ -23,10 +23,10 @@ CREATE TABLE wallets (
     user_id         INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     name            VARCHAR(100) NOT NULL,
     type            wallet_type NOT NULL DEFAULT 'bank',
-    currency        CHAR(3) NOT NULL DEFAULT 'EUR',
+    currency        VARCHAR(3) NOT NULL DEFAULT 'EUR',
     initial_balance NUMERIC(19, 4) NOT NULL DEFAULT 0,
-    created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at      TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at      TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Categories
@@ -36,7 +36,7 @@ CREATE TABLE categories (
     parent_id   INTEGER REFERENCES categories(id) ON DELETE CASCADE,
     name        VARCHAR(100) NOT NULL,
     type        category_type NOT NULL,
-    created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at  TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Transactions
@@ -46,9 +46,9 @@ CREATE TABLE transactions (
     category_id INTEGER NOT NULL REFERENCES categories(id) ON DELETE RESTRICT,
     amount      NUMERIC(19, 4) NOT NULL,  -- positive = income, negative = expense
     description TEXT,
-    occurred_at TIMESTAMP NOT NULL,
-    created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    occurred_at TIMESTAMPTZ NOT NULL,
+    created_at  TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at  TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Indexes

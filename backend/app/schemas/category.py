@@ -11,6 +11,11 @@ class CategoryCreate(BaseModel):
     parent_id: int | None = None
 
 
+class CategoryUpdate(BaseModel):
+    name: str | None = None
+    parent_id: int | None = None
+
+
 class CategoryRead(BaseModel):
     id: int
     name: str

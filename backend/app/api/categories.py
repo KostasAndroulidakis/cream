@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import Category
-from app.schemas import CategoryCreate, CategoryRead
+from app.schemas import CategoryCreate, CategoryRead, CategoryUpdate
 from app.services.auth import get_current_user_id
 
 router = APIRouter()
@@ -66,6 +66,23 @@ def get_category(
     db: Session = Depends(get_db),
 ):
     return get_accessible_category(category_id, user_id, db)
+
+
+@router.patch("/{category_id}", response_model=CategoryRead)
+def update_category(
+    category_id: int,
+    category_in: CategoryUpdate,
+    user_id: int = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    category = get_user_category(category_id, user_id, db)
+
+    for key, value in category_in.model_dump(exclude_unset=True).items():
+        setattr(category, key, value)
+
+    db.commit()
+    db.refresh(category)
+    return category
 
 
 @router.delete("/{category_id}", status_code=status.HTTP_204_NO_CONTENT)
