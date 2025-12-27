@@ -1,9 +1,11 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/operators.h>
 #include <pybind11/chrono.h>
+#include <pybind11/stl.h>
 #include "core.hpp"
 #include "money.hpp"
 #include "transaction.hpp"
+#include "wallet.hpp"
 
 namespace py = pybind11;
 
@@ -66,5 +68,30 @@ PYBIND11_MODULE(cream_py, m) {
         .def("__repr__", [](const cream::Transaction& t) {
             return "Transaction(id=" + std::to_string(t.id) +
                    ", amount=" + t.amount.to_string() + ")";
+        });
+
+    // WalletType enum
+    py::enum_<cream::WalletType>(m, "WalletType")
+        .value("Bank", cream::WalletType::Bank)
+        .value("Cash", cream::WalletType::Cash)
+        .value("Digital", cream::WalletType::Digital)
+        .value("Stash", cream::WalletType::Stash);
+
+    // Wallet struct
+    py::class_<cream::Wallet>(m, "Wallet")
+        .def(py::init<>())
+        .def(py::init<int64_t, int64_t, std::string, cream::WalletType, std::string, cream::Money>(),
+             py::arg("id"), py::arg("user_id"), py::arg("name"),
+             py::arg("type"), py::arg("currency"), py::arg("initial_balance"))
+        .def_readwrite("id", &cream::Wallet::id)
+        .def_readwrite("user_id", &cream::Wallet::user_id)
+        .def_readwrite("name", &cream::Wallet::name)
+        .def_readwrite("type", &cream::Wallet::type)
+        .def_readwrite("currency", &cream::Wallet::currency)
+        .def_readwrite("initial_balance", &cream::Wallet::initial_balance)
+        .def("calculate_balance", &cream::Wallet::calculate_balance)
+        .def("__repr__", [](const cream::Wallet& w) {
+            return "Wallet(id=" + std::to_string(w.id) +
+                   ", name=\"" + w.name + "\")";
         });
 }
