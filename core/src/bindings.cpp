@@ -8,6 +8,7 @@
 #include "wallet.hpp"
 #include "category.hpp"
 #include "ledger.hpp"
+#include "validation.hpp"
 
 namespace py = pybind11;
 
@@ -144,4 +145,34 @@ PYBIND11_MODULE(cream_py, m) {
         .def("get_total_income", &cream::Ledger::get_total_income)
         .def("get_total_expenses", &cream::Ledger::get_total_expenses)
         .def("clear", &cream::Ledger::clear);
+
+    // ValidationError struct
+    py::class_<cream::ValidationError>(m, "ValidationError")
+        .def(py::init<std::string, std::string>(),
+             py::arg("field"), py::arg("message"))
+        .def_readwrite("field", &cream::ValidationError::field)
+        .def_readwrite("message", &cream::ValidationError::message)
+        .def("__repr__", [](const cream::ValidationError& e) {
+            return "ValidationError(field=\"" + e.field +
+                   "\", message=\"" + e.message + "\")";
+        });
+
+    // ValidationResult struct
+    py::class_<cream::ValidationResult>(m, "ValidationResult")
+        .def(py::init<>())
+        .def("is_valid", &cream::ValidationResult::is_valid)
+        .def("add_error", &cream::ValidationResult::add_error)
+        .def_readwrite("valid", &cream::ValidationResult::valid)
+        .def_readwrite("errors", &cream::ValidationResult::errors);
+
+    // TransactionValidator class
+    py::class_<cream::TransactionValidator>(m, "TransactionValidator")
+        .def(py::init<>())
+        .def("set_min_amount", &cream::TransactionValidator::set_min_amount)
+        .def("set_max_amount", &cream::TransactionValidator::set_max_amount)
+        .def("set_allow_future_dates", &cream::TransactionValidator::set_allow_future_dates)
+        .def("validate", &cream::TransactionValidator::validate);
+
+    // Convenience function
+    m.def("validate_transaction", &cream::validate_transaction);
 }
