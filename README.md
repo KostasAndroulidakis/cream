@@ -2,72 +2,131 @@
 
 Personal finance tracker app.
 
-## Specificaton
+## Tech Stack
 
-- Track transactions per wallet. Wallets can be:
-  - Bank Accounts
-  - Digital Wallets (PayPal, Google Pay, etc)
-  - Personal Wallets
-  - Stashes
-  - or anything that tracks a money balance.
+| Layer | Technology |
+| -------- | ------------ |
+| Core Engine | C++ (ledger, rules, aggregation, validation) |
+| Backend | Python, FastAPI |
+| Frontend | React, TypeScript |
+| Database | PostgreSQL |
 
-## Objects
+## Architecture
 
-- `Wallet`: holds a balance
-  - `balance`
-  - `history`: history of transactions
+```text
+┌─────────────────┐
+│    Frontend     │  React + TypeScript
+│   (REST/WS)     │
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│    Backend      │  FastAPI (orchestrator)
+│  ┌───────────┐  │
+│  │ C++ Core  │  │  pybind11 bindings
+│  └───────────┘  │
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│   PostgreSQL    │  ACID, NUMERIC(19,4)
+└─────────────────┘
+```
 
-- `Transaction`: annotated transaction
-  - `amount`: signed + or -
-  - `source`: income
-  - `target`: expense
-  - `date`: date and time
-  - `description`
+- **C++ Core**: Finance engine (ledger, validation, calculations). No DB/web access.
+- **FastAPI**: Orchestrator. Handles HTTP, calls C++ engine, manages DB.
+- **React**: UI layer, communicates via REST or WebSocket.
+- **PostgreSQL**: ACID-compliant storage with Alembic migrations.
 
-## Program Behavior
+## Project Structure
 
-- Program starts:
-  - Show login screen
-  - Validate credentials
-  - Option for "remember me"
-  - 'Log In' button leads to Dashboard
-  - Option for "Sign up"
-  if user click on "Sign up":
-    - Show signup screen
-    - Create account (name, username, password)
-    - Login user to Dashboard
+```text
+cream/
+├── core/           # C++ engine
+│   ├── src/
+│   ├── include/
+│   ├── tests/
+│   └── CMakeLists.txt
+│
+├── backend/        # Python/FastAPI
+│   ├── app/
+│   │   ├── api/
+│   │   ├── models/     # SQLAlchemy
+│   │   ├── schemas/    # Pydantic
+│   │   └── services/
+│   ├── migrations/     # Alembic
+│   └── pyproject.toml
+│
+├── frontend/       # React/TypeScript
+│   ├── src/
+│   └── package.json
+│
+└── database/       # SQL schemas
+    └── schema.sql
+```
 
-- Main Dashboard:
-  - Summary of accounts and balances
-  - Recent transactions
-  - Month-to-date income vs. expenses
-  - Balance status
-  - Settings:
-    - Set up bank accounts (name, initial balance)
-    - Create default categories
+## Database Schema (MVP)
 
-- Navigation options:
-  - Add transaction (income/expense)
-  - View/edit transactions
-  - Generate reports
-  - Manage balance
-  - Account settings
+```text
+┌─────────┐       ┌─────────────┐
+│  users  │───1:N─│   wallets   │
+└─────────┘       └─────────────┘
+     │                   │
+     │ 1:N               │ 1:N
+     ▼                   ▼
+┌────────────┐    ┌──────────────┐
+│ categories │◄───│ transactions │
+└────────────┘    └──────────────┘
+```
 
-- Transaction entry:
-  - Amount
-  - Category (dropdown + option to create new)
-  - Account (bank or cash)
-  - Date and time
-  - Description/notes
-  - Receipt photo (optional)
+| Table | Purpose |
+| ------- | --------- |
+| users | Authentication, profile |
+| wallets | Bank accounts, cash, digital wallets |
+| categories | Hierarchical income/expense categories |
+| transactions | Financial transactions |
 
-- Reports section:
-  - Monthly summaries
-  - Category breakdowns
-  - Income vs. expenses over time
-  - Export options
+## MVP Features
 
-- Balance section:
-  - Set spending limits by category
-  - Track progress
-  - Alerts for approaching limits
+- User signup/login
+- Create and manage wallets
+- Record income/expense transactions
+- Categorize transactions (hierarchical categories)
+- View balance per wallet
+- Dashboard with summary
+
+## Future Features
+
+- Entities (merchants, employers)
+- Tags
+- Recurring transactions
+- Budgets and spending limits
+- Receipt attachments
+- Reports and exports
+
+## Specification
+
+### Wallets
+
+Track balances across:
+
+- Bank Accounts
+- Digital Wallets (PayPal, Google Pay, etc.)
+- Cash/Personal Wallets
+- Stashes
+
+### Transactions
+
+- Amount (positive for income, negative for expense)
+- Category
+- Wallet
+- Date and time
+- Description
+
+### Program Flow
+
+1. Login/Signup screen
+2. Dashboard: balances, recent transactions, month summary
+3. Add/edit transactions
+4. Manage categories and wallets
+5. Generate reports
