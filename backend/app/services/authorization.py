@@ -137,6 +137,22 @@ def get_user_wallet_ids(user_id: int, db: Session) -> list[int]:
     return [w.id for w in db.query(Wallet.id).filter(Wallet.user_id == user_id).all()]
 
 
+def get_user_wallet_ids_subquery(user_id: int, db: Session):
+    """Get a subquery for user's wallet IDs.
+
+    More efficient than get_user_wallet_ids() for filtering - avoids loading
+    IDs into Python memory and lets the database optimize the query.
+
+    Args:
+        user_id: The authenticated user's ID
+        db: Database session
+
+    Returns:
+        SQLAlchemy subquery that can be used with .in_()
+    """
+    return db.query(Wallet.id).filter(Wallet.user_id == user_id).scalar_subquery()
+
+
 def verify_wallet_access(wallet_id: int, user_id: int, db: Session) -> None:
     """Verify user has access to a wallet without returning it.
 

@@ -6,23 +6,23 @@ CREAM follows a classic three-tier web architecture optimized for simplicity and
 
 ```text
 ┌─────────────────────────────────────────────────────────────┐
-│                        FRONTEND                              │
-│                   React + TypeScript                         │
-│              Single Page Application (SPA)                   │
+│                        FRONTEND                             │
+│                   React + TypeScript                        │
+│              Single Page Application (SPA)                  │
 └─────────────────────────┬───────────────────────────────────┘
                           │ HTTPS / REST API
                           │ JSON payloads
                           ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                        BACKEND                               │
-│                   Python + FastAPI                           │
-│                                                              │
+│                        BACKEND                              │
+│                   Python + FastAPI                          │
+│                                                             │
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐  │
 │  │   Routers   │  │  Services   │  │     Validation      │  │
 │  │  (HTTP/API) │─▶│ (Business)  │─▶│  (Business Rules)   │  │
 │  └─────────────┘  └──────┬──────┘  └─────────────────────┘  │
-│                          │                                   │
-│                          ▼                                   │
+│                          │                                  │
+│                          ▼                                  │
 │  ┌─────────────────────────────────────────────────────┐    │
 │  │              SQLAlchemy ORM + Pydantic              │    │
 │  │           (Data Access + Serialization)             │    │
@@ -32,9 +32,9 @@ CREAM follows a classic three-tier web architecture optimized for simplicity and
                           │ Connection pooling
                           ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                       DATABASE                               │
-│                      PostgreSQL                              │
-│                                                              │
+│                       DATABASE                              │
+│                      PostgreSQL                             │
+│                                                             │
 │    ACID transactions, NUMERIC(19,4) precision               │
 │    Indexed queries, Referential integrity                   │
 └─────────────────────────────────────────────────────────────┘
@@ -314,29 +314,29 @@ cream/
 
 ```text
 ┌─────────────────────────────────────────────────────────────┐
-│                    Security Layers                           │
+│                    Security Layers                          │
 ├─────────────────────────────────────────────────────────────┤
-│                                                              │
-│  1. Transport Security                                       │
+│                                                             │
+│  1. Transport Security                                      │
 │     └── HTTPS (TLS) for all communications                  │
-│                                                              │
-│  2. Authentication                                           │
+│                                                             │
+│  2. Authentication                                          │
 │     └── JWT tokens with expiration                          │
 │     └── bcrypt password hashing                             │
-│                                                              │
-│  3. Authorization                                            │
+│                                                             │
+│  3. Authorization                                           │
 │     └── User can only access own resources                  │
 │     └── Verified on every request                           │
-│                                                              │
-│  4. Input Validation                                         │
+│                                                             │
+│  4. Input Validation                                        │
 │     └── Pydantic schema validation                          │
 │     └── Business rule validation                            │
 │     └── SQL injection prevention (ORM)                      │
-│                                                              │
-│  5. Data Isolation                                           │
+│                                                             │
+│  5. Data Isolation                                          │
 │     └── All queries filter by user_id                       │
 │     └── Foreign keys enforce referential integrity          │
-│                                                              │
+│                                                             │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -352,8 +352,8 @@ Current architecture supports vertical scaling. For horizontal scaling:
 
 ```text
 ┌─────────────────────────────────────────────────────────────┐
-│                      Load Balancer                           │
-│                    (nginx / cloud LB)                        │
+│                      Load Balancer                          │
+│                    (nginx / cloud LB)                       │
 └─────────────────────────┬───────────────────────────────────┘
                           │
           ┌───────────────┼───────────────┐

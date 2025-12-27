@@ -39,9 +39,12 @@ Found 26 issues (7 HIGH, 15 MEDIUM, 4 LOW) during code review.
 
 ## Performance Issues
 
-- [ ] **#15 HIGH** `models/wallet.py:40-43` - `balance` property uses N+1 query pattern, iterates all transactions in memory.
-- [ ] **#16 HIGH** `api/statistics.py` - No pagination for large result sets, loads all data into memory.
-- [ ] **#17 MEDIUM** `api/transactions.py:43` - Loads all wallet IDs into Python instead of using subquery.
+- [x] **#15 HIGH** `models/wallet.py:40-43` - `balance` property uses N+1 query pattern, iterates all transactions in memory.
+  - Fixed: Replaced with `column_property` using SQL subquery - balance calculated in single query
+- [x] **#16 HIGH** `api/statistics.py` - No pagination for large result sets, loads all data into memory.
+  - Fixed: Added `limit` parameter (default 50) to category breakdown queries in `services/statistics.py`
+- [x] **#17 MEDIUM** `api/transactions.py:43` - Loads all wallet IDs into Python instead of using subquery.
+  - Fixed: Created `get_user_wallet_ids_subquery()` in authorization service, used in `list_transactions`
 
 ## Error Handling Issues
 
@@ -69,11 +72,11 @@ Found 26 issues (7 HIGH, 15 MEDIUM, 4 LOW) during code review.
 | SRP Violations | 2 | 4 | 0 | 5/6 |
 | SSOT Violations | 1 | 3 | 1 | 4/5 |
 | Security Issues | 2 | 1 | 0 | 3/3 ✅ |
-| Performance Issues | 2 | 1 | 0 | 0/3 |
+| Performance Issues | 2 | 1 | 0 | 3/3 ✅ |
 | Error Handling | 0 | 4 | 0 | 0/4 |
 | Type/Validation | 0 | 2 | 0 | 0/2 |
 | Other | 0 | 0 | 3 | 1/3 |
-| **TOTAL** | **7** | **15** | **4** | **13/26** |
+| **TOTAL** | **7** | **15** | **4** | **16/26** |
 
 ## New Services Created
 

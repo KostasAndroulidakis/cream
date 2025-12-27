@@ -116,6 +116,11 @@ def get_user_wallet_ids(user_id: int, db: Session) -> list[int]:
     return [w.id for w in db.query(Wallet.id).filter(Wallet.user_id == user_id).all()]
 
 
+def get_user_wallet_ids_subquery(user_id: int, db: Session):
+    """Get a subquery for user's wallet IDs (more efficient for large datasets)."""
+    return db.query(Wallet.id).filter(Wallet.user_id == user_id).scalar_subquery()
+
+
 def calculate_wallet_balance(wallet: Wallet, db: Session) -> Decimal:
     """Calculate wallet balance using SQL aggregation."""
     tx_sum = db.query(func.coalesce(func.sum(Transaction.amount), 0)).filter(
@@ -198,8 +203,17 @@ def _get_category_totals(
     *,
     amount_filter,
     use_abs: bool,
+    limit: int = 50,
 ) -> list[CategoryTotalData]:
-    """Get category totals with configurable amount filter."""
+    """Get category totals with configurable amount filter.
+
+    Args:
+        wallet_ids: List of wallet IDs to include
+        db: Database session
+        amount_filter: SQLAlchemy filter for amount (e.g., > 0 or < 0)
+        use_abs: Whether to use absolute values
+        limit: Maximum number of categories to return (default 50)
+    """
     sum_expr = func.sum(func.abs(Transaction.amount)) if use_abs else func.sum(Transaction.amount)
 
     query = (
@@ -213,6 +227,7 @@ def _get_category_totals(
         .filter(amount_filter)
         .group_by(Category.id, Category.name)
         .order_by(sum_expr.desc())
+        .limit(limit)
         .all()
     )
 
@@ -306,9 +321,15 @@ def _calculate_period_summary(period_filter: list, db: Session) -> ReportSummary
 
 
 def _calculate_category_breakdown(
-    period_filter: list, db: Session
+    period_filter: list, db: Session, *, limit: int = 50
 ) -> list[CategoryBreakdownData]:
-    """Calculate category breakdown for a period."""
+    """Calculate category breakdown for a period.
+
+    Args:
+        period_filter: List of SQLAlchemy filter conditions
+        db: Database session
+        limit: Maximum number of categories to return (default 50)
+    """
     query = (
         db.query(
             Category.id.label("category_id"),
@@ -321,6 +342,7 @@ def _calculate_category_breakdown(
         .filter(*period_filter)
         .group_by(Category.id, Category.name, Category.type)
         .order_by(func.sum(func.abs(Transaction.amount)).desc())
+        .limit(limit)
         .all()
     )
 

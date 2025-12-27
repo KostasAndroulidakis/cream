@@ -8,8 +8,9 @@ from app.services.auth import get_current_user_id
 from app.services.authorization import (
     get_transaction as get_user_transaction,
     get_wallet as verify_wallet_ownership,
-    get_user_wallet_ids,
+    get_user_wallet_ids_subquery,
     verify_category_access,
+    verify_wallet_access,
 )
 from app.services.helpers import apply_update
 from app.services.validation import validate_transaction
@@ -24,14 +25,14 @@ def list_transactions(
     db: Session = Depends(get_db),
 ):
     """List transactions for user's wallets."""
-    user_wallet_ids = get_user_wallet_ids(user_id, db)
-
-    query = db.query(Transaction).filter(Transaction.wallet_id.in_(user_wallet_ids))
-
     if wallet_id is not None:
-        if wallet_id not in user_wallet_ids:
-            raise HTTPException(status_code=403, detail="Access denied")
-        query = query.filter(Transaction.wallet_id == wallet_id)
+        # Filter by specific wallet - verify ownership first
+        verify_wallet_access(wallet_id, user_id, db)
+        query = db.query(Transaction).filter(Transaction.wallet_id == wallet_id)
+    else:
+        # List all transactions - use subquery for efficiency
+        wallet_ids_subquery = get_user_wallet_ids_subquery(user_id, db)
+        query = db.query(Transaction).filter(Transaction.wallet_id.in_(wallet_ids_subquery))
 
     return query.order_by(Transaction.occurred_at.desc()).all()
 
