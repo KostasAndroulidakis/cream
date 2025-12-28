@@ -203,7 +203,7 @@
 ## Summary
 
 | Component | Status |
-|-----------|--------|
+| ----------- | -------- |
 | Backend API | ✅ Complete |
 | Validation | ✅ Complete |
 | Non-Functional | ✅ Complete |
