@@ -61,7 +61,8 @@ Found 26 issues (7 HIGH, 15 MEDIUM, 4 LOW) during code review.
 
 ## Type/Validation Issues
 
-- [ ] **#22 MEDIUM** `services/validation.py:146-148` - Naive datetime assumed to be UTC (dangerous assumption).
+- [x] **#22 MEDIUM** `services/validation.py:146-148` - Naive datetime assumed to be UTC (dangerous assumption).
+  - Fixed: Added warning log when encountering naive datetime
 - [x] **#23 MEDIUM** `services/auth.py:55-77` - `get_current_user()` duplicates `get_current_user_id()` logic.
   - Fixed: Refactored to use `get_current_user_id()` as dependency
 
@@ -69,7 +70,8 @@ Found 26 issues (7 HIGH, 15 MEDIUM, 4 LOW) during code review.
 
 - [x] **#24 LOW** `main.py:14-16` - Health check doesn't verify database connectivity.
   - Fixed: Added database connectivity check with `SELECT 1` query
-- [ ] **#25 LOW** Multiple models - Duplicate datetime defaults using lambda, should use base class.
+- [x] **#25 LOW** Multiple models - Duplicate datetime defaults using lambda, should use base class.
+  - Fixed: Created `TimestampMixin` and `utc_now()` in `database.py`. Models now inherit from mixin.
 - [x] **#26 LOW** `api/statistics.py:65-68,164-166,207-208` - Repeated SQL conditional aggregation pattern.
   - Fixed: Moved to `_sum_income_expr()` and `_sum_expenses_expr()` in `services/statistics.py`
 
@@ -82,9 +84,9 @@ Found 26 issues (7 HIGH, 15 MEDIUM, 4 LOW) during code review.
 | Security Issues | 2 | 1 | 0 | 3/3 ✅ |
 | Performance Issues | 2 | 1 | 0 | 3/3 ✅ |
 | Error Handling | 0 | 4 | 0 | 4/4 ✅ |
-| Type/Validation | 0 | 2 | 0 | 1/2 |
-| Other | 0 | 0 | 3 | 2/3 |
-| **TOTAL** | **7** | **15** | **4** | **24/26** |
+| Type/Validation | 0 | 2 | 0 | 2/2 ✅ |
+| Other | 0 | 0 | 3 | 3/3 ✅ |
+| **TOTAL** | **7** | **15** | **4** | **26/26 ✅** |
 
 ## New Services Created
 

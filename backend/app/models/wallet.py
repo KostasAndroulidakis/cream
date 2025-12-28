@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
 from decimal import Decimal
 from enum import Enum
 from typing import TYPE_CHECKING
@@ -8,7 +7,7 @@ from typing import TYPE_CHECKING
 from sqlalchemy import ForeignKey, Numeric, String, select, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship, column_property
 
-from app.database import Base
+from app.database import Base, TimestampMixin
 
 if TYPE_CHECKING:
     from app.models.user import User
@@ -22,7 +21,7 @@ class WalletType(str, Enum):
     STASH = "stash"
 
 
-class Wallet(Base):
+class Wallet(TimestampMixin, Base):
     __tablename__ = "wallets"
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -31,8 +30,6 @@ class Wallet(Base):
     type: Mapped[WalletType]
     currency: Mapped[str] = mapped_column(String(3), default="EUR")
     initial_balance: Mapped[Decimal] = mapped_column(Numeric(19, 4), default=Decimal("0"))
-    created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(timezone.utc))
-    updated_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
     user: Mapped["User"] = relationship(back_populates="wallets")
     transactions: Mapped[list["Transaction"]] = relationship(back_populates="wallet", cascade="all, delete-orphan")

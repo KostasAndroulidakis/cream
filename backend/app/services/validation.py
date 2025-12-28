@@ -7,10 +7,13 @@ Implements business rules for transaction validation:
 - IDs must be positive
 """
 
+import logging
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from decimal import Decimal
 from typing import Optional
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -144,7 +147,11 @@ class TransactionValidator:
 
         # Convert naive datetime to UTC if needed
         if occurred_at.tzinfo is None:
-            # Assume naive datetime is UTC
+            logger.warning(
+                "Naive datetime received: %s. Assuming UTC. "
+                "Consider using timezone-aware datetimes.",
+                occurred_at.isoformat()
+            )
             occurred_at = occurred_at.replace(tzinfo=timezone.utc)
 
         if occurred_at > now:

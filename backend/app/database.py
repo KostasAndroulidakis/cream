@@ -1,10 +1,10 @@
 import logging
-from contextlib import contextmanager
+from datetime import datetime, timezone
 from typing import Generator
 
 from sqlalchemy import create_engine
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.orm import DeclarativeBase, sessionmaker, Session
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker, Session
 
 from app.config import settings
 
@@ -14,8 +14,20 @@ engine = create_engine(settings.database_url)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
+def utc_now() -> datetime:
+    """Return current UTC datetime. Single source of truth for timestamp defaults."""
+    return datetime.now(timezone.utc)
+
+
 class Base(DeclarativeBase):
     pass
+
+
+class TimestampMixin:
+    """Mixin providing created_at and updated_at timestamp columns."""
+
+    created_at: Mapped[datetime] = mapped_column(default=utc_now)
+    updated_at: Mapped[datetime] = mapped_column(default=utc_now, onupdate=utc_now)
 
 
 def get_db() -> Generator[Session, None, None]:
