@@ -1,80 +1,211 @@
-# Backend Progress
+# Implementation Progress
 
-## Implementation Steps
+> **Legend:** ✅ Implemented  ·  ⬜ Not Implemented
 
-| # | Task | Status |
-| --- | --- | --- |
-| 1 | Set up FastAPI project structure | ✅ |
-| 2 | Configure pydantic-settings for environment variables | ✅ |
-| 3 | Set up SQLAlchemy with PostgreSQL | ✅ |
-| 4 | Configure Alembic for migrations | ✅ |
-| 5 | Implement User model and schema | ✅ |
-| 6 | Implement Wallet model and schema (with WalletType enum) | ✅ |
-| 7 | Implement Category model and schema (with CategoryType enum) | ✅ |
-| 8 | Implement Transaction model and schema | ✅ |
-| 9 | Implement auth service (password hashing, JWT) | ✅ |
-| 10 | Implement /auth endpoints (signup, login) | ✅ |
-| 11 | Implement /wallets CRUD endpoints | ✅ |
-| 12 | Implement /categories CRUD endpoints | ✅ |
-| 13 | Implement /transactions CRUD endpoints | ✅ |
-| 14 | Add `get_current_user` dependency (JWT verification) | ✅ |
-| 15 | Secure all endpoints with authentication | ✅ |
-| 16 | Create initial Alembic migration | ✅ |
-| 17 | Write backend unit tests | ✅ |
-| 18 | Implement /statistics endpoints | ✅ |
-| 19 | Implement validation service | ✅ |
+---
 
-## API Endpoints
+## Backend API
 
-| Endpoint | Description |
-| --- | --- |
-| `POST /api/v1/auth/signup` | User registration |
-| `POST /api/v1/auth/login` | User login (returns JWT) |
-| `GET /api/v1/wallets` | List user wallets |
-| `POST /api/v1/wallets` | Create wallet |
-| `GET /api/v1/wallets/{id}` | Get wallet |
-| `PATCH /api/v1/wallets/{id}` | Update wallet |
-| `DELETE /api/v1/wallets/{id}` | Delete wallet |
-| `GET /api/v1/categories` | List categories |
-| `POST /api/v1/categories` | Create category |
-| `GET /api/v1/categories/{id}` | Get category |
-| `PATCH /api/v1/categories/{id}` | Update category |
-| `DELETE /api/v1/categories/{id}` | Delete category |
-| `GET /api/v1/transactions` | List transactions |
-| `POST /api/v1/transactions` | Create transaction |
-| `GET /api/v1/transactions/{id}` | Get transaction |
-| `PATCH /api/v1/transactions/{id}` | Update transaction |
-| `DELETE /api/v1/transactions/{id}` | Delete transaction |
-| `GET /api/v1/statistics` | Aggregated statistics |
-| `GET /api/v1/statistics/report` | Period reports |
+### ✅ User Management (FR1)
 
-## Unit Tests (121 Total)
+- ✅ User registration with username, email, password
+- ✅ User login with JWT token response
+- ✅ Token-based authentication on all endpoints
+- ✅ User data isolation (users can only access own data)
+- ✅ Unique username and email validation
+- ✅ Username length validation (3-50 chars)
+- ✅ Password minimum length validation (8 chars)
 
-| Module | Tests |
-| --- | --- |
-| Auth | 9 |
-| Wallets | 18 |
-| Categories | 28 |
-| Transactions | 27 |
-| Statistics | 10 |
-| Validation | 29 |
+### ✅ Wallet Management (FR2)
 
-**Validation rules implemented:**
+- ✅ Create wallet with name, type, currency, initial balance
+- ✅ List all user wallets
+- ✅ Get wallet details with current balance
+- ✅ Update wallet (name, type, currency)
+- ✅ Delete wallet (cascades to transactions)
+- ✅ Wallet types: bank, cash, digital, stash
+- ✅ Balance calculation: initial_balance + sum(transactions)
+- ✅ Currency validation (exactly 3 characters)
+- ✅ Wallet name validation (1-100 chars)
 
-- Amount must not be zero
-- Amount must be >= 0.0001 and <= 999,999,999.9999
-- `occurred_at` must not be in the future
-- `wallet_id` and `category_id` must be positive
+### ✅ Category Management (FR3)
 
-## Architecture Notes
+- ✅ Create custom categories (name, type)
+- ✅ List categories (personal + system defaults)
+- ✅ Update own categories
+- ✅ Delete own categories
+- ✅ System default categories protection
+- ✅ Hierarchical categories (parent_id)
+- ✅ Cycle detection in category hierarchy
 
-Pure Python/FastAPI backend:
+### ✅ Transaction Management (FR4)
 
-- **Validation**: `app/services/validation.py` - TransactionValidator with builder pattern
-- **Statistics**: SQL aggregations (SUM, GROUP BY) for efficiency
-- **Money precision**: PostgreSQL NUMERIC(19,4), Python Decimal
+- ✅ Create transactions (wallet, category, amount, date, description)
+- ✅ List all transactions
+- ✅ Filter transactions by wallet
+- ✅ Get transaction details
+- ✅ Update transactions
+- ✅ Delete transactions
+- ✅ Positive = income, negative = expense
+- ✅ Wallet ownership validation
+- ✅ Category access validation
 
-## Future Work
+### ✅ Statistics (FR5)
 
-- [ ] Category hierarchy helpers (get_children, get_ancestors, cycle detection)
-- [ ] Frontend implementation (React/TypeScript)
+- ✅ Total balance across all wallets
+- ✅ Total income (sum of positive transactions)
+- ✅ Total expenses (sum of negative transactions)
+- ✅ Balance per wallet
+- ✅ Spending breakdown by category
+- ✅ Income breakdown by category
+
+### ✅ Reports (FR6)
+
+- ✅ Generate reports for date range
+- ✅ Period income, expenses, net change
+- ✅ Transaction count for period
+- ✅ Category breakdown with totals and counts
+- ✅ Wallet breakdown with income/expense/net
+
+---
+
+## Validation Rules
+
+### ✅ Transaction Validation (VR1)
+
+- ✅ Amount must not be zero
+- ✅ Amount >= 0.0001 (minimum precision)
+- ✅ Amount <= 999,999,999.9999 (maximum)
+- ✅ `occurred_at` must not be in the future
+- ✅ `wallet_id` must exist and be owned by user
+- ✅ `category_id` must be accessible
+
+### ✅ Wallet Validation (VR2)
+
+- ✅ Name must not be empty
+- ✅ Name <= 100 characters
+- ✅ Type must be valid enum
+- ✅ Currency must be exactly 3 characters
+
+### ✅ Category Validation (VR3)
+
+- ✅ Name must not be empty
+- ✅ Name <= 100 characters
+- ✅ Type must be income or expense
+- ✅ parent_id must not create cycle
+
+### ✅ User Validation (VR4)
+
+- ✅ Username 3-50 characters
+- ✅ Email valid format
+- ✅ Password minimum 8 characters
+
+---
+
+## Non-Functional Requirements
+
+### ✅ Correctness (NFR1)
+
+- ✅ Fixed-point decimal arithmetic (NUMERIC(19,4))
+- ✅ 4 decimal places precision
+- ✅ No floating-point in financial calculations
+- ✅ ACID-compliant transactions
+- ✅ Consistent balance calculations
+- ✅ Input validation before persistence
+
+### ✅ Security (NFR3)
+
+- ✅ Bcrypt password hashing
+- ✅ JWT tokens with expiration
+- ✅ Authentication required on all endpoints
+- ✅ User data isolation
+- ✅ Input validation (Pydantic + business rules)
+- ✅ SQL injection prevention (ORM)
+- ⬜ HTTPS in production (deployment config)
+
+### ✅ Auditability (NFR4)
+
+- ✅ `created_at` on all entities
+- ✅ `updated_at` on mutable entities
+- ✅ `occurred_at` preserved on transactions
+- ✅ Hard deletes (no soft deletes)
+
+### ✅ Reliability (NFR5)
+
+- ✅ Database error handling
+- ✅ Appropriate error messages
+- ✅ Session rollback on errors
+- ✅ Health check endpoint
+
+### ✅ Maintainability (NFR6)
+
+- ✅ 121 unit tests
+- ✅ API versioning (v1)
+- ✅ Alembic migrations
+- ✅ Environment variable configuration
+
+---
+
+## Frontend
+
+### ⬜ User Interface
+
+- ⬜ React + TypeScript setup
+- ⬜ Authentication pages (login, signup)
+- ⬜ Dashboard with statistics
+- ⬜ Wallet management UI
+- ⬜ Transaction list and forms
+- ⬜ Category management UI
+- ⬜ Reports and charts
+
+---
+
+## Future Features (Post-MVP)
+
+### ⬜ Recurring Transactions
+
+- ⬜ Define recurring transaction templates
+- ⬜ Automatic transaction generation
+- ⬜ Edit/delete recurring rules
+
+### ⬜ Budget Planning
+
+- ⬜ Set spending limits per category
+- ⬜ Budget vs actual tracking
+- ⬜ Alerts when approaching limits
+
+### ⬜ Multi-Currency
+
+- ⬜ Currency conversion rates
+- ⬜ Cross-currency reporting
+- ⬜ Base currency setting
+
+### ⬜ Data Import/Export
+
+- ⬜ CSV export
+- ⬜ JSON export
+- ⬜ CSV import with mapping
+
+### ⬜ Tags
+
+- ⬜ Tag transactions with labels
+- ⬜ Filter by tags
+- ⬜ Tag-based reporting
+
+### ⬜ Receipt Attachments
+
+- ⬜ Upload receipt images
+- ⬜ Link to transactions
+- ⬜ Image storage
+
+---
+
+## Summary
+
+| Component | Status |
+|-----------|--------|
+| Backend API | ✅ Complete |
+| Validation | ✅ Complete |
+| Non-Functional | ✅ Complete |
+| Frontend | ⬜ Not Started |
+| Future Features | ⬜ Post-MVP |

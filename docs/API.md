@@ -11,6 +11,30 @@
 
 All endpoints except `/auth/*` require authentication.
 
+## API Endpoints
+
+| Endpoint | Description |
+| --- | --- |
+| `POST /api/v1/auth/signup` | User registration |
+| `POST /api/v1/auth/login` | User login (returns JWT) |
+| `GET /api/v1/wallets` | List user wallets |
+| `POST /api/v1/wallets` | Create wallet |
+| `GET /api/v1/wallets/{id}` | Get wallet |
+| `PATCH /api/v1/wallets/{id}` | Update wallet |
+| `DELETE /api/v1/wallets/{id}` | Delete wallet |
+| `GET /api/v1/categories` | List categories |
+| `POST /api/v1/categories` | Create category |
+| `GET /api/v1/categories/{id}` | Get category |
+| `PATCH /api/v1/categories/{id}` | Update category |
+| `DELETE /api/v1/categories/{id}` | Delete category |
+| `GET /api/v1/transactions` | List transactions |
+| `POST /api/v1/transactions` | Create transaction |
+| `GET /api/v1/transactions/{id}` | Get transaction |
+| `PATCH /api/v1/transactions/{id}` | Update transaction |
+| `DELETE /api/v1/transactions/{id}` | Delete transaction |
+| `GET /api/v1/statistics` | Aggregated statistics |
+| `GET /api/v1/statistics/report` | Period reports |
+
 ### Headers
 
 ```text

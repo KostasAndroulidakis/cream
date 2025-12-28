@@ -43,7 +43,9 @@ cream/
 │   ├── REQUIREMENTS.md
 │   ├── ARCHITECTURE.md
 │   ├── DOMAIN.md
-│   └── API.md
+│   ├── API.md
+│   ├── PROGRESS.md
+│   └── TESTING.md
 │
 ├── backend/        # Python/FastAPI
 │   ├── app/
