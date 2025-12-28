@@ -95,3 +95,43 @@ Found 26 issues (7 HIGH, 15 MEDIUM, 4 LOW) during code review.
 | `services/authorization.py` | Centralized ownership verification |
 | `services/statistics.py` | Statistics business logic |
 | `services/helpers.py` | Common utilities (`apply_update`) |
+
+---
+
+## Specification Compliance Issues (Second Review)
+
+Found 6 additional issues during specification compliance review.
+
+### Business Rules
+
+- [x] **#27 HIGH** `api/categories.py` - BR6: No cycle detection for category hierarchy.
+  - Fixed: Created `check_category_cycle()` in `services/authorization.py`, called in `update_category`
+- [x] **#28 HIGH** `api/categories.py:71-79` - BR5.2: No IntegrityError handling when deleting category with transactions.
+  - Fixed: Added try/except with `CategoryInUseError` (409 response)
+
+### Validation Rules
+
+- [x] **#29 MEDIUM** `schemas/wallet.py` - VR2.4: Currency not validated to exactly 3 characters.
+  - Fixed: Added `Field(..., min_length=3, max_length=3)` constraint
+- [x] **#30 MEDIUM** `schemas/user.py` - VR4.1: Username length not validated (3-50 chars).
+  - Fixed: Added `Field(..., min_length=3, max_length=50)` constraint
+- [x] **#31 MEDIUM** `schemas/user.py` - VR4.3: Password length not validated (min 8 chars).
+  - Fixed: Added `Field(..., min_length=8)` constraint
+
+### SSOT
+
+- [x] **#32 LOW** `services/statistics.py` - Duplicate `get_user_wallet_ids()` function (also in authorization.py).
+  - Fixed: Removed from statistics.py, use `services/authorization.py` version
+
+## Summary (Second Review)
+
+| Category | HIGH | MEDIUM | LOW | Fixed |
+| ---------- | ------ | -------- | ----- | ----- |
+| Business Rules | 2 | 0 | 0 | 2/2 ✅ |
+| Validation Rules | 0 | 3 | 0 | 3/3 ✅ |
+| SSOT | 0 | 0 | 1 | 1/1 ✅ |
+| **TOTAL** | **2** | **3** | **1** | **6/6 ✅** |
+
+## Grand Total
+
+**32 issues found and fixed across two reviews.**

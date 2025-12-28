@@ -1,11 +1,17 @@
 from fastapi import APIRouter, Depends, status
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import Category
 from app.schemas import CategoryCreate, CategoryRead, CategoryUpdate
 from app.services.auth import get_current_user_id
-from app.services.authorization import get_category, verify_category_access
+from app.services.authorization import (
+    get_category,
+    verify_category_access,
+    check_category_cycle,
+    CategoryInUseError,
+)
 from app.services.helpers import apply_update
 
 router = APIRouter()
@@ -61,6 +67,8 @@ def update_category(
     update_data = category_in.model_dump(exclude_unset=True)
     if "parent_id" in update_data and update_data["parent_id"] is not None:
         verify_category_access(update_data["parent_id"], user_id, db)
+        # Check for cycles in hierarchy
+        check_category_cycle(category_id, update_data["parent_id"], db)
 
     apply_update(category, category_in)
     db.commit()
@@ -76,4 +84,8 @@ def delete_category(
 ):
     category = get_category(category_id, user_id, db, require_ownership=True)
     db.delete(category)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise CategoryInUseError()

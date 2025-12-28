@@ -111,16 +111,6 @@ def get_user_wallets(user_id: int, db: Session) -> list[Wallet]:
     return db.query(Wallet).filter(Wallet.user_id == user_id).all()
 
 
-def get_user_wallet_ids(user_id: int, db: Session) -> list[int]:
-    """Get all wallet IDs for a user."""
-    return [w.id for w in db.query(Wallet.id).filter(Wallet.user_id == user_id).all()]
-
-
-def get_user_wallet_ids_subquery(user_id: int, db: Session):
-    """Get a subquery for user's wallet IDs (more efficient for large datasets)."""
-    return db.query(Wallet.id).filter(Wallet.user_id == user_id).scalar_subquery()
-
-
 def calculate_wallet_balance(wallet: Wallet, db: Session) -> Decimal:
     """Calculate wallet balance using SQL aggregation."""
     tx_sum = db.query(func.coalesce(func.sum(Transaction.amount), 0)).filter(

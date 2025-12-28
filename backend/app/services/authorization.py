@@ -30,6 +30,20 @@ class SystemResourceError(HTTPException):
         super().__init__(status_code=403, detail=f"Cannot modify system default {resource}")
 
 
+class CategoryCycleError(HTTPException):
+    """Category hierarchy would contain a cycle."""
+
+    def __init__(self):
+        super().__init__(status_code=400, detail="Category cannot be its own ancestor")
+
+
+class CategoryInUseError(HTTPException):
+    """Category is referenced by transactions."""
+
+    def __init__(self):
+        super().__init__(status_code=409, detail="Cannot delete category: transactions reference it")
+
+
 def get_wallet(wallet_id: int, user_id: int, db: Session) -> Wallet:
     """Get a wallet and verify the user owns it.
 
@@ -177,3 +191,33 @@ def verify_category_access(
         AccessDeniedError: User does not have access
     """
     get_category(category_id, user_id, db, allow_system=allow_system)
+
+
+def check_category_cycle(category_id: int, new_parent_id: int, db: Session) -> None:
+    """Check if setting a parent would create a cycle in the category hierarchy.
+
+    Args:
+        category_id: The category being modified
+        new_parent_id: The proposed new parent ID
+        db: Database session
+
+    Raises:
+        CategoryCycleError: If the change would create a cycle
+    """
+    # A category cannot be its own parent
+    if category_id == new_parent_id:
+        raise CategoryCycleError()
+
+    # Walk up the ancestor chain from new_parent_id to check for cycles
+    current_id = new_parent_id
+    visited = {category_id}  # The category being modified would create a cycle if found
+
+    while current_id is not None:
+        if current_id in visited:
+            raise CategoryCycleError()
+        visited.add(current_id)
+
+        parent = db.query(Category.parent_id).filter(Category.id == current_id).first()
+        if parent is None:
+            break
+        current_id = parent.parent_id
