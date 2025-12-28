@@ -148,9 +148,23 @@
 
 ## Frontend
 
+### ✅ Project Setup
+
+- ✅ Vite + React + TypeScript
+- ✅ Project structure (components, pages, services, types, hooks, context)
+- ✅ React Router DOM installed
+- ✅ Axios HTTP client installed
+- ✅ TypeScript types from API schemas
+
+### ⬜ Core Infrastructure
+
+- ⬜ API client service
+- ⬜ Authentication context
+- ⬜ Protected routes
+- ⬜ Error handling
+
 ### ⬜ User Interface
 
-- ⬜ React + TypeScript setup
 - ⬜ Authentication pages (login, signup)
 - ⬜ Dashboard with statistics
 - ⬜ Wallet management UI
@@ -207,5 +221,7 @@
 | Backend API | ✅ Complete |
 | Validation | ✅ Complete |
 | Non-Functional | ✅ Complete |
-| Frontend | ⬜ Not Started |
+| Frontend Setup | ✅ Complete |
+| Frontend Infrastructure | ⬜ In Progress |
+| Frontend UI | ⬜ Not Started |
 | Future Features | ⬜ Post-MVP |

@@ -190,7 +190,9 @@ cream/
 │   ├── REQUIREMENTS.md
 │   ├── ARCHITECTURE.md      # This file
 │   ├── DOMAIN.md
-│   └── API.md
+│   ├── API.md
+│   ├── PROGRESS.md
+│   └── TESTING.md
 │
 ├── backend/                 # Python/FastAPI backend
 │   ├── app/
@@ -213,6 +215,9 @@ cream/
 │   │   │   └── statistics.py
 │   │   ├── services/       # Business logic
 │   │   │   ├── auth.py
+│   │   │   ├── authorization.py
+│   │   │   ├── helpers.py
+│   │   │   ├── statistics.py
 │   │   │   └── validation.py
 │   │   ├── config.py       # Configuration (env vars)
 │   │   ├── database.py     # DB connection setup
@@ -221,12 +226,14 @@ cream/
 │   ├── migrations/         # Alembic migrations
 │   └── pyproject.toml      # Dependencies
 │
-├── frontend/               # React/TypeScript frontend
+├── frontend/               # React/TypeScript/Vite frontend
 │   ├── src/
-│   │   ├── components/
-│   │   ├── pages/
-│   │   ├── services/       # API client
-│   │   └── types/          # TypeScript types
+│   │   ├── components/     # Reusable UI components
+│   │   ├── pages/          # Page components (routes)
+│   │   ├── services/       # API client (Axios)
+│   │   ├── types/          # TypeScript types
+│   │   ├── hooks/          # Custom React hooks
+│   │   └── context/        # React contexts (auth state)
 │   └── package.json
 │
 └── database/

@@ -7,7 +7,7 @@ Personal finance tracker app.
 | Layer | Technology |
 | ------- | ------------ |
 | Backend | Python, FastAPI |
-| Frontend | React, TypeScript |
+| Frontend | React, TypeScript, Vite |
 | Database | PostgreSQL |
 
 ## Architecture
@@ -57,8 +57,14 @@ cream/
 │   ├── migrations/     # Alembic migrations
 │   └── pyproject.toml
 │
-├── frontend/       # React/TypeScript (planned)
+├── frontend/       # React/TypeScript/Vite
 │   ├── src/
+│   │   ├── components/  # Reusable UI components
+│   │   ├── pages/       # Page components
+│   │   ├── services/    # API client
+│   │   ├── types/       # TypeScript types
+│   │   ├── hooks/       # Custom React hooks
+│   │   └── context/     # React contexts
 │   └── package.json
 │
 └── database/
@@ -109,12 +115,24 @@ cream/
 
 ## Development
 
+### Backend
+
 ```bash
-# From backend/ directory
+cd backend/
 pip install -e ".[dev]"           # Install dependencies
-uvicorn app.main:app --reload     # Run dev server
+uvicorn app.main:app --reload     # Run dev server (localhost:8000)
 pytest                            # Run tests (121 tests)
 alembic upgrade head              # Apply migrations
+```
+
+### Frontend
+
+```bash
+cd frontend/
+npm install                       # Install dependencies
+npm run dev                       # Run dev server (localhost:5173)
+npm run build                     # Build for production
+npm run lint                      # Run ESLint
 ```
 
 ## Future Features
