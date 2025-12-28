@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import User
 from app.schemas import UserCreate, UserRead, LoginRequest, TokenResponse
-from app.services.auth import hash_password, verify_password, create_access_token
+from app.services.auth import verify_password, create_access_token, create_user
 
 logger = logging.getLogger(__name__)
 
@@ -15,24 +15,14 @@ router = APIRouter()
 
 @router.post("/signup", response_model=UserRead, status_code=status.HTTP_201_CREATED)
 def signup(user_in: UserCreate, db: Session = Depends(get_db)):
-    if db.query(User).filter(User.username == user_in.username).first():
-        logger.warning("Signup failed: username '%s' already exists", user_in.username)
-        raise HTTPException(status_code=400, detail="Username already exists")
-    if db.query(User).filter(User.email == user_in.email).first():
-        logger.warning("Signup failed: email '%s' already exists", user_in.email)
-        raise HTTPException(status_code=400, detail="Email already exists")
-
-    user = User(
+    return create_user(
+        db=db,
         username=user_in.username,
         email=user_in.email,
-        password_hash=hash_password(user_in.password),
+        password=user_in.password,
         first_name=user_in.first_name,
         last_name=user_in.last_name,
     )
-    db.add(user)
-    db.commit()
-    db.refresh(user)
-    return user
 
 
 @router.post("/login", response_model=TokenResponse)

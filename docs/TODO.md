@@ -14,7 +14,8 @@ Found 26 issues (7 HIGH, 15 MEDIUM, 4 LOW) during code review.
   - Fixed: Unified in `services/authorization.py` with `get_category(allow_system, require_ownership)`
 - [x] **#5 MEDIUM** `api/wallets.py:12` - `get_user_wallet()` mixes retrieval and authorization.
   - Fixed: Moved to `services/authorization.py`
-- [ ] **#6 MEDIUM** `api/auth.py:12-29` - `signup()` mixes duplicate checking, hashing, creation, and response formatting.
+- [x] **#6 MEDIUM** `api/auth.py:12-29` - `signup()` mixes duplicate checking, hashing, creation, and response formatting.
+  - Fixed: Extracted to `create_user()` in `services/auth.py`
 
 ## SSOT (Single Source of Truth) Violations
 
@@ -26,7 +27,8 @@ Found 26 issues (7 HIGH, 15 MEDIUM, 4 LOW) during code review.
   - Fixed: Centralized `_to_decimal()` in `services/statistics.py`
 - [x] **#10 MEDIUM** `api/statistics.py:33-34,140-141` - User wallet filtering duplicated in both endpoints.
   - Fixed: Created `get_user_wallets()` and `get_user_wallet_ids()` in `services/statistics.py`
-- [ ] **#11 LOW** `api/auth.py:14-17` - Duplicate user checking pattern for username and email.
+- [x] **#11 LOW** `api/auth.py:14-17` - Duplicate user checking pattern for username and email.
+  - Fixed: Created `check_user_exists()` in `services/auth.py` with unified pattern
 
 ## Security Issues
 
@@ -60,7 +62,8 @@ Found 26 issues (7 HIGH, 15 MEDIUM, 4 LOW) during code review.
 ## Type/Validation Issues
 
 - [ ] **#22 MEDIUM** `services/validation.py:146-148` - Naive datetime assumed to be UTC (dangerous assumption).
-- [ ] **#23 MEDIUM** `services/auth.py:55-77` - `get_current_user()` duplicates `get_current_user_id()` logic.
+- [x] **#23 MEDIUM** `services/auth.py:55-77` - `get_current_user()` duplicates `get_current_user_id()` logic.
+  - Fixed: Refactored to use `get_current_user_id()` as dependency
 
 ## Other Issues
 
@@ -74,14 +77,14 @@ Found 26 issues (7 HIGH, 15 MEDIUM, 4 LOW) during code review.
 
 | Category | HIGH | MEDIUM | LOW | Fixed |
 | ---------- | ------ | -------- | ----- | ----- |
-| SRP Violations | 2 | 4 | 0 | 5/6 |
-| SSOT Violations | 1 | 3 | 1 | 4/5 |
+| SRP Violations | 2 | 4 | 0 | 6/6 ✅ |
+| SSOT Violations | 1 | 3 | 1 | 5/5 ✅ |
 | Security Issues | 2 | 1 | 0 | 3/3 ✅ |
 | Performance Issues | 2 | 1 | 0 | 3/3 ✅ |
 | Error Handling | 0 | 4 | 0 | 4/4 ✅ |
-| Type/Validation | 0 | 2 | 0 | 0/2 |
+| Type/Validation | 0 | 2 | 0 | 1/2 |
 | Other | 0 | 0 | 3 | 2/3 |
-| **TOTAL** | **7** | **15** | **4** | **21/26** |
+| **TOTAL** | **7** | **15** | **4** | **24/26** |
 
 ## New Services Created
 
