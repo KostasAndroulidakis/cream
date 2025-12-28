@@ -48,10 +48,14 @@ Found 26 issues (7 HIGH, 15 MEDIUM, 4 LOW) during code review.
 
 ## Error Handling Issues
 
-- [ ] **#18 MEDIUM** `api/auth.py:12-17` - No error logging on failed signup attempts.
-- [ ] **#19 MEDIUM** `api/transactions.py:69-71,113-115` - Validation errors returned as untyped detail list, no schema.
-- [ ] **#20 MEDIUM** `api/wallets.py:14` - No try/catch for database errors during wallet operations.
-- [ ] **#21 MEDIUM** `database.py:14-19` - No context manager error handling in `get_db()`.
+- [x] **#18 MEDIUM** `api/auth.py:12-17` - No error logging on failed signup attempts.
+  - Fixed: Added logging for failed signup (duplicate username/email) and login attempts
+- [x] **#19 MEDIUM** `api/transactions.py:69-71,113-115` - Validation errors returned as untyped detail list, no schema.
+  - Fixed: Created `ValidationErrorDetail` and `ValidationErrorResponse` schemas in `schemas/error.py`
+- [x] **#20 MEDIUM** `api/wallets.py:14` - No try/catch for database errors during wallet operations.
+  - Fixed: Added global `SQLAlchemyError` exception handler in `main.py`
+- [x] **#21 MEDIUM** `database.py:14-19` - No context manager error handling in `get_db()`.
+  - Fixed: Added rollback on error and logging for both errors and close failures
 
 ## Type/Validation Issues
 
@@ -60,10 +64,11 @@ Found 26 issues (7 HIGH, 15 MEDIUM, 4 LOW) during code review.
 
 ## Other Issues
 
-- [ ] **#24 LOW** `main.py:14-16` - Health check doesn't verify database connectivity.
+- [x] **#24 LOW** `main.py:14-16` - Health check doesn't verify database connectivity.
+  - Fixed: Added database connectivity check with `SELECT 1` query
 - [ ] **#25 LOW** Multiple models - Duplicate datetime defaults using lambda, should use base class.
-- [ ] **#26 LOW** `api/statistics.py:65-68,164-166,207-208` - Repeated SQL conditional aggregation pattern.
-  - Partially fixed: Moved to `_sum_income_expr()` and `_sum_expenses_expr()` in `services/statistics.py`
+- [x] **#26 LOW** `api/statistics.py:65-68,164-166,207-208` - Repeated SQL conditional aggregation pattern.
+  - Fixed: Moved to `_sum_income_expr()` and `_sum_expenses_expr()` in `services/statistics.py`
 
 ## Summary
 
@@ -73,10 +78,10 @@ Found 26 issues (7 HIGH, 15 MEDIUM, 4 LOW) during code review.
 | SSOT Violations | 1 | 3 | 1 | 4/5 |
 | Security Issues | 2 | 1 | 0 | 3/3 ✅ |
 | Performance Issues | 2 | 1 | 0 | 3/3 ✅ |
-| Error Handling | 0 | 4 | 0 | 0/4 |
+| Error Handling | 0 | 4 | 0 | 4/4 ✅ |
 | Type/Validation | 0 | 2 | 0 | 0/2 |
-| Other | 0 | 0 | 3 | 1/3 |
-| **TOTAL** | **7** | **15** | **4** | **16/26** |
+| Other | 0 | 0 | 3 | 2/3 |
+| **TOTAL** | **7** | **15** | **4** | **21/26** |
 
 ## New Services Created
 

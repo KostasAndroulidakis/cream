@@ -12,6 +12,7 @@ from app.schemas.statistics import (
     CategoryBreakdown,
     WalletBreakdown,
 )
+from app.schemas.error import ValidationErrorDetail, ValidationErrorResponse, ErrorResponse
 
 __all__ = [
     "UserCreate", "UserRead", "LoginRequest", "TokenResponse",
@@ -21,4 +22,5 @@ __all__ = [
     "StatisticsResponse", "WalletBalance", "CategoryTotal",
     "ReportResponse", "ReportPeriod", "ReportSummary",
     "CategoryBreakdown", "WalletBreakdown",
+    "ValidationErrorDetail", "ValidationErrorResponse", "ErrorResponse",
 ]

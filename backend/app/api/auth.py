@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
@@ -6,14 +8,18 @@ from app.models import User
 from app.schemas import UserCreate, UserRead, LoginRequest, TokenResponse
 from app.services.auth import hash_password, verify_password, create_access_token
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter()
 
 
 @router.post("/signup", response_model=UserRead, status_code=status.HTTP_201_CREATED)
 def signup(user_in: UserCreate, db: Session = Depends(get_db)):
     if db.query(User).filter(User.username == user_in.username).first():
+        logger.warning("Signup failed: username '%s' already exists", user_in.username)
         raise HTTPException(status_code=400, detail="Username already exists")
     if db.query(User).filter(User.email == user_in.email).first():
+        logger.warning("Signup failed: email '%s' already exists", user_in.email)
         raise HTTPException(status_code=400, detail="Email already exists")
 
     user = User(
@@ -33,7 +39,9 @@ def signup(user_in: UserCreate, db: Session = Depends(get_db)):
 def login(credentials: LoginRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.username == credentials.username).first()
     if not user or not verify_password(credentials.password, user.password_hash):
+        logger.warning("Login failed for username '%s'", credentials.username)
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
+    logger.info("User '%s' logged in successfully", credentials.username)
     token = create_access_token({"sub": str(user.id)})
     return TokenResponse(access_token=token)

@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import Transaction, Wallet
-from app.schemas import TransactionCreate, TransactionRead, TransactionUpdate
+from app.schemas import TransactionCreate, TransactionRead, TransactionUpdate, ValidationErrorDetail
 from app.services.auth import get_current_user_id
 from app.services.authorization import (
     get_transaction as get_user_transaction,
@@ -51,7 +51,10 @@ def create_transaction(
         category_id=transaction_in.category_id,
     )
     if not validation_result.is_valid:
-        errors = [{"field": e.field, "message": e.message} for e in validation_result.errors]
+        errors = [
+            ValidationErrorDetail(field=e.field, message=e.message).model_dump()
+            for e in validation_result.errors
+        ]
         raise HTTPException(status_code=422, detail=errors)
 
     # Verify user owns the wallet
@@ -99,7 +102,10 @@ def update_transaction(
         category_id=category_id,
     )
     if not validation_result.is_valid:
-        errors = [{"field": e.field, "message": e.message} for e in validation_result.errors]
+        errors = [
+            ValidationErrorDetail(field=e.field, message=e.message).model_dump()
+            for e in validation_result.errors
+        ]
         raise HTTPException(status_code=422, detail=errors)
 
     # Verify user has access to the new category if being changed
