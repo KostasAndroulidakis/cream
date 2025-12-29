@@ -183,3 +183,4 @@ claude/
 
 #VSCode
 .vscode/
+.claude
