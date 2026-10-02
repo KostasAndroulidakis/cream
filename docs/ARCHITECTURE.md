@@ -31,6 +31,10 @@ CREAM follows a classic three-tier web architecture optimized for simplicity and
                           │ SQL / psycopg
                           │ Connection pooling
                           ▼
+                          │                    ┌─────────────────────┐
+                          │   HTTPS, JWT RS256 │   Enable Banking    │
+                          ├───────────────────▶│ (PSD2 AIS, optional)│
+                          │                    └─────────────────────┘
 ┌─────────────────────────────────────────────────────────────┐
 │                       DATABASE                              │
 │                      PostgreSQL                             │
@@ -65,6 +69,10 @@ CREAM follows a classic three-tier web architecture optimized for simplicity and
 | React | Component-based, large ecosystem, well-documented |
 | TypeScript | Type safety, better IDE support, fewer runtime errors |
 | SPA | Better UX, reduced server load, offline potential |
+| Vite dev proxy | `/api` is proxied to FastAPI, so the browser sees one origin: no CORS needed in development |
+| Generated API types | `openapi-typescript` + `openapi-fetch`: Pydantic schemas are the single source of truth |
+| TanStack Query | Server state, caching and invalidation instead of hand-written fetch effects |
+| Tailwind + shadcn/ui | Accessible primitives (Base UI) with a small set of design tokens |
 
 ### Backend (Python + FastAPI)
 
@@ -91,7 +99,8 @@ CREAM follows a classic three-tier web architecture optimized for simplicity and
 | FastAPI | Modern async support, automatic OpenAPI docs, Pydantic integration |
 | SQLAlchemy | Mature ORM, good PostgreSQL support, migration tooling |
 | Pydantic | Data validation, serialization, type hints |
-| JWT | Stateless auth, scalable, standard |
+| JWT in `httpOnly` cookie | Stateless auth; JavaScript can't read the token (XSS can't steal it) |
+| uv | Fast, reproducible Python environments with a lockfile |
 
 ### Database (PostgreSQL)
 
@@ -194,44 +203,33 @@ cream/
 │   ├── PROGRESS.md
 │   └── TESTING.md
 │
+├── compose.yaml             # PostgreSQL for development
+├── .env.example             # Copy to .env (never committed)
+│
 ├── api/                     # Python/FastAPI backend
 │   ├── app/
-│   │   ├── api/            # HTTP route handlers
-│   │   │   ├── auth.py
-│   │   │   ├── wallets.py
-│   │   │   ├── categories.py
-│   │   │   ├── transactions.py
-│   │   │   └── statistics.py
-│   │   ├── models/         # SQLAlchemy ORM models
-│   │   │   ├── user.py
-│   │   │   ├── wallet.py
-│   │   │   ├── category.py
-│   │   │   └── transaction.py
+│   │   ├── api/            # HTTP route handlers (auth, bank, categories, health, statistics, transactions, wallets)
+│   │   ├── models/         # SQLAlchemy ORM models: the schema's source of truth
 │   │   ├── schemas/        # Pydantic request/response schemas
-│   │   │   ├── user.py
-│   │   │   ├── wallet.py
-│   │   │   ├── category.py
-│   │   │   ├── transaction.py
-│   │   │   └── statistics.py
 │   │   ├── services/       # Business logic
-│   │   │   ├── auth.py
-│   │   │   ├── authorization.py
-│   │   │   ├── helpers.py
-│   │   │   ├── statistics.py
-│   │   │   └── validation.py
-│   │   ├── config.py       # Configuration (env vars)
-│   │   ├── database.py     # DB connection setup
+│   │   │   ├── auth.py, session.py      # Passwords, JWT, session cookie
+│   │   │   ├── authorization.py         # Ownership and access checks
+│   │   │   ├── wallets.py, statistics.py, validation.py, health.py
+│   │   │   └── banking/                 # Enable Banking: client, mapping, connections, sync
+│   │   ├── config.py       # Settings from the root .env
+│   │   ├── database.py     # Engine, session, Base (global type rules)
 │   │   └── main.py         # FastAPI app entry point
-│   ├── tests/              # pytest test suite
-│   ├── migrations/         # Alembic migrations
-│   └── pyproject.toml      # Dependencies
+│   ├── migrations/         # Alembic migrations (incl. seeded default categories)
+│   ├── scripts/            # export_openapi.py for web type generation
+│   ├── tests/              # pytest suite (SQLite in memory, fake bank provider)
+│   └── pyproject.toml      # Dependencies (uv)
 │
 └── web/                    # React/TypeScript/Vite frontend
     ├── src/
-    │   ├── lib/            # API client, query client, utils
-    │   ├── components/     # Shared UI components (shadcn/ui)
-    │   ├── features/       # Feature modules (auth, wallets, transactions, reports)
-    │   └── routes/         # Pages and router config
+    │   ├── lib/            # API client + generated schema, query client, money/date/amount helpers
+    │   ├── components/     # Shared UI; components/ui = shadcn/ui
+    │   ├── features/       # auth, wallets, transactions, categories, bank, health
+    │   └── routes/         # Pages, app layout, auth guards, router
     └── package.json
 ```
 
@@ -294,7 +292,8 @@ cream/
 
 **Consequences**:
 
-- Total balance across currencies shows nominal sum
+- Totals are shown per currency (`/wallets/totals`), never summed across currencies
+- Known gap: `/statistics` still sums income/expenses nominally across currencies
 - Future: may add currency conversion as optional feature
 
 ### ADR5: Hierarchical Categories with SQL
@@ -312,6 +311,55 @@ cream/
 - Must prevent cycles in application layer
 - Deep hierarchies may need optimization
 
+### ADR6: Session Cookie Instead of Bearer Tokens
+
+**Decision**: The JWT lives in an `httpOnly`, `Secure`, `SameSite=Strict` cookie scoped to `/api`.
+`Authorization: Bearer` headers are not accepted.
+
+**Rationale**:
+
+- JavaScript (and so any XSS) can never read the token
+- `SameSite=Strict` plus JSON-only request bodies block cross-site request forgery
+- Same origin in development through the Vite proxy
+
+**Consequences**:
+
+- A 401 on any request ends the session in the web client and returns to login
+- No token refresh yet: sessions last `CREAM_ACCESS_TOKEN_EXPIRE_MINUTES`
+
+### ADR7: Monarch's Default Categories and a Transfer Type
+
+**Decision**: Seed Monarch's default category set (groups containing categories) with stable keys,
+and add a `transfer` category type that is excluded from income/expense statistics.
+
+**Rationale**:
+
+- A proven taxonomy beats an invented one; stable keys enable translations and MCC mapping
+- With several synced accounts, moving money between them must not count twice
+
+**Consequences**:
+
+- Transactions use categories, never groups; a subcategory has its parent's type
+- The seed lives frozen inside its migration; catalog changes need new migrations
+
+### ADR8: Optional Bank Sync via Enable Banking
+
+**Decision**: Read-only bank sync through Enable Banking (licensed PSD2 AISP), restricted to the
+owner's own accounts. Manual entry stays first-class.
+
+**Rationale**:
+
+- Covers the owner's banks (Eurobank, Piraeus, N26, Revolut, PayPal) without a PSD2 licence
+- Read-only, revocable consent; data is stored only in CREAM's own database
+
+**Consequences**:
+
+- Consent expires after at most 180 days; the user reconnects
+- Only booked transactions are imported; identity = bank `transaction_id` or a fingerprint, with
+  same-day repeats numbered (bank `entry_reference` values are reused and are not unique)
+- The first sync sets the wallet's initial balance so CREAM matches the bank exactly
+- The provider's private key stays outside the repository (`CREAM_ENABLEBANKING_KEY_PATH`)
+
 ## Security Architecture
 
 ```text
@@ -323,7 +371,7 @@ cream/
 │     └── HTTPS (TLS) for all communications                  │
 │                                                             │
 │  2. Authentication                                          │
-│     └── JWT tokens with expiration                          │
+│     └── JWT in httpOnly/Secure/SameSite=Strict cookie       │
 │     └── bcrypt password hashing                             │
 │                                                             │
 │  3. Authorization                                           │

@@ -60,6 +60,7 @@
 ### ✅ Statistics (FR5)
 
 - ✅ Total balance across all wallets
+- ⬜ Per-currency statistics (`/statistics` still sums currencies nominally; `/wallets/totals` is per currency)
 - ✅ Total income (sum of positive transactions)
 - ✅ Total expenses (sum of negative transactions)
 - ✅ Balance per wallet

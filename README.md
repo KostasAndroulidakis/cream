@@ -1,146 +1,159 @@
 # CREAM
 
-Personal finance tracker app.
+Personal finance tracker: every wallet, every euro, in one place. Enter transactions by hand or sync
+them from your banks (read-only Open Banking).
+
+> The name comes from Wu-Tang Clan's "C.R.E.A.M." ("Cash Rules Everything Around Me").
 
 ## Tech Stack
 
 | Layer | Technology |
 | ------- | ------------ |
-| Backend | Python, FastAPI |
-| Frontend | React, TypeScript, Vite |
-| Database | PostgreSQL |
+| Backend | Python 3.13, FastAPI, SQLAlchemy 2, Alembic, managed with `uv` |
+| Frontend | React, TypeScript, Vite, Tailwind CSS, shadcn/ui (Base UI), TanStack Query, React Router |
+| Database | PostgreSQL 18 (Docker Compose) |
+| Bank sync | Enable Banking (PSD2 Account Information, optional) |
 
 ## Architecture
 
 ```text
-┌─────────────────┐
-│    Frontend     │  React + TypeScript
-│   (REST/WS)     │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│    Backend      │  FastAPI
-│   (Python)      │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│   PostgreSQL    │  ACID, NUMERIC(19,4)
-└─────────────────┘
+┌──────────────────────┐   /api/* proxied by Vite in dev (single origin, no CORS)
+│   web  (React SPA)   │──────────────────────────────┐
+└──────────────────────┘                              ▼
+                                         ┌──────────────────────┐      ┌──────────────────┐
+                                         │   api  (FastAPI)     │─────▶│  Enable Banking  │
+                                         │  httpOnly cookie JWT │ JWT  │  (PSD2, optional)│
+                                         └──────────┬───────────┘ RS256└──────────────────┘
+                                                    ▼
+                                         ┌──────────────────────┐
+                                         │ PostgreSQL           │  NUMERIC(19,4), ACID
+                                         └──────────────────────┘
 ```
 
-- **FastAPI**: Handles HTTP, authentication, business logic, statistics, and reports.
-- **React**: UI layer, communicates via REST API.
-- **PostgreSQL**: ACID-compliant storage with precise decimal arithmetic.
+- **api**: authentication, business rules, statistics, bank sync. Single source of truth for data rules.
+- **web**: UI only. TypeScript types are generated from the API's OpenAPI schema (`npm run gen:api`).
+- **PostgreSQL**: exact decimal money, schema managed only by Alembic migrations.
+
+See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for details and decisions.
+
+## Features
+
+- Signup / login with an `httpOnly` session cookie (the browser's JavaScript never sees the token)
+- Wallets (bank, cash, digital, stash), one currency each; totals shown **per currency**, never mixed
+- Income and expense transactions with Monarch's default categories (groups → categories)
+- Transfer category type: moves money between your wallets without counting as income or expense
+- Bank sync: connect a bank, link accounts to wallets, import booked transactions without duplicates
+- Expired sessions return to the login page automatically
+
+Progress and what's next: [`docs/PROGRESS.md`](docs/PROGRESS.md).
 
 ## Project Structure
 
 ```text
 cream/
-├── docs/           # Documentation
-│   ├── VISION.md
-│   ├── REQUIREMENTS.md
-│   ├── ARCHITECTURE.md
-│   ├── DOMAIN.md
-│   ├── API.md
-│   ├── PROGRESS.md
-│   └── TESTING.md
-│
-├── api/            # Python/FastAPI
+├── compose.yaml        # PostgreSQL for development
+├── .env.example        # Copy to .env (never committed)
+├── docs/               # Vision, requirements, architecture, domain, API, progress, testing
+├── api/                # Python / FastAPI
 │   ├── app/
 │   │   ├── api/        # HTTP route handlers
-│   │   ├── models/     # SQLAlchemy ORM
-│   │   ├── schemas/    # Pydantic validation
-│   │   └── services/   # Business logic
-│   ├── tests/          # pytest test suite
+│   │   ├── models/     # SQLAlchemy ORM models (schema source of truth)
+│   │   ├── schemas/    # Pydantic request/response models
+│   │   └── services/   # Business logic (banking/ = Enable Banking client, connections, sync)
 │   ├── migrations/     # Alembic migrations
-│   └── pyproject.toml
-│
-└── web/            # React/TypeScript/Vite
-    ├── src/
-    │   ├── lib/         # API client, query client, utils
-    │   ├── components/  # Shared UI components (shadcn/ui)
-    │   ├── features/    # Feature modules (auth, wallets, transactions, reports)
-    │   └── routes/      # Pages and router config
-    └── package.json
+│   ├── scripts/        # export_openapi.py (feeds the web type generator)
+│   └── tests/          # pytest suite
+└── web/                # React / TypeScript / Vite
+    └── src/
+        ├── lib/        # API client + generated types, query client, money/date/amount helpers
+        ├── components/ # Shared UI (shadcn/ui in components/ui)
+        ├── features/   # auth, wallets, transactions, categories, bank, health
+        └── routes/     # Pages, layout, guards, router
 ```
 
-## Database Schema
+## Database
 
-> **Source of truth:** the SQLAlchemy models in `api/app/models/`. Schema changes are applied via Alembic migrations in `api/migrations/` — never by hand.
+> **Source of truth:** the SQLAlchemy models in `api/app/models/`. Schema changes go through Alembic
+> migrations in `api/migrations/`, never by hand.
 
 ```text
-┌─────────┐       ┌─────────────┐
-│  users  │───1:N─│   wallets   │
-└─────────┘       └─────────────┘
-     │                   │
-     │ 1:N               │ 1:N
-     ▼                   ▼
-┌────────────┐    ┌──────────────┐
-│ categories │◄───│ transactions │
-└────────────┘    └──────────────┘
+users ──1:N── wallets ──1:N── transactions ──N:1── categories (groups → categories, system + own)
+  │              ▲
+  └──1:N── bank_connections ──1:N── bank_accounts ──(links to one wallet)
 ```
 
 | Table | Purpose |
 | ------- | --------- |
-| users | Authentication, profile |
-| wallets | Bank accounts, cash, digital wallets |
-| categories | Hierarchical income/expense categories |
-| transactions | Financial transactions |
+| users | Accounts and login |
+| wallets | Bank accounts, cash, digital wallets, stashes |
+| categories | System default groups/categories (stable `key`) and user categories |
+| transactions | Money in/out; imported ones carry `external_id`, counterparty and MCC |
+| bank_connections | One bank consent (PSD2, up to 180 days) |
+| bank_accounts | Accounts shared by a bank, linked to wallets |
 
-## MVP Features
+## Getting Started
 
-- User signup/login (JWT in httpOnly session cookie)
-- Create and manage wallets
-- Record income/expense transactions
-- Categorize transactions (hierarchical categories)
-- View balance per wallet
-- Statistics and reports
-- Optional bank sync via Open Banking (Enable Banking, read-only)
+**Prerequisites:** Docker with the Compose plugin, [`uv`](https://docs.astral.sh/uv/), Node.js.
 
-## API Endpoints
+1. Configure environment (database credentials, optional bank sync):
 
-| Endpoint | Description |
-| ---------- | ------------- |
-| `GET /api/v1/health` | API and database availability (public) |
-| `POST /api/v1/auth/signup` | User registration |
-| `POST /api/v1/auth/login` | User login (sets session cookie) |
-| `POST /api/v1/auth/logout` | End session |
-| `GET /api/v1/auth/me` | Current user |
-| `GET/POST/PATCH/DELETE /api/v1/wallets` | Wallet CRUD |
-| `GET/POST/PATCH/DELETE /api/v1/categories` | Category CRUD |
-| `GET/POST/PATCH/DELETE /api/v1/transactions` | Transaction CRUD |
-| `GET /api/v1/statistics` | Aggregated statistics |
-| `GET /api/v1/statistics/report` | Period-based reports |
+   ```bash
+   cp .env.example .env
+   ```
 
-## Development
+2. Start PostgreSQL:
 
-### Backend
+   ```bash
+   docker compose up -d db
+   ```
 
-```bash
-cd api/
-uv sync                                  # Install dependencies
-uv run uvicorn app.main:app --reload     # Run dev server (localhost:8000)
-uv run pytest                            # Run tests
-uv run alembic upgrade head              # Apply migrations
-```
+3. API: install, migrate, run (`localhost:8000`, docs at `/docs`):
 
-### Frontend
+   ```bash
+   cd api
+   uv sync
+   uv run alembic upgrade head
+   uv run uvicorn app.main:app --reload
+   ```
 
-```bash
-cd web/
-npm install                       # Install dependencies
-npm run dev                       # Run dev server (localhost:5173)
-npm run build                     # Build for production
-npm run lint                      # Run ESLint
-```
+4. Web: install and run (`localhost:5173`):
+
+   ```bash
+   cd web
+   npm install
+   npm run dev
+   ```
+
+### Common Commands
+
+| Where | Command | What it does |
+| --- | --- | --- |
+| `api/` | `uv run pytest` | Run the test suite |
+| `api/` | `uv run alembic revision --autogenerate -m "..."` | Create a migration from model changes (review it!) |
+| `api/` | `uv run alembic check` | Verify models and database match |
+| `web/` | `npm run gen:api` | Regenerate TypeScript types after API changes |
+| `web/` | `npm run lint` / `npm run build` | Lint / type-check and build |
+
+### Bank Sync (optional)
+
+1. Create an application at [Enable Banking](https://enablebanking.com) (Sandbox to develop, Production
+   in restricted mode for your own accounts). Redirect URL: `http://localhost:5173/connections/callback`.
+2. Store the downloaded private key **outside the repo** and readable only by you:
+
+   ```bash
+   mkdir -p ~/.config/cream && chmod 700 ~/.config/cream
+   mv ~/Downloads/<application-id>.pem ~/.config/cream/enablebanking-sandbox.pem
+   chmod 600 ~/.config/cream/enablebanking-sandbox.pem
+   ```
+
+3. Set `CREAM_ENABLEBANKING_APP_ID` and `CREAM_ENABLEBANKING_KEY_PATH` (absolute path) in `.env`,
+   restart the API, then use **Banks** in the app.
 
 ## Future Features
 
-- Entities (merchants, employers)
-- Tags
-- Recurring transactions
-- Budgets and spending limits
-- Receipt attachments
-- Data export (CSV, JSON)
+- Automatic categorization (MCC mapping + rules learned from your choices)
+- Edit/delete wallets and transactions; transfers between wallets from the UI
+- Scheduled background sync and consent renewal
+- Greek translation
+- CSV import for older history
+- Budgets, recurring transactions, reports and charts
