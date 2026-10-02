@@ -2,40 +2,6 @@ import pytest
 
 
 @pytest.fixture
-def second_user_data():
-    """Second user for testing access denial."""
-    return {
-        "username": "otheruser",
-        "email": "other@example.com",
-        "password": "otherpassword123",
-        "first_name": "Other",
-        "last_name": "User",
-    }
-
-
-@pytest.fixture
-def second_user_token(client, second_user_data):
-    """Create second user and get auth token."""
-    # Register
-    client.post("/api/v1/auth/signup", json=second_user_data)
-    # Login
-    response = client.post(
-        "/api/v1/auth/login",
-        json={
-            "username": second_user_data["username"],
-            "password": second_user_data["password"],
-        },
-    )
-    return response.json()["access_token"]
-
-
-@pytest.fixture
-def second_auth_headers(second_user_token):
-    """Headers for second user."""
-    return {"Authorization": f"Bearer {second_user_token}"}
-
-
-@pytest.fixture
 def wallet_data():
     """Sample wallet data."""
     return {

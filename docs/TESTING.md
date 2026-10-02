@@ -19,13 +19,14 @@ uv run pytest tests/test_auth.py
 
 | Module | Tests | Description |
 | -------- | ------- | ------------- |
-| Auth | 9 | Signup, login, JWT validation |
+| Auth | 16 | Signup, login, session cookie, `/me`, logout |
 | Wallets | 18 | CRUD operations, ownership checks |
 | Categories | 28 | CRUD, hierarchy, system defaults |
 | Transactions | 27 | CRUD, validation, filtering |
 | Statistics | 10 | Aggregations, reports |
 | Validation | 29 | Business rule validation |
-| **Total** | **121** | |
+| Health | 3 | API and database availability |
+| **Total** | **131** | |
 
 ## Validation Rules Tested
 

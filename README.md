@@ -91,7 +91,7 @@ cream/
 
 ## MVP Features
 
-- User signup/login (JWT authentication)
+- User signup/login (JWT in httpOnly session cookie)
 - Create and manage wallets
 - Record income/expense transactions
 - Categorize transactions (hierarchical categories)
@@ -104,7 +104,9 @@ cream/
 | ---------- | ------------- |
 | `GET /api/v1/health` | API and database availability (public) |
 | `POST /api/v1/auth/signup` | User registration |
-| `POST /api/v1/auth/login` | User login (returns JWT) |
+| `POST /api/v1/auth/login` | User login (sets session cookie) |
+| `POST /api/v1/auth/logout` | End session |
+| `GET /api/v1/auth/me` | Current user |
 | `GET/POST/PATCH/DELETE /api/v1/wallets` | Wallet CRUD |
 | `GET/POST/PATCH/DELETE /api/v1/categories` | Category CRUD |
 | `GET/POST/PATCH/DELETE /api/v1/transactions` | Transaction CRUD |
@@ -119,7 +121,7 @@ cream/
 cd api/
 uv sync                                  # Install dependencies
 uv run uvicorn app.main:app --reload     # Run dev server (localhost:8000)
-uv run pytest                            # Run tests (121 tests)
+uv run pytest                            # Run tests
 uv run alembic upgrade head              # Apply migrations
 ```
 

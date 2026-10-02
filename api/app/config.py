@@ -20,6 +20,9 @@ class Settings(BaseSettings):
     secret_key: str = "change-me-in-production"
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 30
+    auth_cookie_name: str = "cream_session"
+    # Browsers treat http://localhost as secure, so this stays on in development too
+    auth_cookie_secure: bool = True
 
     @computed_field
     @property

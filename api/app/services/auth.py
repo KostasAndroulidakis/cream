@@ -2,16 +2,15 @@ import logging
 from datetime import datetime, timedelta, timezone
 
 from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from sqlalchemy.orm import Session
 import bcrypt
 
 from app.config import settings
 from app.database import get_db
+from app.services.session import session_cookie
 
 logger = logging.getLogger(__name__)
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
 
 def hash_password(password: str) -> str:
@@ -70,6 +69,16 @@ def create_user(
     return user
 
 
+def authenticate_user(db: Session, username: str, password: str):
+    """Return the user if the credentials are valid, None otherwise."""
+    from app.models import User
+
+    user = db.query(User).filter(User.username == username).first()
+    if user is None or not verify_password(password, user.password_hash):
+        return None
+    return user
+
+
 def create_access_token(data: dict) -> str:
     to_encode = data.copy()
     expire = datetime.now(timezone.utc) + timedelta(minutes=settings.access_token_expire_minutes)
@@ -89,15 +98,15 @@ def verify_token(token: str) -> int | None:
         return None
 
 
-def get_current_user_id(token: str = Depends(oauth2_scheme)) -> int:
-    """FastAPI dependency to get current user ID from JWT token."""
-    user_id = verify_token(token)
+def _not_authenticated() -> HTTPException:
+    return HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
+
+
+def get_current_user_id(token: str | None = Depends(session_cookie)) -> int:
+    """FastAPI dependency: user ID from the session cookie, or 401."""
+    user_id = verify_token(token) if token else None
     if user_id is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired token",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+        raise _not_authenticated()
     return user_id
 
 
@@ -105,14 +114,10 @@ def get_current_user(
     user_id: int = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
-    """FastAPI dependency to get current user from JWT token."""
+    """FastAPI dependency: the authenticated user, or 401."""
     from app.models import User
 
     user = db.query(User).filter(User.id == user_id).first()
     if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User not found",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+        raise _not_authenticated()
     return user

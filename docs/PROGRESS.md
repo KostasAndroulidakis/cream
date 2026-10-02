@@ -9,7 +9,9 @@
 ### ✅ User Management (FR1)
 
 - ✅ User registration with username, email, password
-- ✅ User login with JWT token response
+- ✅ User login with JWT in httpOnly session cookie
+- ✅ Logout (clears session cookie)
+- ✅ Current user endpoint (`/auth/me`)
 - ✅ Token-based authentication on all endpoints
 - ✅ User data isolation (users can only access own data)
 - ✅ Unique username and email validation
@@ -139,7 +141,7 @@
 
 ### ✅ Maintainability (NFR6)
 
-- ✅ 121 unit tests
+- ✅ pytest suite (see TESTING.md)
 - ✅ API versioning (v1)
 - ✅ Alembic migrations
 - ✅ Environment variable configuration

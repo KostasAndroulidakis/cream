@@ -1,4 +1,4 @@
-from app.schemas.user import UserCreate, UserRead, LoginRequest, TokenResponse
+from app.schemas.user import UserCreate, UserRead, LoginRequest
 from app.schemas.wallet import WalletCreate, WalletRead, WalletUpdate
 from app.schemas.category import CategoryCreate, CategoryRead, CategoryUpdate
 from app.schemas.transaction import TransactionCreate, TransactionRead, TransactionUpdate
@@ -16,7 +16,7 @@ from app.schemas.health import HealthResponse, ServiceStatus
 from app.schemas.error import ValidationErrorDetail, ValidationErrorResponse, ErrorResponse
 
 __all__ = [
-    "UserCreate", "UserRead", "LoginRequest", "TokenResponse",
+    "UserCreate", "UserRead", "LoginRequest",
     "WalletCreate", "WalletRead", "WalletUpdate",
     "CategoryCreate", "CategoryRead", "CategoryUpdate",
     "TransactionCreate", "TransactionRead", "TransactionUpdate",

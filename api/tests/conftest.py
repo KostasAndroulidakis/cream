@@ -4,11 +4,15 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
+from app.config import settings
 from app.database import Base, get_db
 from app.main import app
 
 # Use in-memory SQLite for tests
 SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
+
+LOGIN_URL = "/api/v1/auth/login"
+SIGNUP_URL = "/api/v1/auth/signup"
 
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL,
@@ -60,26 +64,44 @@ def test_user_data():
 @pytest.fixture
 def registered_user(client, test_user_data):
     """Create and return a registered user."""
-    response = client.post("/api/v1/auth/signup", json=test_user_data)
+    response = client.post(SIGNUP_URL, json=test_user_data)
     assert response.status_code == 201
     return response.json()
 
 
-@pytest.fixture
-def auth_token(client, test_user_data, registered_user):
-    """Get auth token for a registered user."""
-    response = client.post(
-        "/api/v1/auth/login",
-        json={
-            "username": test_user_data["username"],
-            "password": test_user_data["password"],
-        },
-    )
+def login_session_headers(client, username: str, password: str) -> dict[str, str]:
+    """Log in and return headers carrying that user's session cookie.
+
+    The client's cookie jar is cleared so each request's identity is explicit.
+    """
+    response = client.post(LOGIN_URL, json={"username": username, "password": password})
     assert response.status_code == 200
-    return response.json()["access_token"]
+    token = response.cookies[settings.auth_cookie_name]
+    client.cookies.clear()
+    return {"Cookie": f"{settings.auth_cookie_name}={token}"}
 
 
 @pytest.fixture
-def auth_headers(auth_token):
-    """Headers with authorization token."""
-    return {"Authorization": f"Bearer {auth_token}"}
+def auth_headers(client, test_user_data, registered_user):
+    """Session headers for the default test user."""
+    return login_session_headers(client, test_user_data["username"], test_user_data["password"])
+
+
+@pytest.fixture
+def second_user_data():
+    """Second user for testing access denial."""
+    return {
+        "username": "otheruser",
+        "email": "other@example.com",
+        "password": "otherpassword123",
+        "first_name": "Other",
+        "last_name": "User",
+    }
+
+
+@pytest.fixture
+def second_auth_headers(client, second_user_data):
+    """Session headers for the second user."""
+    response = client.post(SIGNUP_URL, json=second_user_data)
+    assert response.status_code == 201
+    return login_session_headers(client, second_user_data["username"], second_user_data["password"])

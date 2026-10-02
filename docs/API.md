@@ -4,19 +4,22 @@
 
 - **Base URL**: `/api/v1`
 - **Format**: JSON
-- **Authentication**: JWT Bearer tokens
+- **Authentication**: JWT in an `httpOnly` session cookie
 - **Versioning**: URL path (`/api/v1`, `/api/v2`, etc.)
 
 ## Authentication Requirement
 
-All endpoints except `/auth/*` require authentication.
+All endpoints except `/health`, `/auth/signup`, `/auth/login` and `/auth/logout` require authentication.
 
 ## API Endpoints
 
 | Endpoint | Description |
 | --- | --- |
 | `POST /api/v1/auth/signup` | User registration |
-| `POST /api/v1/auth/login` | User login (returns JWT) |
+| `GET /api/v1/health` | API and database availability (public) |
+| `POST /api/v1/auth/login` | User login (sets session cookie) |
+| `POST /api/v1/auth/logout` | End session (clears cookie) |
+| `GET /api/v1/auth/me` | Current authenticated user |
 | `GET /api/v1/wallets` | List user wallets |
 | `POST /api/v1/wallets` | Create wallet |
 | `GET /api/v1/wallets/{id}` | Get wallet |
@@ -35,11 +38,19 @@ All endpoints except `/auth/*` require authentication.
 | `GET /api/v1/statistics` | Aggregated statistics |
 | `GET /api/v1/statistics/report` | Period reports |
 
-### Headers
+### Session Cookie
+
+Login sets the JWT as a cookie; the browser sends it automatically. JavaScript never sees the token.
 
 ```text
-Authorization: Bearer <jwt_token>
+Set-Cookie: cream_session=<jwt>; HttpOnly; Secure; SameSite=Strict; Path=/api; Max-Age=1800
 ```
+
+- `HttpOnly`: not readable from JavaScript (XSS cannot steal it)
+- `SameSite=Strict` + JSON-only bodies: not sent on cross-site requests (CSRF protection)
+- `Path=/api`: only sent to API routes
+- Name configurable via `CREAM_AUTH_COOKIE_NAME`; `Secure` via `CREAM_AUTH_COOKIE_SECURE`
+- `Authorization: Bearer` headers are **not** accepted
 
 ### Token Structure
 
@@ -98,7 +109,7 @@ Create a new user account.
 
 #### POST /auth/login
 
-Authenticate and receive a token.
+Verify credentials and start a session.
 
 **Request**:
 
@@ -109,18 +120,25 @@ Authenticate and receive a token.
 }
 ```
 
-**Response** `200 OK`:
-
-```json
-{
-  "access_token": "eyJhbGciOiJIUzI1NiIs...",
-  "token_type": "bearer"
-}
-```
+**Response** `200 OK`: the user (same shape as signup), plus the `Set-Cookie` header above.
 
 **Errors**:
 
 - `401`: Invalid credentials
+
+#### POST /auth/logout
+
+Clear the session cookie. Always succeeds.
+
+**Response** `204 No Content`
+
+#### GET /auth/me
+
+Return the authenticated user (same shape as signup).
+
+**Errors**:
+
+- `401`: Not authenticated
 
 ---
 

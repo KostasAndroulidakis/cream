@@ -50,13 +50,13 @@ CREAM follows a classic three-tier web architecture optimized for simplicity and
 - Manages client-side state
 - Communicates with backend via REST API
 - Handles user input and validation feedback
-- Stores JWT token for authentication
+- Never handles the JWT: the browser stores it as an `httpOnly` cookie
 
 **Boundaries**:
 
 - Does NOT access database directly
 - Does NOT implement business logic
-- Does NOT store sensitive data (except JWT in memory/localStorage)
+- Does NOT store sensitive data (no tokens in memory or localStorage)
 
 **Technology Choices**:
 
@@ -129,13 +129,13 @@ CREAM follows a classic three-tier web architecture optimized for simplicity and
    │
    ▼
 3. Frontend sends POST /api/v1/transactions
-   │ Authorization: Bearer <jwt>
+   │ Cookie: cream_session=<jwt> (sent by the browser)
    │ Body: {wallet_id, category_id, amount, ...}
    ▼
 4. Backend: Router receives request
    │
    ▼
-5. Backend: Auth middleware validates JWT
+5. Backend: Auth dependency validates JWT from cookie
    │ Extracts user_id from token
    ▼
 6. Backend: Pydantic validates schema
@@ -163,7 +163,7 @@ CREAM follows a classic three-tier web architecture optimized for simplicity and
    │
    ▼
 2. Frontend sends GET /api/v1/statistics
-   │ Authorization: Bearer <jwt>
+   │ Cookie: cream_session=<jwt> (sent by the browser)
    ▼
 3. Backend: Auth validates JWT, extracts user_id
    │

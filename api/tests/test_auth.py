@@ -1,5 +1,11 @@
 import pytest
 
+from app.config import settings
+from tests.conftest import login_session_headers
+
+ME_URL = "/api/v1/auth/me"
+LOGOUT_URL = "/api/v1/auth/logout"
+
 
 class TestSignup:
     """Tests for POST /api/v1/auth/signup"""
@@ -71,9 +77,14 @@ class TestLogin:
         )
 
         assert response.status_code == 200
-        data = response.json()
-        assert "access_token" in data
-        assert data["token_type"] == "bearer"
+        assert response.json()["username"] == test_user_data["username"]
+        assert "access_token" not in response.json()
+
+        cookie = response.headers["set-cookie"].lower()
+        assert cookie.startswith(f"{settings.auth_cookie_name}=")
+        assert "httponly" in cookie
+        assert "samesite=strict" in cookie
+        assert "path=/api" in cookie
 
     def test_login_wrong_password(self, client, test_user_data, registered_user):
         """Test login with wrong password fails."""
@@ -106,3 +117,57 @@ class TestLogin:
         response = client.post("/api/v1/auth/login", json={})
 
         assert response.status_code == 422
+
+
+class TestMe:
+    """Tests for GET /api/v1/auth/me"""
+
+    def test_me_returns_current_user(self, client, test_user_data, auth_headers):
+        response = client.get(ME_URL, headers=auth_headers)
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["username"] == test_user_data["username"]
+        assert "password_hash" not in data
+
+    def test_me_identifies_each_user(self, client, auth_headers, second_auth_headers, second_user_data):
+        response = client.get(ME_URL, headers=second_auth_headers)
+
+        assert response.json()["username"] == second_user_data["username"]
+
+    def test_me_without_session(self, client):
+        response = client.get(ME_URL)
+
+        assert response.status_code == 401
+        assert response.json()["detail"] == "Not authenticated"
+
+    def test_me_with_invalid_token(self, client):
+        response = client.get(ME_URL, headers={"Cookie": f"{settings.auth_cookie_name}=not-a-jwt"})
+
+        assert response.status_code == 401
+
+    def test_bearer_header_is_not_accepted(self, client, test_user_data, registered_user):
+        cookie_header = login_session_headers(client, test_user_data["username"], test_user_data["password"])
+        token = cookie_header["Cookie"].split("=", 1)[1]
+
+        response = client.get(ME_URL, headers={"Authorization": f"Bearer {token}"})
+
+        assert response.status_code == 401
+
+
+class TestLogout:
+    """Tests for POST /api/v1/auth/logout"""
+
+    def test_logout_clears_cookie(self, client, auth_headers):
+        response = client.post(LOGOUT_URL, headers=auth_headers)
+
+        assert response.status_code == 204
+        cookie = response.headers["set-cookie"].lower()
+        assert cookie.startswith(f"{settings.auth_cookie_name}=")
+        assert "max-age=0" in cookie
+        assert "path=/api" in cookie
+
+    def test_logout_without_session_is_harmless(self, client):
+        response = client.post(LOGOUT_URL)
+
+        assert response.status_code == 204
