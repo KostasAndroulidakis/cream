@@ -22,6 +22,8 @@ type RowProps = {
 
 function TransactionRow({ transaction, categoryName, walletName, currency }: RowProps) {
   const isIncome = !transaction.amount.startsWith("-")
+  // Bank imports carry the merchant; manual entries carry the user's note
+  const title = transaction.counterparty || transaction.description || categoryName
 
   return (
     <li className="flex items-center gap-4 py-3">
@@ -32,9 +34,9 @@ function TransactionRow({ transaction, categoryName, walletName, currency }: Row
         {formatShortDate(transaction.occurred_at)}
       </time>
       <div className="min-w-0 flex-1">
-        <p className="truncate font-medium">{transaction.description || categoryName}</p>
+        <p className="truncate font-medium">{title}</p>
         <p className="truncate text-sm text-muted-foreground">
-          {transaction.description ? `${categoryName}, ${walletName}` : walletName}
+          {title === categoryName ? walletName : `${categoryName}, ${walletName}`}
         </p>
       </div>
       <p className={cn("font-medium tabular-nums", isIncome && "text-primary")}>

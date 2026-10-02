@@ -501,6 +501,34 @@ Delete a transaction.
 
 ---
 
+### Bank Connections
+
+Optional read-only bank sync through Enable Banking (PSD2). Requires `CREAM_ENABLEBANKING_APP_ID` and
+`CREAM_ENABLEBANKING_KEY_PATH`; otherwise these endpoints return `503`. Provider failures return `502`.
+
+| Endpoint | Description |
+| --- | --- |
+| `GET /bank/aspsps?country=GR` | Banks available in a country |
+| `POST /bank/connections` | Start: `{aspsp_name, country}` → `{url}` (send the user there) |
+| `POST /bank/connections/complete` | Finish with the bank redirect's `{state, code}` → connection with accounts |
+| `GET /bank/connections` | Connections (active/expired) with their accounts |
+| `DELETE /bank/connections/{id}` | Disconnect (revokes consent); wallets and imported transactions stay |
+| `POST /bank/accounts/{id}/link` | Link an account to `{wallet_id}`, or to a new wallet when `null` |
+| `POST /bank/sync` | Import new booked transactions of all linked accounts → per-account `{imported, error}` |
+
+**Sync rules**:
+
+- Only booked transactions are imported (pending ones can still change)
+- Each bank transaction is imported at most once per wallet (`external_id`): the bank's `transaction_id`
+  when present, otherwise a fingerprint (reference, date, amount, text). `entry_reference` alone is not
+  unique (banks reuse it), and identical same-day transactions are numbered (`#2`, `#3`)
+- Imported transactions land in **Other → Uncategorized** with `counterparty` and `merchant_category_code`
+- First sync reads 90 days back and sets the wallet's initial balance so it matches the bank; later syncs
+  re-read the last 3 days to catch late bookings
+- The `state` parameter is single-use and bound to the user who started the connection (CSRF protection)
+
+---
+
 ### Statistics
 
 #### GET /statistics

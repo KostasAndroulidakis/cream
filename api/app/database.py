@@ -20,6 +20,11 @@ def utc_now() -> datetime:
     return datetime.now(timezone.utc)
 
 
+def as_utc(value: datetime) -> datetime:
+    """Treat a naive datetime as UTC (some drivers, e.g. SQLite, drop the time zone)."""
+    return value if value.tzinfo else value.replace(tzinfo=timezone.utc)
+
+
 class Base(DeclarativeBase):
     # Global type rules: every datetime is timezone-aware,
     # every Python Enum is stored by its value ("income"), not its name ("INCOME")

@@ -200,6 +200,16 @@
 - ⬜ Budget vs actual tracking
 - ⬜ Alerts when approaching limits
 
+### ✅ Bank Sync (Enable Banking)
+
+- ✅ Connect a bank (PSD2 consent, single-use state)
+- ✅ Link bank accounts to new or existing wallets
+- ✅ Manual sync: booked transactions only, no duplicates, balance matches the bank
+- ✅ Disconnect (revokes consent, keeps data)
+- ⬜ Scheduled background sync
+- ⬜ Reconnect flow for expired consent
+- ⬜ Production (restricted mode) with real accounts
+
 ### ⬜ Multi-Currency
 
 - ⬜ Currency conversion rates

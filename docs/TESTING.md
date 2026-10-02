@@ -27,7 +27,8 @@ uv run pytest tests/test_auth.py
 | Validation | 29 | Business rule validation |
 | Health | 3 | API and database availability |
 | Category rules | 9 | Groups, transfer type, parent type, pagination |
-| **Total** | **152** | |
+| Bank sync | 22 | Mapping, connections, linking, sync, duplicates, expiry |
+| **Total** | **174** | |
 
 ## Validation Rules Tested
 

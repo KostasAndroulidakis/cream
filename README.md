@@ -97,6 +97,7 @@ cream/
 - Categorize transactions (hierarchical categories)
 - View balance per wallet
 - Statistics and reports
+- Optional bank sync via Open Banking (Enable Banking, read-only)
 
 ## API Endpoints
 

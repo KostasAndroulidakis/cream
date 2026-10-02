@@ -24,6 +24,19 @@ class Settings(BaseSettings):
     # Browsers treat http://localhost as secure, so this stays on in development too
     auth_cookie_secure: bool = True
 
+    # Enable Banking (Open Banking / PSD2). Unset app ID or key path = bank sync disabled.
+    enablebanking_app_id: str | None = None
+    # Private key lives outside the repo (e.g. ~/.config/cream/), never in git
+    enablebanking_key_path: Path | None = None
+    enablebanking_api_url: str = "https://api.enablebanking.com"
+    enablebanking_redirect_url: str = "http://localhost:5173/connections/callback"
+    # Most banks cap consent at 180 days; the provider rejects longer requests
+    bank_consent_days: int = 180
+    # History requested on the first sync of an account
+    bank_initial_history_days: int = 90
+    # Later syncs re-read a few days back, to catch transactions booked late
+    bank_sync_overlap_days: int = 3
+
     @computed_field
     @property
     def database_url(self) -> str:

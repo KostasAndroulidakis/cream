@@ -184,3 +184,6 @@ claude/
 #VSCode
 .vscode/
 .claude
+
+# Local Enable Banking mock data (never commit)
+mock-aspsp-*.json

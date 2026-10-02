@@ -26,6 +26,10 @@ class TransactionRead(BaseModel):
     amount: Decimal
     description: str | None
     occurred_at: datetime
+    counterparty: str | None
+    merchant_category_code: str | None
+    # True when imported from a bank (not entered by hand)
+    is_imported: bool
     created_at: datetime
 
     model_config = {"from_attributes": True}

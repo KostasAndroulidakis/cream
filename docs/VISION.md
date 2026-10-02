@@ -16,11 +16,11 @@ The result: people avoid tracking finances altogether, leading to overspending, 
 CREAM is designed for **individuals who want control over their finances** without complexity:
 
 - People who use multiple payment methods (cards, cash, digital wallets)
-- Those who want to understand spending patterns without linking bank accounts
-- Users who prefer manual entry for privacy and accuracy
+- Those who want one view across all their banks, entered by hand or synced on their own terms
+- Users who prefer manual entry for privacy and accuracy, or optional bank sync for convenience
 - Anyone who has tried spreadsheets but found them tedious
 
-**Not for**: Businesses, accountants, investors trading securities, or users who want automatic bank sync.
+**Not for**: Businesses, accountants, or investors trading securities.
 
 ## The Value Proposition
 
@@ -30,7 +30,7 @@ CREAM provides **clarity and control** over personal finances:
 2. **Understand spending patterns**: Categorized expenses with clear breakdowns
 3. **Track progress over time**: Historical reports and trends
 4. **Stay in control**: Manual entry means you decide what to track
-5. **Privacy-first**: No bank connections, your data stays yours
+5. **Privacy-first**: Bank connections are optional, read-only (PSD2) and revocable; your data stays in your own database
 
 ## Success Goals
 
@@ -60,7 +60,6 @@ To maintain focus, CREAM explicitly does **not** aim to be:
 
 | Not This | Why |
 | ---------- | ----- |
-| **Bank sync app** | Privacy concerns, complexity, unreliable APIs |
 | **Investment tracker** | Different domain (stocks, crypto have different needs) |
 | **Business accounting** | No invoicing, no tax reports, no multi-user |
 | **Budgeting enforcer** | We show data, we don't restrict spending |
@@ -98,3 +97,9 @@ These are explicitly out of scope for MVP but may be considered later:
 - Mobile native apps
 - Receipt photo attachments
 - Tags and advanced filtering
+
+## Decision Log
+
+- **2026-10: Optional bank sync.** Manual-only entry was the original stance. Bank connections were added
+  for personal use through Enable Banking (licensed PSD2 AISP, "restricted mode": only the owner's own
+  accounts). Read-only access, consent expires after at most 180 days, and manual entry remains first-class.

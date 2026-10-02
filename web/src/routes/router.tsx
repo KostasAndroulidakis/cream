@@ -1,5 +1,8 @@
 import { createBrowserRouter, Navigate } from "react-router"
 
+import { AppLayout } from "./app-layout"
+import { ConnectionCallbackPage } from "./connection-callback-page"
+import { ConnectionsPage } from "./connections-page"
 import { RedirectIfAuthenticated, RequireAuth } from "./guards"
 import { HomePage } from "./home-page"
 import { LoginPage } from "./login-page"
@@ -9,7 +12,17 @@ import { SignupPage } from "./signup-page"
 export const router = createBrowserRouter([
   {
     element: <RequireAuth />,
-    children: [{ path: paths.home, element: <HomePage /> }],
+    children: [
+      {
+        element: <AppLayout />,
+        children: [
+          { path: paths.home, element: <HomePage /> },
+          { path: paths.connections, element: <ConnectionsPage /> },
+        ],
+      },
+      // Full-screen: the user lands here straight from the bank's site
+      { path: paths.connectionCallback, element: <ConnectionCallbackPage /> },
+    ],
   },
   {
     element: <RedirectIfAuthenticated />,
