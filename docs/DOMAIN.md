@@ -79,7 +79,9 @@ Category
 ├── user_id: owner reference (NULL for system defaults)
 ├── parent_id: parent category reference (NULL for root)
 ├── name: display name (e.g., "Groceries")
-├── type: category_type enum (income/expense)
+├── type: category_type enum (income/expense/transfer)
+├── key: stable identifier of a system category (e.g. "food_and_dining.groceries"), NULL for user categories
+├── is_group: true for groups that organize categories (never assigned to transactions)
 └── created_at: creation timestamp
 ```
 
@@ -89,15 +91,23 @@ Category
 | ------ | ------------- | ---------- |
 | `income` | Money received | Salary, Gifts, Refunds |
 | `expense` | Money spent | Food, Transport, Bills |
+| `transfer` | Money moving between your own wallets | Account transfer, Cash & ATM, Credit card payment |
+
+Transfers change wallet balances but are **excluded** from income, expense and category statistics,
+so moving money between your own accounts is never counted twice.
 
 **System Default Categories**:
 Categories with `user_id = NULL` are system defaults, visible to all users but not modifiable.
+They follow Monarch's default set: groups (e.g. "Food & Dining") containing categories (e.g. "Groceries"),
+seeded by an Alembic migration. Each has a stable `key` for translations and automatic categorization.
 
 **Invariants**:
 
 - Category type is immutable after creation
 - Parent category must exist if parent_id is set
 - Category hierarchy must not contain cycles
+- A subcategory has the same type as its parent
+- Transactions use categories, never groups (`is_group = false`)
 - User can only modify categories they own (user_id matches)
 - System default categories cannot be modified or deleted
 

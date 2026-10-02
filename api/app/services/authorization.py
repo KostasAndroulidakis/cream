@@ -37,6 +37,20 @@ class CategoryCycleError(HTTPException):
         super().__init__(status_code=400, detail="Category cannot be its own ancestor")
 
 
+class CategoryGroupError(HTTPException):
+    """Transactions can't be recorded directly in a category group."""
+
+    def __init__(self):
+        super().__init__(status_code=422, detail="Pick a category, not a category group")
+
+
+class CategoryTypeMismatchError(HTTPException):
+    """A subcategory must have the same type as its parent."""
+
+    def __init__(self):
+        super().__init__(status_code=400, detail="Category type must match its parent's type")
+
+
 class CategoryInUseError(HTTPException):
     """Category is referenced by transactions."""
 
@@ -221,3 +235,18 @@ def check_category_cycle(category_id: int, new_parent_id: int, db: Session) -> N
         if parent is None:
             break
         current_id = parent.parent_id
+
+
+def get_assignable_category(category_id: int, user_id: int, db: Session) -> Category:
+    """A category the user may record a transaction in (accessible and not a group)."""
+    category = get_category(category_id, user_id, db, allow_system=True)
+    if category.is_group:
+        raise CategoryGroupError()
+    return category
+
+
+def verify_parent_category(parent_id: int, category_type, user_id: int, db: Session) -> None:
+    """The parent must be accessible and of the same type (income under income, etc.)."""
+    parent = get_category(parent_id, user_id, db, allow_system=True)
+    if parent.type != category_type:
+        raise CategoryTypeMismatchError()

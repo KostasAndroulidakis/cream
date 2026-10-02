@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -8,23 +8,34 @@ from app.services.auth import get_current_user_id
 from app.services.authorization import (
     get_transaction as get_user_transaction,
     get_wallet as verify_wallet_ownership,
+    get_assignable_category,
     get_user_wallet_ids_subquery,
-    verify_category_access,
     verify_wallet_access,
 )
 from app.services.helpers import apply_update
-from app.services.validation import validate_transaction
+from app.services.validation import ValidationResult, validate_transaction
 
 router = APIRouter()
+
+DEFAULT_PAGE_SIZE = 50
+MAX_PAGE_SIZE = 200
+
+
+def _raise_if_invalid(result: ValidationResult) -> None:
+    if not result.is_valid:
+        errors = [ValidationErrorDetail(field=e.field, message=e.message).model_dump() for e in result.errors]
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=errors)
 
 
 @router.get("", response_model=list[TransactionRead])
 def list_transactions(
     wallet_id: int | None = None,
+    limit: int = Query(DEFAULT_PAGE_SIZE, ge=1, le=MAX_PAGE_SIZE),
+    offset: int = Query(0, ge=0),
     user_id: int = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
-    """List transactions for user's wallets."""
+    """List transactions for the user's wallets, newest first."""
     if wallet_id is not None:
         # Filter by specific wallet - verify ownership first
         verify_wallet_access(wallet_id, user_id, db)
@@ -34,7 +45,12 @@ def list_transactions(
         wallet_ids_subquery = get_user_wallet_ids_subquery(user_id, db)
         query = db.query(Transaction).filter(Transaction.wallet_id.in_(wallet_ids_subquery))
 
-    return query.order_by(Transaction.occurred_at.desc()).all()
+    return (
+        query.order_by(Transaction.occurred_at.desc(), Transaction.id.desc())
+        .offset(offset)
+        .limit(limit)
+        .all()
+    )
 
 
 @router.post("", response_model=TransactionRead, status_code=status.HTTP_201_CREATED)
@@ -50,19 +66,13 @@ def create_transaction(
         wallet_id=transaction_in.wallet_id,
         category_id=transaction_in.category_id,
     )
-    if not validation_result.is_valid:
-        errors = [
-            ValidationErrorDetail(field=e.field, message=e.message).model_dump()
-            for e in validation_result.errors
-        ]
-        raise HTTPException(status_code=422, detail=errors)
+    _raise_if_invalid(validation_result)
 
     # Verify user owns the wallet
     verify_wallet_ownership(transaction_in.wallet_id, user_id, db)
 
-    # Verify user has access to the category (user-owned or system default)
-    if transaction_in.category_id is not None:
-        verify_category_access(transaction_in.category_id, user_id, db)
+    # Category must be accessible (own or system) and not a group
+    get_assignable_category(transaction_in.category_id, user_id, db)
 
     transaction = Transaction(**transaction_in.model_dump())
     db.add(transaction)
@@ -101,16 +111,11 @@ def update_transaction(
         occurred_at=occurred_at,
         category_id=category_id,
     )
-    if not validation_result.is_valid:
-        errors = [
-            ValidationErrorDetail(field=e.field, message=e.message).model_dump()
-            for e in validation_result.errors
-        ]
-        raise HTTPException(status_code=422, detail=errors)
+    _raise_if_invalid(validation_result)
 
     # Verify user has access to the new category if being changed
     if "category_id" in update_data and update_data["category_id"] is not None:
-        verify_category_access(update_data["category_id"], user_id, db)
+        get_assignable_category(update_data["category_id"], user_id, db)
 
     apply_update(transaction, transaction_in)
     db.commit()

@@ -285,9 +285,11 @@ List all accessible categories (user's + system defaults).
 [
   {
     "id": 1,
-    "name": "Food",
+    "name": "Food & Dining",
     "type": "expense",
     "parent_id": null,
+    "key": "group.food_and_dining",
+    "is_group": true,
     "created_at": "2025-01-15T10:30:00Z"
   },
   {
@@ -295,6 +297,8 @@ List all accessible categories (user's + system defaults).
     "name": "Groceries",
     "type": "expense",
     "parent_id": 1,
+    "key": "food_and_dining.groceries",
+    "is_group": false,
     "created_at": "2025-01-15T10:30:00Z"
   }
 ]
@@ -309,8 +313,8 @@ Create a new category.
 ```json
 {
   "name": "string (max 100 chars)",
-  "type": "income | expense",
-  "parent_id": "integer | null (optional)"
+  "type": "income | expense | transfer",
+  "parent_id": "integer | null (optional, same type as the parent)"
 }
 ```
 
@@ -322,12 +326,15 @@ Create a new category.
   "name": "Restaurants",
   "type": "expense",
   "parent_id": 1,
+  "key": null,
+  "is_group": false,
   "created_at": "2025-01-15T10:30:00Z"
 }
 ```
 
 **Errors**:
 
+- `400`: Type doesn't match the parent's type
 - `422`: Validation error
 
 #### GET /categories/{id}
@@ -381,11 +388,13 @@ Delete a category (user-owned only).
 
 #### GET /transactions
 
-List all transactions for the user's wallets.
+List transactions for the user's wallets, newest first.
 
 **Query Parameters**:
 
 - `wallet_id` (optional): Filter by wallet
+- `limit` (optional, default 50, max 200): Page size
+- `offset` (optional, default 0): Items to skip
 
 **Response** `200 OK`:
 
@@ -443,7 +452,7 @@ Create a new transaction.
 
 - `404`: Wallet not found
 - `403`: Access denied (not owner of wallet)
-- `422`: Validation error (amount zero, future date, etc.)
+- `422`: Validation error (amount zero, future date, category is a group, etc.)
 
 #### GET /transactions/{id}
 

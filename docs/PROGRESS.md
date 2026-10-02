@@ -41,11 +41,14 @@
 - ✅ System default categories protection
 - ✅ Hierarchical categories (parent_id)
 - ✅ Cycle detection in category hierarchy
+- ✅ Default categories (Monarch's set) seeded as groups + categories with stable keys
+- ✅ Transfer category type, excluded from income/expense statistics
+- ✅ Subcategory type must match its parent; groups can't hold transactions
 
 ### ✅ Transaction Management (FR4)
 
 - ✅ Create transactions (wallet, category, amount, date, description)
-- ✅ List all transactions
+- ✅ List transactions newest first, with pagination (limit/offset)
 - ✅ Filter transactions by wallet
 - ✅ Get transaction details
 - ✅ Update transactions
@@ -176,7 +179,8 @@
 - ✅ Wallet list with balances and totals per currency
 - ✅ Add wallet dialog
 - ⬜ Edit and delete wallets
-- ⬜ Transaction list and forms
+- ✅ Add transaction (expense/income) and recent transactions
+- ⬜ Edit and delete transactions
 - ⬜ Category management UI
 - ⬜ Reports and charts
 

@@ -8,7 +8,7 @@ from app.schemas import CategoryCreate, CategoryRead, CategoryUpdate
 from app.services.auth import get_current_user_id
 from app.services.authorization import (
     get_category,
-    verify_category_access,
+    verify_parent_category,
     check_category_cycle,
     CategoryInUseError,
 )
@@ -23,9 +23,12 @@ def list_categories(
     db: Session = Depends(get_db),
 ):
     """List user's categories and system defaults."""
-    return db.query(Category).filter(
-        (Category.user_id == user_id) | (Category.user_id.is_(None))
-    ).all()
+    return (
+        db.query(Category)
+        .filter((Category.user_id == user_id) | (Category.user_id.is_(None)))
+        .order_by(Category.id)
+        .all()
+    )
 
 
 @router.post("", response_model=CategoryRead, status_code=status.HTTP_201_CREATED)
@@ -36,7 +39,7 @@ def create_category(
 ):
     # Verify user has access to the parent category if specified
     if category_in.parent_id is not None:
-        verify_category_access(category_in.parent_id, user_id, db)
+        verify_parent_category(category_in.parent_id, category_in.type, user_id, db)
 
     category = Category(user_id=user_id, **category_in.model_dump())
     db.add(category)
@@ -66,7 +69,7 @@ def update_category(
     # Verify user has access to the new parent category if being changed
     update_data = category_in.model_dump(exclude_unset=True)
     if "parent_id" in update_data and update_data["parent_id"] is not None:
-        verify_category_access(update_data["parent_id"], user_id, db)
+        verify_parent_category(update_data["parent_id"], category.type, user_id, db)
         # Check for cycles in hierarchy
         check_category_cycle(category_id, update_data["parent_id"], db)
 
