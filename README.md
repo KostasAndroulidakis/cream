@@ -102,6 +102,7 @@ cream/
 
 | Endpoint | Description |
 | ---------- | ------------- |
+| `GET /api/v1/health` | API and database availability (public) |
 | `POST /api/v1/auth/signup` | User registration |
 | `POST /api/v1/auth/login` | User login (returns JWT) |
 | `GET/POST/PATCH/DELETE /api/v1/wallets` | Wallet CRUD |

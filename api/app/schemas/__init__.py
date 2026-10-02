@@ -12,6 +12,7 @@ from app.schemas.statistics import (
     CategoryBreakdown,
     WalletBreakdown,
 )
+from app.schemas.health import HealthResponse, ServiceStatus
 from app.schemas.error import ValidationErrorDetail, ValidationErrorResponse, ErrorResponse
 
 __all__ = [
@@ -22,5 +23,6 @@ __all__ = [
     "StatisticsResponse", "WalletBalance", "CategoryTotal",
     "ReportResponse", "ReportPeriod", "ReportSummary",
     "CategoryBreakdown", "WalletBreakdown",
+    "HealthResponse", "ServiceStatus",
     "ValidationErrorDetail", "ValidationErrorResponse", "ErrorResponse",
 ]
