@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Intermediate OpenAPI export (regenerate with `npm run gen:api`)
+openapi.json

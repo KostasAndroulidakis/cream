@@ -1,5 +1,5 @@
 {
-  "name": "web",
+  "name": "cream-web",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "gen:api": "uv run --directory ../api python -m scripts.export_openapi ../web/openapi.json && openapi-typescript openapi.json -o src/lib/api/schema.d.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",
