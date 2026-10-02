@@ -57,19 +57,18 @@ cream/
 │   ├── migrations/     # Alembic migrations
 │   └── pyproject.toml
 │
-├── web/            # React/TypeScript/Vite
-│   ├── src/
-│   │   ├── lib/         # API client, query client, utils
-│   │   ├── components/  # Shared UI components (shadcn/ui)
-│   │   ├── features/    # Feature modules (auth, wallets, transactions, reports)
-│   │   └── routes/      # Pages and router config
-│   └── package.json
-│
-└── database/
-    └── schema.sql  # Reference schema
+└── web/            # React/TypeScript/Vite
+    ├── src/
+    │   ├── lib/         # API client, query client, utils
+    │   ├── components/  # Shared UI components (shadcn/ui)
+    │   ├── features/    # Feature modules (auth, wallets, transactions, reports)
+    │   └── routes/      # Pages and router config
+    └── package.json
 ```
 
 ## Database Schema
+
+> **Source of truth:** the SQLAlchemy models in `api/app/models/`. Schema changes are applied via Alembic migrations in `api/migrations/` — never by hand.
 
 ```text
 ┌─────────┐       ┌─────────────┐

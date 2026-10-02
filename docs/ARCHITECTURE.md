@@ -226,16 +226,13 @@ cream/
 │   ├── migrations/         # Alembic migrations
 │   └── pyproject.toml      # Dependencies
 │
-├── web/                    # React/TypeScript/Vite frontend
-│   ├── src/
-│   │   ├── lib/            # API client, query client, utils
-│   │   ├── components/     # Shared UI components (shadcn/ui)
-│   │   ├── features/       # Feature modules (auth, wallets, transactions, reports)
-│   │   └── routes/         # Pages and router config
-│   └── package.json
-│
-└── database/
-    └── schema.sql          # Reference schema
+└── web/                    # React/TypeScript/Vite frontend
+    ├── src/
+    │   ├── lib/            # API client, query client, utils
+    │   ├── components/     # Shared UI components (shadcn/ui)
+    │   ├── features/       # Feature modules (auth, wallets, transactions, reports)
+    │   └── routes/         # Pages and router config
+    └── package.json
 ```
 
 ## Key Architectural Decisions
