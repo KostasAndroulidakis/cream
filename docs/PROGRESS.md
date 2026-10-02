@@ -1,250 +1,123 @@
 # Implementation Progress
 
-> **Legend:** ✅ Implemented  ·  ⬜ Not Implemented
+CREAM is built in **vertical slices**: each slice delivers one thing a user can do, end to end
+(database → API → web), and is usable on its own when it ships.
+
+> **Legend:** ✅ Done · 🔜 Next · ⬜ Planned
+
+## Overview
+
+| # | Slice | User outcome | Status |
+| --- | --- | --- | --- |
+| 0 | Walking skeleton | "I can see that the app, API and database are connected" | ✅ |
+| 1 | Accounts | "I can sign up, log in and log out securely" | ✅ |
+| 2 | Wallets | "I can see my wallets, their balances and my totals per currency" | ✅ |
+| 3 | Transactions | "I can record an expense or income in seconds" | ✅ |
+| 4 | Bank sync | "My bank transactions arrive in CREAM without typing them" | ✅ (Sandbox) |
+| 5 | Auto-categorization | "Imported transactions land in the right category" | 🔜 |
+| 6 | Manage records | "I can fix and remove wallets and transactions" | ⬜ |
+| 7 | Transfers | "Moving money between my accounts isn't counted as spending" | ⬜ |
+| 8 | Always in sync | "Banks sync on their own and tell me when to reconnect" | ⬜ |
+| 9 | Insights | "I can see where my money went this month" | ⬜ |
+| 10 | Greek | "I can use CREAM in Greek" | ⬜ |
+| 11 | History import | "My older history is in CREAM too (CSV)" | ⬜ |
 
 ---
 
-## Backend API
+## Done
 
-### ✅ User Management (FR1)
+### ✅ Slice 0: Walking skeleton
 
-- ✅ User registration with username, email, password
-- ✅ User login with JWT in httpOnly session cookie
-- ✅ Logout (clears session cookie)
-- ✅ Current user endpoint (`/auth/me`)
-- ✅ Token-based authentication on all endpoints
-- ✅ User data isolation (users can only access own data)
-- ✅ Unique username and email validation
-- ✅ Username length validation (3-50 chars)
-- ✅ Password minimum length validation (8 chars)
+| Layer | Delivered |
+| --- | --- |
+| Infra | PostgreSQL via Docker Compose; shared root `.env` (single source for credentials) |
+| DB | Alembic baseline migration: tz-aware timestamps, enums stored by value, indexes |
+| API | `GET /api/v1/health` (API + database), typed response |
+| Web | Vite + React + TS, Tailwind + shadcn/ui, TanStack Query, dev proxy, OpenAPI type generation, system status card |
 
-### ✅ Wallet Management (FR2)
+### ✅ Slice 1: Accounts
 
-- ✅ Create wallet with name, type, currency, initial balance
-- ✅ List all user wallets
-- ✅ Get wallet details with current balance
-- ✅ Update wallet (name, type, currency)
-- ✅ Delete wallet (cascades to transactions)
-- ✅ Wallet types: bank, cash, digital, stash
-- ✅ Balance calculation: initial_balance + sum(transactions)
-- ✅ Currency validation (ISO 4217 format, normalized to uppercase)
-- ✅ Currency locked once a wallet has transactions (409)
-- ✅ Totals per currency (`/wallets/totals`), never mixed
-- ✅ Wallet name validation (1-100 chars)
+| Layer | Delivered |
+| --- | --- |
+| API | Signup, login, logout, `/auth/me`; JWT in `httpOnly` / `Secure` / `SameSite=Strict` cookie; bcrypt |
+| Web | Login and signup pages with validation, protected routes with return-to, logout, expired session → login |
 
-### ✅ Category Management (FR3)
+### ✅ Slice 2: Wallets
 
-- ✅ Create custom categories (name, type)
-- ✅ List categories (personal + system defaults)
-- ✅ Update own categories
-- ✅ Delete own categories
-- ✅ System default categories protection
-- ✅ Hierarchical categories (parent_id)
-- ✅ Cycle detection in category hierarchy
-- ✅ Default categories (Monarch's set) seeded as groups + categories with stable keys
-- ✅ Transfer category type, excluded from income/expense statistics
-- ✅ Subcategory type must match its parent; groups can't hold transactions
+| Layer | Delivered |
+| --- | --- |
+| API | ISO currency codes (normalized), currency locked once transactions exist, `/wallets/totals` per currency |
+| Web | Wallet list with balances, headline totals per currency, add-wallet dialog, exact decimal formatting |
 
-### ✅ Transaction Management (FR4)
+### ✅ Slice 3: Transactions
 
-- ✅ Create transactions (wallet, category, amount, date, description)
-- ✅ List transactions newest first, with pagination (limit/offset)
-- ✅ Filter transactions by wallet
-- ✅ Get transaction details
-- ✅ Update transactions
-- ✅ Delete transactions
-- ✅ Positive = income, negative = expense
-- ✅ Wallet ownership validation
-- ✅ Category access validation
+| Layer | Delivered |
+| --- | --- |
+| DB | Monarch's default categories (15 groups, 60 categories) with stable keys; `transfer` category type |
+| API | Transfers excluded from income/expense stats; groups not assignable; parent/child type rule; pagination |
+| Web | Add-transaction dialog (expense/income, grouped categories, decimal comma), recent transactions |
 
-### ✅ Statistics (FR5)
+### ✅ Slice 4: Bank sync (Enable Banking)
 
-- ✅ Total balance across all wallets
-- ⬜ Per-currency statistics (`/statistics` still sums currencies nominally; `/wallets/totals` is per currency)
-- ✅ Total income (sum of positive transactions)
-- ✅ Total expenses (sum of negative transactions)
-- ✅ Balance per wallet
-- ✅ Spending breakdown by category
-- ✅ Income breakdown by category
-
-### ✅ Reports (FR6)
-
-- ✅ Generate reports for date range
-- ✅ Period income, expenses, net change
-- ✅ Transaction count for period
-- ✅ Category breakdown with totals and counts
-- ✅ Wallet breakdown with income/expense/net
+| Layer | Delivered |
+| --- | --- |
+| DB | `bank_connections`, `bank_accounts`; transactions gain `external_id`, `counterparty`, MCC |
+| API | Connect (single-use state), link accounts to wallets, manual sync of booked transactions, duplicate-safe IDs, first-sync balance reconciliation, disconnect |
+| Web | Banks page: connect, callback, link to new/existing wallet, sync now with results |
+| Verified | Sandbox with Mock ASPSP (146 transactions imported, balance matches the bank) |
 
 ---
 
-## Validation Rules
+## Next
 
-### ✅ Transaction Validation (VR1)
+### 🔜 Slice 5: Auto-categorization
 
-- ✅ Amount must not be zero
-- ✅ Amount >= 0.0001 (minimum precision)
-- ✅ Amount <= 999,999,999.9999 (maximum)
-- ✅ `occurred_at` must not be in the future
-- ✅ `wallet_id` must exist and be owned by user
-- ✅ `category_id` must be accessible
+- Map merchant category codes (MCC) to CREAM categories, using Plaid's taxonomy as a guide
+- Change a transaction's category; offer to apply it to similar transactions (merchant rules)
+- Rules run on every sync, so categorized merchants stay categorized
+- Web: "Uncategorized" inbox to review imported transactions quickly
 
-### ✅ Wallet Validation (VR2)
+## Planned
 
-- ✅ Name must not be empty
-- ✅ Name <= 100 characters
-- ✅ Type must be valid enum
-- ✅ Currency must be a 3-letter code (`eur` → `EUR`)
+### ⬜ Slice 6: Manage records
+Edit and delete wallets and transactions; hide default categories you don't use.
 
-### ✅ Category Validation (VR3)
+### ⬜ Slice 7: Transfers
+Record a transfer between two wallets as one action; detect and pair matching in/out bank transactions.
 
-- ✅ Name must not be empty
-- ✅ Name <= 100 characters
-- ✅ Type must be income or expense
-- ✅ parent_id must not create cycle
+### ⬜ Slice 8: Always in sync
+Scheduled background sync (respecting bank rate limits), reconnect flow before consent expires,
+Production (restricted mode) with real accounts, starting with the most stable banks (Revolut, N26).
 
-### ✅ User Validation (VR4)
+### ⬜ Slice 9: Insights
+Monthly income vs expenses, spending by category with charts, per-currency statistics.
 
-- ✅ Username 3-50 characters
-- ✅ Email valid format
-- ✅ Password minimum 8 characters
+### ⬜ Slice 10: Greek
+Greek UI and category names, using the stable category keys.
 
----
-
-## Non-Functional Requirements
-
-### ✅ Correctness (NFR1)
-
-- ✅ Fixed-point decimal arithmetic (NUMERIC(19,4))
-- ✅ 4 decimal places precision
-- ✅ No floating-point in financial calculations
-- ✅ ACID-compliant transactions
-- ✅ Consistent balance calculations
-- ✅ Input validation before persistence
-
-### ✅ Security (NFR3)
-
-- ✅ Bcrypt password hashing
-- ✅ JWT tokens with expiration
-- ✅ Authentication required on all endpoints
-- ✅ User data isolation
-- ✅ Input validation (Pydantic + business rules)
-- ✅ SQL injection prevention (ORM)
-- ⬜ HTTPS in production (deployment config)
-
-### ✅ Auditability (NFR4)
-
-- ✅ `created_at` on all entities
-- ✅ `updated_at` on mutable entities
-- ✅ `occurred_at` preserved on transactions
-- ✅ Hard deletes (no soft deletes)
-
-### ✅ Reliability (NFR5)
-
-- ✅ Database error handling
-- ✅ Appropriate error messages
-- ✅ Session rollback on errors
-- ✅ Health check endpoint
-
-### ✅ Maintainability (NFR6)
-
-- ✅ pytest suite (see TESTING.md)
-- ✅ API versioning (v1)
-- ✅ Alembic migrations
-- ✅ Environment variable configuration
+### ⬜ Slice 11: History import
+CSV import for older history and for days when a bank connection is down.
 
 ---
 
-## Frontend
+## Known Gaps
 
-### ✅ Project Setup
+- `/statistics` still sums amounts across currencies (`/wallets/totals` is correct); fixed in Slice 9
+- No session refresh: sessions end after `CREAM_ACCESS_TOKEN_EXPIRE_MINUTES`
+- Tests run on SQLite; Postgres-specific behavior (e.g. NUMERIC precision) is not covered by tests
+- HTTPS and deployment configuration not set up yet
 
-- ✅ Vite + React + TypeScript
-- ✅ Tailwind CSS + shadcn/ui
-- ✅ React Router + TanStack Query
-- ✅ Feature-based structure (lib, components, features, routes)
-- ✅ TypeScript types generated from OpenAPI schema (`npm run gen:api`)
-- ✅ Vite dev proxy to API
-- ✅ System status page (walking skeleton: web → API → DB)
+## Requirements Coverage
 
-### ⬜ Core Infrastructure
-
-- ✅ API client service (typed, openapi-fetch)
-- ✅ Current user query (`useCurrentUser`)
-- ✅ Protected routes (redirect to login and back)
-- ✅ Expired session (any 401) returns to login
-
-### ⬜ User Interface
-
-- ✅ Authentication pages (login, signup, logout)
-- ⬜ Dashboard with statistics
-- ✅ Wallet list with balances and totals per currency
-- ✅ Add wallet dialog
-- ⬜ Edit and delete wallets
-- ✅ Add transaction (expense/income) and recent transactions
-- ⬜ Edit and delete transactions
-- ⬜ Category management UI
-- ⬜ Reports and charts
-
----
-
-## Future Features (Post-MVP)
-
-### ⬜ Recurring Transactions
-
-- ⬜ Define recurring transaction templates
-- ⬜ Automatic transaction generation
-- ⬜ Edit/delete recurring rules
-
-### ⬜ Budget Planning
-
-- ⬜ Set spending limits per category
-- ⬜ Budget vs actual tracking
-- ⬜ Alerts when approaching limits
-
-### ✅ Bank Sync (Enable Banking)
-
-- ✅ Connect a bank (PSD2 consent, single-use state)
-- ✅ Link bank accounts to new or existing wallets
-- ✅ Manual sync: booked transactions only, no duplicates, balance matches the bank
-- ✅ Disconnect (revokes consent, keeps data)
-- ⬜ Scheduled background sync
-- ⬜ Reconnect flow for expired consent
-- ⬜ Production (restricted mode) with real accounts
-
-### ⬜ Multi-Currency
-
-- ⬜ Currency conversion rates
-- ⬜ Cross-currency reporting
-- ⬜ Base currency setting
-
-### ⬜ Data Import/Export
-
-- ⬜ CSV export
-- ⬜ JSON export
-- ⬜ CSV import with mapping
-
-### ⬜ Tags
-
-- ⬜ Tag transactions with labels
-- ⬜ Filter by tags
-- ⬜ Tag-based reporting
-
-### ⬜ Receipt Attachments
-
-- ⬜ Upload receipt images
-- ⬜ Link to transactions
-- ⬜ Image storage
-
----
-
-## Summary
-
-| Component | Status |
-| ----------- | -------- |
-| Backend API | ✅ Complete |
-| Validation | ✅ Complete |
-| Non-Functional | ✅ Complete |
-| Frontend Setup | ✅ Complete |
-| Frontend Infrastructure | ⬜ In Progress |
-| Frontend UI | ⬜ Not Started |
-| Future Features | ⬜ Post-MVP |
+| Area | Status | Notes |
+| --- | --- | --- |
+| FR1 Users | ✅ | Signup, login, logout, `/me`, data isolation |
+| FR2 Wallets | ✅ | CRUD in API; edit/delete in UI comes in Slice 6 |
+| FR3 Categories | ✅ | System defaults + own categories, hierarchy, cycle detection |
+| FR4 Transactions | ✅ | CRUD in API; edit/delete in UI comes in Slice 6 |
+| FR5 Statistics | ✅ | Per-currency statistics pending (Slice 9) |
+| FR6 Reports | ✅ (API) | Reports UI comes in Slice 9 |
+| VR1–VR4 Validation | ✅ | Amounts, dates, names, currencies, users |
+| NFR1 Correctness | ✅ | NUMERIC(19,4), no floats anywhere (API or web) |
+| NFR3 Security | ✅ | Cookie sessions, bcrypt, ownership checks, PSD2 key outside repo; HTTPS pending |
+| NFR4–NFR6 | ✅ | Timestamps, error handling, migrations, test suite (see [TESTING.md](TESTING.md)) |
