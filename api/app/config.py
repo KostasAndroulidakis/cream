@@ -35,4 +35,5 @@ class Settings(BaseSettings):
         ).render_as_string(hide_password=False)
 
 
-settings = Settings()
+# Fields are populated from environment / .env at runtime, not via __init__ args
+settings = Settings()  # pyright: ignore[reportCallIssue]
