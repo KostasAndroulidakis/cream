@@ -47,7 +47,7 @@ Wallet
 ├── user_id: owner reference
 ├── name: display name (e.g., "Main Bank Account")
 ├── type: wallet_type enum
-├── currency: 3-letter currency code (e.g., "EUR")
+├── currency: ISO 4217 code (e.g., "EUR"); fixed once the wallet has transactions
 ├── initial_balance: starting balance (Money)
 ├── created_at: creation timestamp
 └── updated_at: last modification timestamp

@@ -3,10 +3,11 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import Wallet
-from app.schemas import WalletCreate, WalletRead, WalletUpdate
+from app.schemas import CurrencyTotal, WalletCreate, WalletRead, WalletUpdate
 from app.services.auth import get_current_user_id
 from app.services.authorization import get_wallet as get_user_wallet
 from app.services.helpers import apply_update
+from app.services.wallets import calculate_currency_totals, ensure_currency_change_allowed, get_user_wallets
 
 router = APIRouter()
 
@@ -16,7 +17,17 @@ def list_wallets(
     user_id: int = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
-    return db.query(Wallet).filter(Wallet.user_id == user_id).all()
+    return get_user_wallets(user_id, db)
+
+
+# Declared before /{wallet_id} so "totals" isn't parsed as an ID
+@router.get("/totals", response_model=list[CurrencyTotal])
+def get_wallet_totals(
+    user_id: int = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """Combined balance per currency across the user's wallets."""
+    return calculate_currency_totals(get_user_wallets(user_id, db))
 
 
 @router.post("", response_model=WalletRead, status_code=status.HTTP_201_CREATED)
@@ -49,6 +60,7 @@ def update_wallet(
     db: Session = Depends(get_db),
 ):
     wallet = get_user_wallet(wallet_id, user_id, db)
+    ensure_currency_change_allowed(wallet, wallet_in.currency, db)
     apply_update(wallet, wallet_in)
     db.commit()
     db.refresh(wallet)

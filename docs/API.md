@@ -22,6 +22,7 @@ All endpoints except `/health`, `/auth/signup`, `/auth/login` and `/auth/logout`
 | `GET /api/v1/auth/me` | Current authenticated user |
 | `GET /api/v1/wallets` | List user wallets |
 | `POST /api/v1/wallets` | Create wallet |
+| `GET /api/v1/wallets/totals` | Combined balance per currency |
 | `GET /api/v1/wallets/{id}` | Get wallet |
 | `PATCH /api/v1/wallets/{id}` | Update wallet |
 | `DELETE /api/v1/wallets/{id}` | Delete wallet |
@@ -199,6 +200,19 @@ Create a new wallet.
 
 - `422`: Validation error
 
+#### GET /wallets/totals
+
+Combined balance of the user's wallets, one entry per currency. Currencies are never converted or mixed.
+
+**Response** `200 OK`:
+
+```json
+[
+  { "currency": "EUR", "balance": "1450.5000", "wallet_count": 2 },
+  { "currency": "USD", "balance": "300.0000", "wallet_count": 1 }
+]
+```
+
 #### GET /wallets/{id}
 
 Get a specific wallet.
@@ -243,6 +257,7 @@ Update a wallet.
 
 - `404`: Wallet not found
 - `403`: Access denied
+- `409`: Currency change on a wallet that already has transactions
 - `422`: Validation error
 
 #### DELETE /wallets/{id}

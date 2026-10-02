@@ -27,7 +27,9 @@
 - ✅ Delete wallet (cascades to transactions)
 - ✅ Wallet types: bank, cash, digital, stash
 - ✅ Balance calculation: initial_balance + sum(transactions)
-- ✅ Currency validation (exactly 3 characters)
+- ✅ Currency validation (ISO 4217 format, normalized to uppercase)
+- ✅ Currency locked once a wallet has transactions (409)
+- ✅ Totals per currency (`/wallets/totals`), never mixed
 - ✅ Wallet name validation (1-100 chars)
 
 ### ✅ Category Management (FR3)
@@ -87,7 +89,7 @@
 - ✅ Name must not be empty
 - ✅ Name <= 100 characters
 - ✅ Type must be valid enum
-- ✅ Currency must be exactly 3 characters
+- ✅ Currency must be a 3-letter code (`eur` → `EUR`)
 
 ### ✅ Category Validation (VR3)
 
@@ -163,15 +165,17 @@
 ### ⬜ Core Infrastructure
 
 - ✅ API client service (typed, openapi-fetch)
-- ⬜ Authentication context
-- ⬜ Protected routes
-- ⬜ Error handling
+- ✅ Current user query (`useCurrentUser`)
+- ✅ Protected routes (redirect to login and back)
+- ✅ Expired session (any 401) returns to login
 
 ### ⬜ User Interface
 
-- ⬜ Authentication pages (login, signup)
+- ✅ Authentication pages (login, signup, logout)
 - ⬜ Dashboard with statistics
-- ⬜ Wallet management UI
+- ✅ Wallet list with balances and totals per currency
+- ✅ Add wallet dialog
+- ⬜ Edit and delete wallets
 - ⬜ Transaction list and forms
 - ⬜ Category management UI
 - ⬜ Reports and charts

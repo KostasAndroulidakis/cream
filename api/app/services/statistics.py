@@ -12,6 +12,7 @@ from sqlalchemy import case, func
 from sqlalchemy.orm import Session
 
 from app.models import Category, Transaction, Wallet
+from app.services.wallets import get_user_wallets
 
 
 @dataclass
@@ -104,11 +105,6 @@ def _sum_expenses_expr():
     return func.coalesce(
         func.sum(case((Transaction.amount < 0, func.abs(Transaction.amount)), else_=0)), 0
     )
-
-
-def get_user_wallets(user_id: int, db: Session) -> list[Wallet]:
-    """Get all wallets for a user."""
-    return db.query(Wallet).filter(Wallet.user_id == user_id).all()
 
 
 def calculate_wallet_balance(wallet: Wallet, db: Session) -> Decimal:

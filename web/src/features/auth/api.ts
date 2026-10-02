@@ -3,13 +3,12 @@ import { queryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/r
 import { api } from "@/lib/api/client"
 import { toApiError } from "@/lib/api/errors"
 import { HTTP_STATUS } from "@/lib/api/http-status"
+import { SESSION_QUERY_KEY } from "@/lib/api/session"
 import type { Schemas } from "@/lib/api/types"
 
 export type User = Schemas["UserRead"]
 export type LoginInput = Schemas["LoginRequest"]
 export type SignupInput = Schemas["UserCreate"]
-
-const CURRENT_USER_KEY = ["auth", "me"] as const
 
 async function fetchCurrentUser(): Promise<User | null> {
   const { data, error, response } = await api.GET("/api/v1/auth/me")
@@ -37,7 +36,7 @@ async function logout(): Promise<void> {
 }
 
 export const currentUserQueryOptions = queryOptions({
-  queryKey: CURRENT_USER_KEY,
+  queryKey: SESSION_QUERY_KEY,
   queryFn: fetchCurrentUser,
   retry: false,
 })
@@ -50,7 +49,7 @@ function useSessionMutation<TInput>(mutationFn: (input: TInput) => Promise<User>
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn,
-    onSuccess: (user) => queryClient.setQueryData(CURRENT_USER_KEY, user),
+    onSuccess: (user) => queryClient.setQueryData(SESSION_QUERY_KEY, user),
   })
 }
 
@@ -69,7 +68,7 @@ export function useLogout() {
     onSuccess: () => {
       // Drop every cached piece of the previous user's data
       queryClient.clear()
-      queryClient.setQueryData(CURRENT_USER_KEY, null)
+      queryClient.setQueryData(SESSION_QUERY_KEY, null)
     },
   })
 }
