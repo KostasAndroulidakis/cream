@@ -148,18 +148,19 @@
 
 ## Frontend
 
-### ⬜ Project Setup
+### ✅ Project Setup
 
-- ⬜ Vite + React + TypeScript
-- ⬜ Tailwind CSS + shadcn/ui
-- ⬜ React Router + TanStack Query
-- ⬜ Feature-based structure (lib, components, features, routes)
-- ⬜ TypeScript types generated from OpenAPI schema
-- ⬜ Vite dev proxy to API
+- ✅ Vite + React + TypeScript
+- ✅ Tailwind CSS + shadcn/ui
+- ✅ React Router + TanStack Query
+- ✅ Feature-based structure (lib, components, features, routes)
+- ✅ TypeScript types generated from OpenAPI schema (`npm run gen:api`)
+- ✅ Vite dev proxy to API
+- ✅ System status page (walking skeleton: web → API → DB)
 
 ### ⬜ Core Infrastructure
 
-- ⬜ API client service
+- ✅ API client service (typed, openapi-fetch)
 - ⬜ Authentication context
 - ⬜ Protected routes
 - ⬜ Error handling
@@ -222,7 +223,7 @@
 | Backend API | ✅ Complete |
 | Validation | ✅ Complete |
 | Non-Functional | ✅ Complete |
-| Frontend Setup | ⬜ In Progress |
-| Frontend Infrastructure | ⬜ Not Started |
+| Frontend Setup | ✅ Complete |
+| Frontend Infrastructure | ⬜ In Progress |
 | Frontend UI | ⬜ Not Started |
 | Future Features | ⬜ Post-MVP |
