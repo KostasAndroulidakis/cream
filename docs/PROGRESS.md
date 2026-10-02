@@ -148,13 +148,14 @@
 
 ## Frontend
 
-### ✅ Project Setup
+### ⬜ Project Setup
 
-- ✅ Vite + React + TypeScript
-- ✅ Project structure (components, pages, services, types, hooks, context)
-- ✅ React Router DOM installed
-- ✅ Axios HTTP client installed
-- ✅ TypeScript types from API schemas
+- ⬜ Vite + React + TypeScript
+- ⬜ Tailwind CSS + shadcn/ui
+- ⬜ React Router + TanStack Query
+- ⬜ Feature-based structure (lib, components, features, routes)
+- ⬜ TypeScript types generated from OpenAPI schema
+- ⬜ Vite dev proxy to API
 
 ### ⬜ Core Infrastructure
 
@@ -221,7 +222,7 @@
 | Backend API | ✅ Complete |
 | Validation | ✅ Complete |
 | Non-Functional | ✅ Complete |
-| Frontend Setup | ✅ Complete |
-| Frontend Infrastructure | ⬜ In Progress |
+| Frontend Setup | ⬜ In Progress |
+| Frontend Infrastructure | ⬜ Not Started |
 | Frontend UI | ⬜ Not Started |
 | Future Features | ⬜ Post-MVP |

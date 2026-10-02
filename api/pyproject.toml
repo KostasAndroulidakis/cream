@@ -1,7 +1,7 @@
 [project]
-name = "cream-backend"
+name = "cream-api"
 version = "0.1.0"
-description = "CREAM personal finance backend"
+description = "CREAM personal finance API"
 requires-python = ">=3.13"
 dependencies = [
     "fastapi>=0.115.0",

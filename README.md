@@ -47,7 +47,7 @@ cream/
 │   ├── PROGRESS.md
 │   └── TESTING.md
 │
-├── backend/        # Python/FastAPI
+├── api/            # Python/FastAPI
 │   ├── app/
 │   │   ├── api/        # HTTP route handlers
 │   │   ├── models/     # SQLAlchemy ORM
@@ -57,14 +57,12 @@ cream/
 │   ├── migrations/     # Alembic migrations
 │   └── pyproject.toml
 │
-├── frontend/       # React/TypeScript/Vite
+├── web/            # React/TypeScript/Vite
 │   ├── src/
-│   │   ├── components/  # Reusable UI components
-│   │   ├── pages/       # Page components
-│   │   ├── services/    # API client
-│   │   ├── types/       # TypeScript types
-│   │   ├── hooks/       # Custom React hooks
-│   │   └── context/     # React contexts
+│   │   ├── lib/         # API client, query client, utils
+│   │   ├── components/  # Shared UI components (shadcn/ui)
+│   │   ├── features/    # Feature modules (auth, wallets, transactions, reports)
+│   │   └── routes/      # Pages and router config
 │   └── package.json
 │
 └── database/
@@ -118,17 +116,17 @@ cream/
 ### Backend
 
 ```bash
-cd backend/
-pip install -e ".[dev]"           # Install dependencies
-uvicorn app.main:app --reload     # Run dev server (localhost:8000)
-pytest                            # Run tests (121 tests)
-alembic upgrade head              # Apply migrations
+cd api/
+uv sync                                  # Install dependencies
+uv run uvicorn app.main:app --reload     # Run dev server (localhost:8000)
+uv run pytest                            # Run tests (121 tests)
+uv run alembic upgrade head              # Apply migrations
 ```
 
 ### Frontend
 
 ```bash
-cd frontend/
+cd web/
 npm install                       # Install dependencies
 npm run dev                       # Run dev server (localhost:5173)
 npm run build                     # Build for production

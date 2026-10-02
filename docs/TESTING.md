@@ -2,17 +2,17 @@
 
 ## Overview
 
-All tests are located in `backend/tests/` and use pytest.
+All tests are located in `api/tests/` and use pytest. Run them from `api/` via uv.
 
 ```bash
 # Run all tests
-pytest
+uv run pytest
 
 # Run with verbose output
-pytest -v
+uv run pytest -v
 
 # Run specific test file
-pytest tests/test_auth.py
+uv run pytest tests/test_auth.py
 ```
 
 ## Test Coverage
@@ -45,7 +45,7 @@ pytest tests/test_auth.py
 ## Test Structure
 
 ```text
-backend/tests/
+api/tests/
 ├── conftest.py          # Fixtures (test DB, client, auth)
 ├── test_auth.py         # Authentication endpoints
 ├── test_wallets.py      # Wallet CRUD

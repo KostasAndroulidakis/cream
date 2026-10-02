@@ -194,7 +194,7 @@ cream/
 │   ├── PROGRESS.md
 │   └── TESTING.md
 │
-├── backend/                 # Python/FastAPI backend
+├── api/                     # Python/FastAPI backend
 │   ├── app/
 │   │   ├── api/            # HTTP route handlers
 │   │   │   ├── auth.py
@@ -226,14 +226,12 @@ cream/
 │   ├── migrations/         # Alembic migrations
 │   └── pyproject.toml      # Dependencies
 │
-├── frontend/               # React/TypeScript/Vite frontend
+├── web/                    # React/TypeScript/Vite frontend
 │   ├── src/
-│   │   ├── components/     # Reusable UI components
-│   │   ├── pages/          # Page components (routes)
-│   │   ├── services/       # API client (Axios)
-│   │   ├── types/          # TypeScript types
-│   │   ├── hooks/          # Custom React hooks
-│   │   └── context/        # React contexts (auth state)
+│   │   ├── lib/            # API client, query client, utils
+│   │   ├── components/     # Shared UI components (shadcn/ui)
+│   │   ├── features/       # Feature modules (auth, wallets, transactions, reports)
+│   │   └── routes/         # Pages and router config
 │   └── package.json
 │
 └── database/
