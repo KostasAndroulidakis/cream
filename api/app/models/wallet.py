@@ -25,7 +25,7 @@ class Wallet(TimestampMixin, Base):
     __tablename__ = "wallets"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
     name: Mapped[str] = mapped_column(String(100))
     type: Mapped[WalletType]
     currency: Mapped[str] = mapped_column(String(3), default="EUR")

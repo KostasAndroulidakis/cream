@@ -18,11 +18,11 @@ class Transaction(TimestampMixin, Base):
     __tablename__ = "transactions"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    wallet_id: Mapped[int] = mapped_column(ForeignKey("wallets.id", ondelete="CASCADE"))
-    category_id: Mapped[int] = mapped_column(ForeignKey("categories.id", ondelete="RESTRICT"))
+    wallet_id: Mapped[int] = mapped_column(ForeignKey("wallets.id", ondelete="CASCADE"), index=True)
+    category_id: Mapped[int] = mapped_column(ForeignKey("categories.id", ondelete="RESTRICT"), index=True)
     amount: Mapped[Decimal] = mapped_column(Numeric(19, 4))
     description: Mapped[str | None] = mapped_column(Text)
-    occurred_at: Mapped[datetime]
+    occurred_at: Mapped[datetime] = mapped_column(index=True)
 
     wallet: Mapped["Wallet"] = relationship(back_populates="transactions")
     category: Mapped["Category"] = relationship(back_populates="transactions")

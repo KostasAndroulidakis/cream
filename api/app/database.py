@@ -1,8 +1,9 @@
+import enum
 import logging
 from datetime import datetime, timezone
 from typing import Generator
 
-from sqlalchemy import create_engine
+from sqlalchemy import DateTime, Enum as SAEnum, create_engine
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker, Session
 
@@ -20,7 +21,12 @@ def utc_now() -> datetime:
 
 
 class Base(DeclarativeBase):
-    pass
+    # Global type rules: every datetime is timezone-aware,
+    # every Python Enum is stored by its value ("income"), not its name ("INCOME")
+    type_annotation_map = {
+        datetime: DateTime(timezone=True),
+        enum.Enum: SAEnum(enum.Enum, values_callable=lambda e: [m.value for m in e]),
+    }
 
 
 class TimestampMixin:
