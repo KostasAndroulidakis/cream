@@ -10,7 +10,7 @@ export type WalletCreateInput = Schemas["WalletCreate"]
 export type CurrencyTotal = Schemas["CurrencyTotal"]
 
 // Every wallet query lives under this prefix so one invalidation refreshes them all
-const WALLETS_KEY = ["wallets"] as const
+export const WALLETS_KEY = ["wallets"] as const
 
 export const walletsQueryOptions = queryOptions({
   queryKey: [...WALLETS_KEY, "list"],

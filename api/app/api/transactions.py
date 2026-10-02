@@ -2,8 +2,16 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models import Transaction, Wallet
-from app.schemas import TransactionCreate, TransactionRead, TransactionUpdate, ValidationErrorDetail
+from app.models import CategorySource, Transaction
+from app.schemas import (
+    CategorizeRequest,
+    CategorizeResultRead,
+    TransactionCreate,
+    TransactionPage,
+    TransactionRead,
+    TransactionUpdate,
+    ValidationErrorDetail,
+)
 from app.services.auth import get_current_user_id
 from app.services.authorization import (
     get_transaction as get_user_transaction,
@@ -12,6 +20,9 @@ from app.services.authorization import (
     get_user_wallet_ids_subquery,
     verify_wallet_access,
 )
+from app.services.categorization.assignment import assign_category
+from app.services.categorization.inbox import uncategorized_page
+from app.services.categorization.rules import categorize_transaction
 from app.services.helpers import apply_update
 from app.services.validation import ValidationResult, validate_transaction
 
@@ -51,6 +62,19 @@ def list_transactions(
         .limit(limit)
         .all()
     )
+
+
+# Declared before /{transaction_id} so "uncategorized" isn't read as an ID
+@router.get("/uncategorized", response_model=TransactionPage)
+def list_uncategorized(
+    limit: int = Query(DEFAULT_PAGE_SIZE, ge=1, le=MAX_PAGE_SIZE),
+    offset: int = Query(0, ge=0),
+    user_id: int = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """The review inbox: transactions still waiting for a category, newest first."""
+    total, items = uncategorized_page(user_id, limit, offset, db)
+    return {"total": total, "items": items}
 
 
 @router.post("", response_model=TransactionRead, status_code=status.HTTP_201_CREATED)
@@ -118,9 +142,25 @@ def update_transaction(
         get_assignable_category(update_data["category_id"], user_id, db)
 
     apply_update(transaction, transaction_in)
+    if "category_id" in update_data:
+        # The user chose this category: automatic categorization leaves it alone from now on
+        assign_category(transaction, transaction.category_id, CategorySource.MANUAL)
     db.commit()
     db.refresh(transaction)
     return transaction
+
+
+@router.post("/{transaction_id}/categorize", response_model=CategorizeResultRead)
+def categorize(
+    transaction_id: int,
+    request: CategorizeRequest,
+    user_id: int = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """Set the category; with apply_to_similar, also for the merchant's other and future transactions."""
+    transaction = get_user_transaction(transaction_id, user_id, db)
+    category = get_assignable_category(request.category_id, user_id, db)
+    return categorize_transaction(transaction, category, request.apply_to_similar, user_id, db)
 
 
 @router.delete("/{transaction_id}", status_code=status.HTTP_204_NO_CONTENT)

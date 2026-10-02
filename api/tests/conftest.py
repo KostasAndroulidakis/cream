@@ -7,6 +7,10 @@ from sqlalchemy.pool import StaticPool
 from app.config import settings
 from app.database import Base, get_db
 from app.main import app
+from app.models import Category, CategoryType
+from app.services.banking.client import get_bank_client
+from app.services.categorization.system_categories import UNCATEGORIZED_KEY
+from tests.bank_fakes import FakeBankClient
 
 # Use in-memory SQLite for tests
 SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
@@ -105,3 +109,20 @@ def second_auth_headers(client, second_user_data):
     response = client.post(SIGNUP_URL, json=second_user_data)
     assert response.status_code == 201
     return login_session_headers(client, second_user_data["username"], second_user_data["password"])
+
+
+@pytest.fixture
+def bank(client):
+    """A fake Open Banking provider in place of Enable Banking."""
+    fake = FakeBankClient()
+    app.dependency_overrides[get_bank_client] = lambda: fake
+    return fake
+
+
+@pytest.fixture
+def uncategorized(db_session):
+    """The system category imported transactions fall back to."""
+    category = Category(user_id=None, name="Uncategorized", type=CategoryType.EXPENSE, key=UNCATEGORIZED_KEY)
+    db_session.add(category)
+    db_session.commit()
+    return category

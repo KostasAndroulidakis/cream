@@ -12,6 +12,9 @@
 | **Income** | Money received (positive transaction) |
 | **Expense** | Money spent (negative transaction) |
 | **Period** | A date range for reporting purposes |
+| **Merchant** | Who an imported transaction was with: the bank's counterparty, else the transaction text |
+| **MCC** | Merchant category code (ISO 18245) the bank reports for card payments, e.g. 5411 = grocery stores |
+| **Merchant rule** | The user's choice "this merchant always goes to this category" |
 
 ## Entities
 
@@ -120,9 +123,14 @@ Transaction
 ├── id: unique identifier
 ├── wallet_id: wallet reference
 ├── category_id: category reference
+├── category_source: who chose the category (manual / rule / mcc / default)
 ├── amount: monetary value (Money)
-├── description: optional note
+├── description: optional note (the bank's text for imports)
 ├── occurred_at: when the transaction happened
+├── external_id: bank identity of an imported transaction (NULL for manual entries)
+├── counterparty: who the money went to / came from (imports)
+├── merchant_category_code: the bank's MCC (imports)
+├── merchant_key: normalized merchant (imports), what merchant rules match on
 ├── created_at: record creation timestamp
 └── updated_at: last modification timestamp
 ```
@@ -134,6 +142,25 @@ Transaction
 - Wallet must exist and belong to the user
 - Category must be accessible to the user
 - occurred_at must not be in the future
+
+### Merchant Rule
+
+```text
+MerchantRule
+├── id: unique identifier
+├── user_id: owner reference
+├── merchant_key: normalized merchant (case and spacing ignored)
+├── merchant_name: the merchant as the bank wrote it, for display
+├── category_id: where the merchant's transactions go
+├── created_at: creation timestamp
+└── updated_at: last modification timestamp
+```
+
+**Invariants**:
+
+- At most one rule per merchant per user
+- The category is assignable (accessible, not a group)
+- Deleting a user category deletes the rules that point to it
 
 ## Value Objects
 
@@ -271,6 +298,17 @@ wallet.balance = wallet.initial_balance + SUM(transactions.amount)
 | BR6.2 | Category cannot be its own parent |
 | BR6.3 | Category cannot create circular references |
 | BR6.4 | Child category inherits nothing from parent (flat reporting) |
+
+### BR7: Categorization Rules
+
+| Rule | Description |
+| ------ | ------------- |
+| BR7.1 | An imported transaction's category: the user's merchant rule, else the MCC mapping, else Other → Uncategorized |
+| BR7.2 | A category the user picks (`manual`) is never changed by rules or the MCC |
+| BR7.3 | "Apply to similar" saves the merchant's rule and moves the merchant's other non-manual transactions to it |
+| BR7.4 | Every sync retries the user's transactions still waiting in Uncategorized (`default`) |
+| BR7.5 | Rules only ever touch the owner's transactions |
+| BR7.6 | Deleting a rule keeps the categories it set |
 
 ## Aggregations
 

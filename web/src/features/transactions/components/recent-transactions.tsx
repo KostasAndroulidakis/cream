@@ -1,51 +1,18 @@
 import { useQuery } from "@tanstack/react-query"
 
 import { FormAlert } from "@/components/form-alert"
+import { ListSkeleton } from "@/components/list-skeleton"
 import { categoriesQueryOptions } from "@/features/categories/api"
+import { categoriesById } from "@/features/categories/grouping"
+import { ChangeCategoryDialog } from "@/features/categorization/components/change-category-dialog"
 import { walletsQueryOptions } from "@/features/wallets/api"
 import { userMessage } from "@/lib/api/errors"
-import { formatShortDate } from "@/lib/dates"
-import { formatMoney } from "@/lib/money"
-import { cn } from "@/lib/utils"
-import { recentTransactionsQueryOptions, type Transaction } from "../api"
+import { recentTransactionsQueryOptions } from "../api"
+import { transactionLabel } from "../display"
+import { TransactionSummary } from "./transaction-summary"
 
 const RECENT_LIMIT = 10
 const SKELETON_ROWS = 4
-
-type RowProps = {
-  transaction: Transaction
-  categoryName: string
-  walletName: string
-  // Unknown only for the moment before wallets finish loading
-  currency?: string
-}
-
-function TransactionRow({ transaction, categoryName, walletName, currency }: RowProps) {
-  const isIncome = !transaction.amount.startsWith("-")
-  // Bank imports carry the merchant; manual entries carry the user's note
-  const title = transaction.counterparty || transaction.description || categoryName
-
-  return (
-    <li className="flex items-center gap-4 py-3">
-      <time
-        dateTime={transaction.occurred_at}
-        className="w-12 shrink-0 text-sm tabular-nums text-muted-foreground"
-      >
-        {formatShortDate(transaction.occurred_at)}
-      </time>
-      <div className="min-w-0 flex-1">
-        <p className="truncate font-medium">{title}</p>
-        <p className="truncate text-sm text-muted-foreground">
-          {title === categoryName ? walletName : `${categoryName}, ${walletName}`}
-        </p>
-      </div>
-      <p className={cn("font-medium tabular-nums", isIncome && "text-primary")}>
-        {isIncome && "+"}
-        {currency ? formatMoney(transaction.amount, currency) : transaction.amount}
-      </p>
-    </li>
-  )
-}
 
 export function RecentTransactions() {
   const transactionsQuery = useQuery(recentTransactionsQueryOptions(RECENT_LIMIT))
@@ -53,15 +20,7 @@ export function RecentTransactions() {
   const { data: wallets = [] } = useQuery(walletsQueryOptions)
 
   if (transactionsQuery.isPending) {
-    return (
-      <ul className="divide-y" aria-label="Loading transactions">
-        {Array.from({ length: SKELETON_ROWS }, (_, i) => (
-          <li key={i} className="h-16 animate-pulse py-3">
-            <div className="h-full rounded-lg bg-muted" />
-          </li>
-        ))}
-      </ul>
-    )
+    return <ListSkeleton rows={SKELETON_ROWS} label="Loading transactions" rowClassName="h-16" />
   }
   if (transactionsQuery.isError) return <FormAlert message={userMessage(transactionsQuery.error)} />
 
@@ -74,21 +33,28 @@ export function RecentTransactions() {
     )
   }
 
-  const categoryNames = new Map(categories.map((category) => [category.id, category.name]))
+  const categoryById = categoriesById(categories)
   const walletsById = new Map(wallets.map((wallet) => [wallet.id, wallet]))
 
   return (
     <ul className="divide-y">
       {transactions.map((transaction) => {
         const wallet = walletsById.get(transaction.wallet_id)
+        const categoryName = categoryById.get(transaction.category_id)?.name ?? ""
         return (
-          <TransactionRow
-            key={transaction.id}
-            transaction={transaction}
-            categoryName={categoryNames.get(transaction.category_id) ?? ""}
-            walletName={wallet?.name ?? ""}
-            currency={wallet?.currency}
-          />
+          <li key={transaction.id} className="py-3">
+            <TransactionSummary
+              transaction={transaction}
+              title={transactionLabel(transaction) ?? categoryName}
+              currency={wallet?.currency}
+              subtitle={
+                <>
+                  <ChangeCategoryDialog transaction={transaction} categoryName={categoryName} />
+                  {wallet && `, ${wallet.name}`}
+                </>
+              }
+            />
+          </li>
         )
       })}
     </ul>

@@ -8,7 +8,8 @@ import { NativeSelect } from "@/components/native-select"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { categoriesQueryOptions } from "@/features/categories/api"
-import { groupAssignableCategories } from "@/features/categories/grouping"
+import { CategorySelect } from "@/features/categories/components/category-select"
+import { groupAssignableCategories, NO_CATEGORY } from "@/features/categories/grouping"
 import { walletsQueryOptions } from "@/features/wallets/api"
 import { userMessage } from "@/lib/api/errors"
 import { dateInputToISO, todayInputValue } from "@/lib/dates"
@@ -18,7 +19,7 @@ import { KIND_LABELS, signedAmount } from "../kinds"
 import { createTransactionSchema, type CreateTransactionFormInput, type CreateTransactionValues } from "../schemas"
 import { KindToggle } from "./kind-toggle"
 
-const NO_SELECTION = ""
+const NO_WALLET = ""
 
 export function CreateTransactionForm({ onCreated }: { onCreated: () => void }) {
   const createTransaction = useCreateTransaction()
@@ -36,14 +37,14 @@ export function CreateTransactionForm({ onCreated }: { onCreated: () => void }) 
     defaultValues: {
       kind: "expense",
       amount: "",
-      category_id: NO_SELECTION,
-      wallet_id: wallets.length === 1 ? String(wallets[0].id) : NO_SELECTION,
+      category_id: NO_CATEGORY,
+      wallet_id: wallets.length === 1 ? String(wallets[0].id) : NO_WALLET,
       date: todayInputValue(),
       description: "",
     },
   })
   const kind = useWatch({ control, name: "kind" })
-  const categoryGroups = groupAssignableCategories(categories, kind)
+  const categoryGroups = groupAssignableCategories(categories, [kind])
 
   const onSubmit = handleSubmit(({ kind, amount, category_id, wallet_id, date, description }) =>
     createTransaction.mutate(
@@ -66,7 +67,7 @@ export function CreateTransactionForm({ onCreated }: { onCreated: () => void }) 
         value={kind}
         registration={register("kind", {
           // A category of the other kind would be invalid, so clear the choice
-          onChange: () => resetField("category_id", { defaultValue: NO_SELECTION }),
+          onChange: () => resetField("category_id", { defaultValue: NO_CATEGORY }),
         })}
       />
 
@@ -83,26 +84,18 @@ export function CreateTransactionForm({ onCreated }: { onCreated: () => void }) 
       </FormField>
 
       <FormField id="tx-category" label="Category" error={errors.category_id?.message}>
-        <NativeSelect id="tx-category" {...fieldA11y("tx-category", errors.category_id?.message)} {...register("category_id")}>
-          <option value={NO_SELECTION} disabled>
-            Pick a category
-          </option>
-          {categoryGroups.map((group) => (
-            <optgroup key={group.label} label={group.label}>
-              {group.categories.map((category) => (
-                <option key={category.id} value={category.id}>
-                  {category.name}
-                </option>
-              ))}
-            </optgroup>
-          ))}
-        </NativeSelect>
+        <CategorySelect
+          id="tx-category"
+          groups={categoryGroups}
+          {...fieldA11y("tx-category", errors.category_id?.message)}
+          {...register("category_id")}
+        />
       </FormField>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <FormField id="tx-wallet" label="Wallet" error={errors.wallet_id?.message}>
           <NativeSelect id="tx-wallet" {...fieldA11y("tx-wallet", errors.wallet_id?.message)} {...register("wallet_id")}>
-            <option value={NO_SELECTION} disabled>
+            <option value={NO_WALLET} disabled>
               Pick a wallet
             </option>
             {wallets.map((wallet) => (

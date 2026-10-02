@@ -43,6 +43,8 @@ See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for details and decisions.
 - Income and expense transactions with Monarch's default categories (groups → categories)
 - Transfer category type: moves money between your wallets without counting as income or expense
 - Bank sync: connect a bank, link accounts to wallets, import booked transactions without duplicates
+- Auto-categorization: merchant rules learned from your choices, then the bank's merchant category code (MCC);
+  the rest waits in a **Review** inbox
 - Expired sessions return to the login page automatically
 
 Progress and what's next: [`docs/PROGRESS.md`](docs/PROGRESS.md).
@@ -59,7 +61,7 @@ cream/
 │   │   ├── api/        # HTTP route handlers
 │   │   ├── models/     # SQLAlchemy ORM models (schema source of truth)
 │   │   ├── schemas/    # Pydantic request/response models
-│   │   └── services/   # Business logic (banking/ = Enable Banking client, connections, sync)
+│   │   └── services/   # Business logic (banking/ = Enable Banking; categorization/ = MCC map, rules, inbox)
 │   ├── migrations/     # Alembic migrations
 │   ├── scripts/        # export_openapi.py (feeds the web type generator)
 │   └── tests/          # pytest suite
@@ -67,7 +69,7 @@ cream/
     └── src/
         ├── lib/        # API client + generated types, query client, money/date/amount helpers
         ├── components/ # Shared UI (shadcn/ui in components/ui)
-        ├── features/   # auth, wallets, transactions, categories, bank, health
+        ├── features/   # auth, wallets, transactions, categories, categorization, bank, health
         └── routes/     # Pages, layout, guards, router
 ```
 
@@ -79,7 +81,8 @@ cream/
 ```text
 users ──1:N── wallets ──1:N── transactions ──N:1── categories (groups → categories, system + own)
   │              ▲
-  └──1:N── bank_connections ──1:N── bank_accounts ──(links to one wallet)
+  ├──1:N── bank_connections ──1:N── bank_accounts ──(links to one wallet)
+  └──1:N── merchant_rules ──N:1── categories
 ```
 
 | Table | Purpose |
@@ -87,7 +90,8 @@ users ──1:N── wallets ──1:N── transactions ──N:1── categ
 | users | Accounts and login |
 | wallets | Bank accounts, cash, digital wallets, stashes |
 | categories | System default groups/categories (stable `key`) and user categories |
-| transactions | Money in/out; imported ones carry `external_id`, counterparty and MCC |
+| transactions | Money in/out; imported ones carry `external_id`, counterparty, MCC and `merchant_key`; `category_source` says who chose the category |
+| merchant_rules | "This merchant always goes to this category", one per merchant per user |
 | bank_connections | One bank consent (PSD2, up to 180 days) |
 | bank_accounts | Accounts shared by a bank, linked to wallets |
 
@@ -151,7 +155,6 @@ users ──1:N── wallets ──1:N── transactions ──N:1── categ
 
 ## Future Features
 
-- Automatic categorization (MCC mapping + rules learned from your choices)
 - Edit/delete wallets and transactions; transfers between wallets from the UI
 - Scheduled background sync and consent renewal
 - Greek translation

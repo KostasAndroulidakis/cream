@@ -3,13 +3,17 @@ import { RefreshCw } from "lucide-react"
 import { FormAlert } from "@/components/form-alert"
 import { Button } from "@/components/ui/button"
 import { userMessage } from "@/lib/api/errors"
+import { pluralize } from "@/lib/text"
 import { cn } from "@/lib/utils"
 import { useSyncBanks, type SyncResult } from "../api"
 
 function summarize(results: SyncResult[]): string {
   if (results.length === 0) return "No linked accounts to sync yet."
   const imported = results.reduce((total, result) => total + result.imported, 0)
-  return imported === 0 ? "Up to date. No new transactions." : `Imported ${imported} new transaction${imported === 1 ? "" : "s"}.`
+  const categorized = results.reduce((total, result) => total + result.categorized, 0)
+  const parts = [imported === 0 ? "Up to date. No new transactions" : `Imported ${pluralize(imported, "new transaction")}`]
+  if (categorized > 0) parts.push(`${categorized} categorized automatically`)
+  return `${parts.join(", ")}.`
 }
 
 export function SyncButton() {

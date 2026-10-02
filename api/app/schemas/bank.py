@@ -60,6 +60,8 @@ class LinkAccountRequest(BaseModel):
 class SyncResultRead(BaseModel):
     bank_account_id: int
     imported: int
+    # New or previously uncategorized transactions that a rule or the MCC categorized
+    categorized: int
     error: str | None
 
     model_config = {"from_attributes": True}

@@ -7,6 +7,7 @@ import { RedirectIfAuthenticated, RequireAuth } from "./guards"
 import { HomePage } from "./home-page"
 import { LoginPage } from "./login-page"
 import { paths } from "./paths"
+import { ReviewPage } from "./review-page"
 import { SignupPage } from "./signup-page"
 
 export const router = createBrowserRouter([
@@ -17,6 +18,7 @@ export const router = createBrowserRouter([
         element: <AppLayout />,
         children: [
           { path: paths.home, element: <HomePage /> },
+          { path: paths.review, element: <ReviewPage /> },
           { path: paths.connections, element: <ConnectionsPage /> },
         ],
       },

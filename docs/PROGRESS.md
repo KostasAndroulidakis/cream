@@ -14,8 +14,8 @@ CREAM is built in **vertical slices**: each slice delivers one thing a user can 
 | 2 | Wallets | "I can see my wallets, their balances and my totals per currency" | ✅ |
 | 3 | Transactions | "I can record an expense or income in seconds" | ✅ |
 | 4 | Bank sync | "My bank transactions arrive in CREAM without typing them" | ✅ (Sandbox) |
-| 5 | Auto-categorization | "Imported transactions land in the right category" | 🔜 |
-| 6 | Manage records | "I can fix and remove wallets and transactions" | ⬜ |
+| 5 | Auto-categorization | "Imported transactions land in the right category" | ✅ |
+| 6 | Manage records | "I can fix and remove wallets and transactions" | 🔜 |
 | 7 | Transfers | "Moving money between my accounts isn't counted as spending" | ⬜ |
 | 8 | Always in sync | "Banks sync on their own and tell me when to reconnect" | ⬜ |
 | 9 | Insights | "I can see where my money went this month" | ⬜ |
@@ -66,21 +66,24 @@ CREAM is built in **vertical slices**: each slice delivers one thing a user can 
 | Web | Banks page: connect, callback, link to new/existing wallet, sync now with results |
 | Verified | Sandbox with Mock ASPSP (146 transactions imported, balance matches the bank) |
 
+### ✅ Slice 5: Auto-categorization
+
+| Layer | Delivered |
+| --- | --- |
+| DB | `merchant_rules`; transactions gain `merchant_key` (normalized merchant) and `category_source` (`manual` / `rule` / `mcc` / `default`); backfill of existing imports |
+| API | Import order: your merchant rule → MCC map (~1,100 codes, Plaid's taxonomy as a guide) → Uncategorized; every sync also retries transactions still waiting; `GET /transactions/uncategorized`, `POST /transactions/{id}/categorize` (optional rule + apply to similar), `GET/DELETE /rules` |
+| Rules | Never override a category you picked by hand; one rule per merchant (case and spacing ignored) |
+| Web | **Review** page (nav badge with the count): inbox with a quick picker and "Always use for …", merchant rules list; change any category from Recent transactions (✨ marks automatic ones); sync summary shows how many were categorized |
+| Verified | Migration on PostgreSQL (upgrade, backfill, downgrade, `alembic check`); UI at desktop and phone widths |
+
 ---
 
 ## Next
 
-### 🔜 Slice 5: Auto-categorization
-
-- Map merchant category codes (MCC) to CREAM categories, using Plaid's taxonomy as a guide
-- Change a transaction's category; offer to apply it to similar transactions (merchant rules)
-- Rules run on every sync, so categorized merchants stay categorized
-- Web: "Uncategorized" inbox to review imported transactions quickly
+### 🔜 Slice 6: Manage records
+Edit and delete wallets and transactions; hide default categories you don't use.
 
 ## Planned
-
-### ⬜ Slice 6: Manage records
-Edit and delete wallets and transactions; hide default categories you don't use.
 
 ### ⬜ Slice 7: Transfers
 Record a transfer between two wallets as one action; detect and pair matching in/out bank transactions.
@@ -106,6 +109,9 @@ CSV import for older history and for days when a bank connection is down.
 - No session refresh: sessions end after `CREAM_ACCESS_TOKEN_EXPIRE_MINUTES`
 - Tests run on SQLite; Postgres-specific behavior (e.g. NUMERIC precision) is not covered by tests
 - HTTPS and deployment configuration not set up yet
+- MCC can't tell coffee shops from fast food (both 5814): rules fix it after the first choice
+- Merchant rules match the bank's counterparty, or its text when there is none; texts with one-off details
+  (card numbers, dates) never repeat, so "Always use for" starts unticked for them
 
 ## Requirements Coverage
 
@@ -113,7 +119,7 @@ CSV import for older history and for days when a bank connection is down.
 | --- | --- | --- |
 | FR1 Users | ✅ | Signup, login, logout, `/me`, data isolation |
 | FR2 Wallets | ✅ | CRUD in API; edit/delete in UI comes in Slice 6 |
-| FR3 Categories | ✅ | System defaults + own categories, hierarchy, cycle detection |
+| FR3 Categories | ✅ | System defaults + own categories, hierarchy, cycle detection; auto-categorization (rules, MCC) |
 | FR4 Transactions | ✅ | CRUD in API; edit/delete in UI comes in Slice 6 |
 | FR5 Statistics | ✅ | Per-currency statistics pending (Slice 9) |
 | FR6 Reports | ✅ (API) | Reports UI comes in Slice 9 |

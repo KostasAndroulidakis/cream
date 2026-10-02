@@ -33,9 +33,13 @@ All endpoints except `/health`, `/auth/signup`, `/auth/login` and `/auth/logout`
 | `DELETE /api/v1/categories/{id}` | Delete category |
 | `GET /api/v1/transactions` | List transactions |
 | `POST /api/v1/transactions` | Create transaction |
+| `GET /api/v1/transactions/uncategorized` | Review inbox: transactions still in Uncategorized |
 | `GET /api/v1/transactions/{id}` | Get transaction |
 | `PATCH /api/v1/transactions/{id}` | Update transaction |
+| `POST /api/v1/transactions/{id}/categorize` | Set the category, optionally as a merchant rule |
 | `DELETE /api/v1/transactions/{id}` | Delete transaction |
+| `GET /api/v1/rules` | List merchant rules |
+| `DELETE /api/v1/rules/{id}` | Delete a merchant rule |
 | `GET /api/v1/statistics` | Aggregated statistics |
 | `GET /api/v1/statistics/report` | Period reports |
 
@@ -404,14 +408,23 @@ List transactions for the user's wallets, newest first.
     "id": 1,
     "wallet_id": 1,
     "category_id": 2,
+    "category_source": "mcc",
     "amount": "-45.5000",
-    "description": "Weekly groceries",
-    "occurred_at": "2025-01-15T14:30:00Z",
-    "created_at": "2025-01-15T14:35:00Z",
-    "updated_at": "2025-01-15T14:35:00Z"
+    "description": "Card payment",
+    "occurred_at": "2025-01-15T12:00:00Z",
+    "counterparty": "SKLAVENITIS",
+    "merchant_category_code": "5411",
+    "merchant_key": "sklavenitis",
+    "is_imported": true,
+    "created_at": "2025-01-15T14:35:00Z"
   }
 ]
 ```
+
+`category_source` says who chose the category: `manual` (the user), `rule` (a merchant rule), `mcc` (the
+bank's merchant category code) or `default` (nothing matched; waiting in the review inbox). Automatic
+categorization never changes a `manual` category. `merchant_key` is the normalized merchant of an imported
+transaction (counterparty, else its text; case and spacing ignored), or `null` when there is none.
 
 **Errors**:
 
@@ -454,6 +467,20 @@ Create a new transaction.
 - `403`: Access denied (not owner of wallet)
 - `422`: Validation error (amount zero, future date, category is a group, etc.)
 
+#### GET /transactions/uncategorized
+
+The review inbox: the user's transactions in **Other → Uncategorized**, newest first.
+
+**Query Parameters**: `limit` (default 50, max 200), `offset` (default 0)
+
+**Response** `200 OK`:
+
+```json
+{ "total": 12, "items": [ /* transaction objects */ ] }
+```
+
+`total` counts every uncategorized transaction, not just this page.
+
 #### GET /transactions/{id}
 
 Get a specific transaction.
@@ -480,13 +507,42 @@ Update a transaction.
 }
 ```
 
-**Response** `200 OK`: Updated transaction object
+**Response** `200 OK`: Updated transaction object. Changing `category_id` makes `category_source` `manual`.
 
 **Errors**:
 
 - `404`: Transaction not found
 - `403`: Access denied
 - `422`: Validation error
+
+#### POST /transactions/{id}/categorize
+
+Set the category the user picked (`category_source` becomes `manual`). With `apply_to_similar`, also save
+a merchant rule and move the merchant's other transactions there, except those the user categorized by hand.
+Future imports from the merchant follow the rule.
+
+**Request**:
+
+```json
+{ "category_id": 7, "apply_to_similar": true }
+```
+
+**Response** `200 OK`:
+
+```json
+{
+  "transaction": { /* updated transaction */ },
+  "rule": { "id": 1, "merchant_name": "SKLAVENITIS", "category_id": 7, "created_at": "…", "updated_at": "…" },
+  "similar_updated": 4
+}
+```
+
+`rule` is `null` without `apply_to_similar`. One rule per merchant: categorizing again updates it.
+
+**Errors**:
+
+- `404` / `403`: Transaction or category not found / not accessible
+- `422`: Category is a group, or `apply_to_similar` on a transaction without a merchant
 
 #### DELETE /transactions/{id}
 
@@ -498,6 +554,17 @@ Delete a transaction.
 
 - `404`: Transaction not found
 - `403`: Access denied
+
+---
+
+### Merchant Rules
+
+"Transactions from this merchant go to this category", created with `POST /transactions/{id}/categorize`.
+
+| Endpoint | Description |
+| --- | --- |
+| `GET /rules` | The user's rules, by merchant: `[{id, merchant_name, category_id, created_at, updated_at}]` |
+| `DELETE /rules/{id}` | Forget a rule (`204`). Transactions keep their categories; future imports fall back to the MCC. `404` for another user's rule |
 
 ---
 
@@ -514,7 +581,7 @@ Optional read-only bank sync through Enable Banking (PSD2). Requires `CREAM_ENAB
 | `GET /bank/connections` | Connections (active/expired) with their accounts |
 | `DELETE /bank/connections/{id}` | Disconnect (revokes consent); wallets and imported transactions stay |
 | `POST /bank/accounts/{id}/link` | Link an account to `{wallet_id}`, or to a new wallet when `null` |
-| `POST /bank/sync` | Import new booked transactions of all linked accounts → per-account `{imported, error}` |
+| `POST /bank/sync` | Import new booked transactions of all linked accounts → per-account `{imported, categorized, error}` |
 
 **Sync rules**:
 
@@ -522,7 +589,9 @@ Optional read-only bank sync through Enable Banking (PSD2). Requires `CREAM_ENAB
 - Each bank transaction is imported at most once per wallet (`external_id`): the bank's `transaction_id`
   when present, otherwise a fingerprint (reference, date, amount, text). `entry_reference` alone is not
   unique (banks reuse it), and identical same-day transactions are numbered (`#2`, `#3`)
-- Imported transactions land in **Other → Uncategorized** with `counterparty` and `merchant_category_code`
+- Imported transactions get a category automatically: the user's merchant rule, else the MCC mapping
+  (Plaid's taxonomy as a guide), else **Other → Uncategorized** (the review inbox). Every sync also retries
+  transactions still waiting there; `categorized` counts both
 - First sync reads 90 days back and sets the wallet's initial balance so it matches the bank; later syncs
   re-read the last 3 days to catch late bookings
 - The `state` parameter is single-use and bound to the user who started the connection (CSRF protection)

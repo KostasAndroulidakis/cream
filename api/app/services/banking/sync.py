@@ -10,26 +10,39 @@ from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.database import as_utc
-from app.models import BankAccount, BankConnection, Category, ConnectionStatus, Transaction
+from app.models import BankAccount, BankConnection, CategorySource, ConnectionStatus, Transaction
 from app.services.banking.client import BankClient
-from app.services.banking.mapping import assign_external_ids, parse_transaction, pick_balance
-
-# Imported transactions land here until the user (or a rule) categorizes them
-UNCATEGORIZED_KEY = "other.uncategorized"
+from app.services.banking.mapping import ImportedTransaction, assign_external_ids, parse_transaction, pick_balance
+from app.services.categorization.auto import AutoCategorizer
+from app.services.categorization.merchants import merchant_key
 
 
 @dataclass
 class SyncResult:
     bank_account_id: int
     imported: int = 0
+    # Transactions (new or waiting in the inbox) that a rule or the MCC put in a category
+    categorized: int = 0
     error: str | None = None
 
 
-def _uncategorized_id(db: Session) -> int:
-    category_id = db.scalar(select(Category.id).where(Category.key == UNCATEGORIZED_KEY))
-    if category_id is None:
-        raise RuntimeError(f"System category '{UNCATEGORIZED_KEY}' is missing; run the migrations")
-    return category_id
+def _new_transaction(
+    wallet_id: int, external_id: str, parsed: ImportedTransaction, categorizer: AutoCategorizer
+) -> Transaction:
+    key = merchant_key(parsed.counterparty, parsed.description)
+    decision = categorizer.decide(key, parsed.merchant_category_code)
+    return Transaction(
+        wallet_id=wallet_id,
+        category_id=decision.category_id,
+        category_source=decision.source,
+        amount=parsed.amount,
+        occurred_at=parsed.occurred_at,
+        description=parsed.description,
+        counterparty=parsed.counterparty,
+        merchant_category_code=parsed.merchant_category_code,
+        merchant_key=key,
+        external_id=external_id,
+    )
 
 
 def _sync_start_date(account: BankAccount, today: date) -> date:
@@ -57,8 +70,8 @@ def _consent_expired(connection: BankConnection, now: datetime) -> bool:
     return connection.valid_until is not None and as_utc(connection.valid_until) <= now
 
 
-def sync_account(account: BankAccount, client: BankClient, db: Session) -> SyncResult:
-    """Import new booked transactions of one linked account."""
+def sync_account(account: BankAccount, client: BankClient, categorizer: AutoCategorizer, db: Session) -> SyncResult:
+    """Import new booked transactions of one linked account, categorizing them on the way in."""
     result = SyncResult(bank_account_id=account.id)
     now = datetime.now(timezone.utc)
     connection = account.connection
@@ -79,34 +92,25 @@ def sync_account(account: BankAccount, client: BankClient, db: Session) -> SyncR
             )
         )
     )
-    category_id = _uncategorized_id(db)
-
     try:
         raw_transactions = client.iter_transactions(account.uid, _sync_start_date(account, now.date()))
         booked = [parsed for raw in raw_transactions if (parsed := parse_transaction(raw)) is not None]
         for external_id, parsed in assign_external_ids(booked):
             if external_id in known_ids:
                 continue
-            db.add(
-                Transaction(
-                    wallet_id=account.wallet_id,
-                    category_id=category_id,
-                    amount=parsed.amount,
-                    occurred_at=parsed.occurred_at,
-                    description=parsed.description,
-                    counterparty=parsed.counterparty,
-                    merchant_category_code=parsed.merchant_category_code,
-                    external_id=external_id,
-                )
-            )
+            transaction = _new_transaction(account.wallet_id, external_id, parsed, categorizer)
+            db.add(transaction)
             result.imported += 1
+            if transaction.category_source is not CategorySource.DEFAULT:
+                result.categorized += 1
         db.flush()
+        result.categorized += categorizer.retry_uncategorized(account.wallet_id, db)
         if is_first_sync:
             _reconcile_initial_balance(account, client, db)
     except HTTPException as exc:
         # One failing bank must not lose another bank's progress: roll back only this account
         db.rollback()
-        result.imported = 0
+        result.imported = result.categorized = 0
         result.error = str(exc.detail)
         return result
 
@@ -128,4 +132,7 @@ def sync_user_accounts(user_id: int, client: BankClient, db: Session) -> list[Sy
         .order_by(BankAccount.id)
         .all()
     )
-    return [sync_account(account, client, db) for account in accounts]
+    if not accounts:
+        return []
+    categorizer = AutoCategorizer.for_user(user_id, db)
+    return [sync_account(account, client, categorizer, db) for account in accounts]

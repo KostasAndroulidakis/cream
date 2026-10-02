@@ -28,7 +28,8 @@ uv run pytest tests/test_auth.py
 | Health | 3 | API and database availability |
 | Category rules | 9 | Groups, transfer type, parent type, pagination |
 | Bank sync | 22 | Mapping, connections, linking, sync, duplicates, expiry |
-| **Total** | **174** | |
+| Categorization | 21 | Merchant keys, MCC map vs. seeded catalog, rule → MCC → inbox order, apply to similar, manual choices kept, rules ownership |
+| **Total** | **195** | |
 
 ## Validation Rules Tested
 
@@ -49,11 +50,15 @@ uv run pytest tests/test_auth.py
 
 ```text
 api/tests/
-├── conftest.py          # Fixtures (test DB, client, auth)
+├── conftest.py          # Fixtures (test DB, client, auth, fake bank, Uncategorized)
 ├── test_auth.py         # Authentication endpoints
 ├── test_wallets.py      # Wallet CRUD
 ├── test_categories.py   # Category CRUD + hierarchy
 ├── test_transactions.py # Transaction CRUD
 ├── test_statistics.py   # Statistics + reports
-└── test_validation.py   # Business rule validation
+├── test_validation.py   # Business rule validation
+├── test_category_rules.py # Groups, transfer type, parent type
+├── test_bank.py         # Bank connections and sync
+├── test_categorization.py # Auto-categorization, rules, review inbox
+└── bank_fakes.py        # Fake Open Banking provider + connect/sync helpers
 ```

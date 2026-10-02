@@ -3,6 +3,8 @@ import { queryOptions, useMutation, useQueryClient } from "@tanstack/react-query
 import { api } from "@/lib/api/client"
 import { toApiError } from "@/lib/api/errors"
 import type { Schemas } from "@/lib/api/types"
+import { TRANSACTIONS_KEY } from "@/features/transactions/api"
+import { WALLETS_KEY } from "@/features/wallets/api"
 
 export type Aspsp = Schemas["AspspRead"]
 export type BankConnection = Schemas["BankConnectionRead"]
@@ -11,7 +13,7 @@ export type SyncResult = Schemas["SyncResultRead"]
 
 const BANK_KEY = ["bank"] as const
 // A sync or a new link changes wallets and transactions too
-const DEPENDENT_KEYS = [["wallets"], ["transactions"]] as const
+const DEPENDENT_KEYS = [WALLETS_KEY, TRANSACTIONS_KEY] as const
 
 export function aspspsQueryOptions(country: string) {
   return queryOptions({

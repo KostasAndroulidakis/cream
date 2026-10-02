@@ -215,7 +215,8 @@ cream/
 │   │   │   ├── auth.py, session.py      # Passwords, JWT, session cookie
 │   │   │   ├── authorization.py         # Ownership and access checks
 │   │   │   ├── wallets.py, statistics.py, validation.py, health.py
-│   │   │   └── banking/                 # Enable Banking: client, mapping, connections, sync
+│   │   │   ├── banking/                 # Enable Banking: client, mapping, connections, sync
+│   │   │   └── categorization/          # Merchant keys, MCC map, auto-categorizer, rules, review inbox
 │   │   ├── config.py       # Settings from the root .env
 │   │   ├── database.py     # Engine, session, Base (global type rules)
 │   │   └── main.py         # FastAPI app entry point
@@ -228,7 +229,7 @@ cream/
     ├── src/
     │   ├── lib/            # API client + generated schema, query client, money/date/amount helpers
     │   ├── components/     # Shared UI; components/ui = shadcn/ui
-    │   ├── features/       # auth, wallets, transactions, categories, bank, health
+    │   ├── features/       # auth, wallets, transactions, categories, categorization, bank, health
     │   └── routes/         # Pages, app layout, auth guards, router
     └── package.json
 ```
@@ -359,6 +360,25 @@ owner's own accounts. Manual entry stays first-class.
   same-day repeats numbered (bank `entry_reference` values are reused and are not unique)
 - The first sync sets the wallet's initial balance so CREAM matches the bank exactly
 - The provider's private key stays outside the repository (`CREAM_ENABLEBANKING_KEY_PATH`)
+
+### ADR9: Rule-First Auto-Categorization with a Category Source
+
+**Decision**: Categorize imports in a fixed order (the user's merchant rule, then a static MCC map, then
+Uncategorized) and record on every transaction who chose its category (`manual` / `rule` / `mcc` / `default`).
+
+**Rationale**:
+
+- The user's own choices are the strongest signal; MCC is a good generic fallback (Plaid's taxonomy as a guide)
+- Knowing the source lets automation fix its own guesses without ever overwriting a deliberate choice
+- Deterministic and explainable: no model to train, the same input always lands in the same category
+
+**Consequences**:
+
+- Merchants are matched by a normalized key (counterparty, else the bank text), stored on the transaction
+- The MCC map lives in code (`services/categorization/mcc.py`) and maps to category keys; a test checks
+  every key exists in the seeded catalog
+- Each sync retries `default` transactions, so a better map or a new rule also fixes older imports
+- The Uncategorized system category doubles as the review inbox
 
 ## Security Architecture
 
