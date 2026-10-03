@@ -14,11 +14,13 @@ import { ALL_CATEGORY_TYPES, categoriesById, groupAssignableCategories } from "@
 import { walletsQueryOptions } from "@/features/wallets/api"
 import { WalletsSummary } from "@/features/wallets/components/wallets-summary"
 import { userMessage } from "@/lib/api/errors"
+import { notifySuccess } from "@/lib/notify"
 import { todayInputValue } from "@/lib/dates"
 import { pluralize } from "@/lib/text"
 import { useBulkUpdateTransactions, type Transaction } from "../api"
 import {
   BULK_FIELD_LABELS,
+  bulkUpdateNotice,
   draftToChanges,
   EMPTY_DRAFT,
   hasChanges,
@@ -64,9 +66,11 @@ function BulkEditForm({ transactions, onCancel, onSaved }: BulkEditFormProps) {
     bulkUpdate.mutate(
       { transactionIds: transactions.map((transaction) => transaction.id), changes },
       {
-        onSuccess: () => {
+        onSuccess: ({ affected }) => {
           setIsConfirming(false)
           onSaved()
+          const { title, description } = bulkUpdateNotice(affected)
+          notifySuccess(title, description)
         },
       },
     )

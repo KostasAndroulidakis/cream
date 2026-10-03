@@ -1,6 +1,7 @@
 import type { SummaryRow } from "@/components/confirm-changes-dialog"
 import { NO_CATEGORY } from "@/features/categories/grouping"
 import { dateInputToISO, formatLongDate, localDayKey } from "@/lib/dates"
+import { pluralize } from "@/lib/text"
 import type { BulkChanges } from "./api"
 
 /** The value of a bulk-edit field the user hasn't touched. */
@@ -72,4 +73,12 @@ export function summarizeChanges(
     rows.push({ label: BULK_FIELD_LABELS.visibility, value: choice?.label ?? "" })
   }
   return rows
+}
+
+/** The notification after a bulk edit, counting what the API actually changed. */
+export function bulkUpdateNotice(affected: number): { title: string; description: string } {
+  return {
+    title: "Transactions updated successfully",
+    description: `${pluralize(affected, "transaction")} ${affected === 1 ? "was" : "were"} affected.`,
+  }
 }
