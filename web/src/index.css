@@ -71,6 +71,13 @@
     --positive: oklch(0.527 0.154 150.069);
     /* The single-series chart color (net worth): the brand green, lighter in dark mode */
     --chart-accent: #1f4d3a;
+    /* Categorical slots in fixed order (blue, orange, aqua, yellow, magenta, green), validated for CVD */
+    --series-1: #2a78d6;
+    --series-2: #eb6834;
+    --series-3: #1baf7a;
+    --series-4: #eda100;
+    --series-5: #e87ba4;
+    --series-6: #008300;
     --border: oklch(0.922 0 0);
     --input: oklch(0.922 0 0);
     --ring: #1f4d3a;
@@ -112,6 +119,12 @@
     --destructive: oklch(0.704 0.191 22.216);
     --positive: oklch(0.723 0.192 149.579);
     --chart-accent: oklch(0.723 0.192 149.579);
+    --series-1: #3987e5;
+    --series-2: #d95926;
+    --series-3: #199e70;
+    --series-4: #c98500;
+    --series-5: #d55181;
+    --series-6: #008300;
     --border: oklch(1 0 0 / 10%);
     --input: oklch(1 0 0 / 15%);
     --ring: oklch(0.556 0 0);

@@ -37,15 +37,25 @@ export function subtractAmounts(to: string, from: string): string {
   return sumAmounts([to, negate(from)])
 }
 
+// part / whole as a percent to one decimal ("30.7"), rounded half away from zero; whole is never zero
+function percentText(part: bigint, whole: bigint): string {
+  const size = whole < 0n ? -whole : whole
+  const sign = part < 0n ? -1n : 1n
+  const tenths = (2n * part * 1000n + sign * size) / (2n * size)
+  const absolute = tenths < 0n ? -tenths : tenths
+  return `${tenths < 0n ? "-" : ""}${absolute / 10n}.${absolute % 10n}`
+}
+
 /** The change from one amount to another, as a percent of the first's size, to one decimal ("30.7"). Null from zero. */
 export function percentChange(from: string, to: string): string | null {
   const base = toUnits(from)
-  if (base === 0n) return null
-  const size = base < 0n ? -base : base
-  const change = toUnits(to) - base
-  // Tenths of a percent, rounded half away from zero
-  const sign = change < 0n ? -1n : 1n
-  const tenths = (2n * change * 1000n + sign * size) / (2n * size)
-  const absolute = tenths < 0n ? -tenths : tenths
-  return `${tenths < 0n ? "-" : ""}${absolute / 10n}.${absolute % 10n}`
+  return base === 0n ? null : percentText(toUnits(to) - base, base)
+}
+
+/** How much of a whole a part is, by size, to one decimal ("12.5"); null when the whole is zero. */
+export function percentOf(part: string, whole: string): string | null {
+  const total = toUnits(whole)
+  if (total === 0n) return null
+  const units = toUnits(part)
+  return percentText(units < 0n ? -units : units, total)
 }
