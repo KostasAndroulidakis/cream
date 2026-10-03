@@ -3,9 +3,11 @@
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 
+import httpx2 as httpx
 import pytest
 
 from app.config import settings
+from app.services.banking.client import _error_reason
 from app.services.banking.mapping import assign_external_ids, parse_transaction, pick_balance
 from tests.conftest import SIGNUP_URL
 from tests.bank_fakes import BANK_URL, connect, connect_and_link, raw_transaction, sync
@@ -50,7 +52,24 @@ class TestMapping:
             {"balance_type": "ITAV", "balance_amount": {"amount": "90"}},
             {"balance_type": "CLBD", "balance_amount": {"amount": "100"}},
         ]
-        assert pick_balance(balances) == Decimal("100")
+        assert pick_balance(balances, "EUR") == Decimal("100")
+
+    def test_balance_in_the_accounts_currency_only(self):
+        # A multi-currency account (PayPal) reports one balance per currency
+        balances = [
+            {"balance_type": "CLBD", "balance_amount": {"currency": "USD", "amount": "70"}},
+            {"balance_type": "ITAV", "balance_amount": {"currency": "EUR", "amount": "25"}},
+        ]
+        assert pick_balance(balances, "EUR") == Decimal("25")
+
+
+class TestProviderErrors:
+    def test_reason_from_the_providers_message(self):
+        response = httpx.Response(422, json={"code": 422, "message": "Wrong transactions period requested"})
+        assert _error_reason(response) == "Wrong transactions period requested"
+
+    def test_no_reason_when_the_body_isnt_json(self):
+        assert _error_reason(httpx.Response(502, text="Bad gateway")) is None
 
 
 class TestConnections:
@@ -317,6 +336,26 @@ class TestLinkCurrency:
 
     def test_eur_account_can_be_linked(self, client, auth_headers, bank, uncategorized):
         assert self._account(client, auth_headers, bank, "EUR")["can_link"] is True
+
+    def test_multi_currency_account_is_kept_in_eur(self, client, auth_headers, bank, uncategorized):
+        # PayPal reports XXX ("no currency") for an account holding several currencies
+        account = self._account(client, auth_headers, bank, "XXX")
+
+        assert (account["currency"], account["can_link"]) == ("EUR", True)
+
+    def test_multi_currency_account_imports_its_eur_transactions_only(
+        self, client, auth_headers, bank, uncategorized
+    ):
+        bank.accounts_currency = "XXX"
+        bank.transactions = [
+            raw_transaction("eur", "10.00"),
+            {**raw_transaction("usd", "99.00"), "transaction_amount": {"currency": "USD", "amount": "99.00"}},
+        ]
+        connect_and_link(client, auth_headers, bank)
+
+        [result] = sync(client, auth_headers)
+
+        assert result["imported"] == 1
 
     def test_existing_account_must_share_the_currency(self, client, auth_headers, bank, uncategorized, db_session):
         from app.models import Wallet

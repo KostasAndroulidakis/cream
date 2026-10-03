@@ -1,5 +1,6 @@
 """Thin client for the Enable Banking API (https://enablebanking.com/docs/api/reference/)."""
 
+import logging
 import time
 from collections.abc import Iterator
 from datetime import date, datetime
@@ -20,6 +21,20 @@ JWT_LIFETIME_SECONDS = 3600
 REQUEST_TIMEOUT_SECONDS = 30
 
 Json = dict[str, Any]
+
+logger = logging.getLogger(__name__)
+
+
+def _error_reason(response: httpx.Response) -> str | None:
+    """The provider's own explanation of an error (its `message`, else `error`), if the body has one."""
+    try:
+        body = response.json()
+    except ValueError:
+        return None
+    if not isinstance(body, dict):
+        return None
+    reason = body.get("message") or body.get("error")
+    return str(reason) if reason else None
 
 
 class BankProviderError(HTTPException):
@@ -66,7 +81,9 @@ class EnableBankingClient:
         except httpx.HTTPError as exc:
             raise BankProviderError() from exc
         if response.is_error:
-            raise BankProviderError(f"Bank provider error ({response.status_code})")
+            reason = _error_reason(response)
+            logger.warning("Enable Banking %s %s failed (%s): %s", method, path, response.status_code, response.text)
+            raise BankProviderError(f"Bank provider error ({response.status_code}){f': {reason}' if reason else ''}")
         return response.json() if response.content else {}
 
     def list_aspsps(self, country: str) -> list[Json]:

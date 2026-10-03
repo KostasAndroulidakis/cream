@@ -734,6 +734,8 @@ Optional read-only bank sync through Enable Banking (PSD2). Requires `CREAM_ENAB
 **Sync rules**:
 
 - Only booked transactions are imported (pending ones can still change)
+- A multi-currency account (PayPal reports its currency as `XXX`) is kept in EUR: sync imports its EUR
+  transactions and EUR balance only, and leaves the other currencies out
 - Each bank transaction is imported at most once per wallet (`external_id`): the bank's `transaction_id`
   when present, otherwise a fingerprint (reference, date, amount, text). `entry_reference` alone is not
   unique (banks reuse it), and identical same-day transactions are numbered (`#2`, `#3`)

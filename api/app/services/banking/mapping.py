@@ -26,6 +26,8 @@ class ImportedTransaction:
     description: str | None
     counterparty: str | None
     merchant_category_code: str | None
+    # As the bank reports it; a multi-currency account (PayPal) mixes several
+    currency: str | None
 
 
 def _signed_amount(raw: Json) -> Decimal:
@@ -80,6 +82,7 @@ def parse_transaction(raw: Json) -> ImportedTransaction | None:
         description=description,
         counterparty=_counterparty(raw, amount),
         merchant_category_code=mcc if mcc and len(mcc) == MCC_LENGTH else None,
+        currency=raw["transaction_amount"].get("currency"),
     )
 
 
@@ -99,8 +102,12 @@ def assign_external_ids(transactions: list[ImportedTransaction]) -> list[tuple[s
     return result
 
 
-def pick_balance(balances: list[Json]) -> Decimal | None:
-    """The account's current balance, preferring booked balance types."""
+def pick_balance(balances: list[Json], currency: str) -> Decimal | None:
+    """The account's current balance in a currency, preferring booked balance types.
+
+    A multi-currency account (PayPal) reports one balance per currency; only the account's own counts.
+    """
+    balances = [b for b in balances if b["balance_amount"].get("currency") in (None, currency)]
     by_type = {balance.get("balance_type"): balance for balance in balances}
     for balance_type in BALANCE_TYPE_PRIORITY:
         if balance_type in by_type:

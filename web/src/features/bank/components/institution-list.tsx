@@ -138,6 +138,12 @@ function InstitutionCard({ connection, wallets }: { connection: BankConnection; 
           <DisconnectMenu connection={connection} />
         </div>
       </header>
+      {connection.status === "active" && connection.accounts.length === 0 && (
+        <p className="pt-2 text-sm text-muted-foreground">
+          {connection.aspsp_name} didn't share any accounts with CREAM. Disconnect it from ⋯ and connect again,
+          choosing the accounts to share if {connection.aspsp_name} asks.
+        </p>
+      )}
       {connection.accounts.length > 0 && (
         <ul className="divide-y divide-border/60">
           {connection.accounts.map((account) => (

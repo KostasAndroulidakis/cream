@@ -1,5 +1,6 @@
 """Connecting banks: start the bank login, finish it, and link accounts to wallets."""
 
+import logging
 import secrets
 from datetime import datetime, timedelta, timezone
 
@@ -9,10 +10,12 @@ from sqlalchemy.orm import Session
 from app.config import settings
 from app.models import BankAccount, BankConnection, ConnectionStatus, Wallet, WalletType
 from app.services.account_types import resolve_subtype
-from app.services.currencies import DEFAULT_CURRENCY, UnsupportedCurrencyError, ensure_supported
+from app.services.currencies import UnsupportedCurrencyError, bank_account_currency, ensure_supported
 from app.services.authorization import NotFoundError, get_wallet
 from app.services.banking.client import BankClient
 from app.services.banking.mapping import account_display_name, iban_last4
+
+logger = logging.getLogger(__name__)
 
 STATE_BYTES = 32
 # What a linked bank account is when CREAM creates an account for it
@@ -93,6 +96,14 @@ def complete_connection(user_id: int, state: str, code: str, client: BankClient,
         raise InvalidAuthorizationError()
 
     session = client.create_session(code)
+    # Some banks authorize without sharing any account (seen with PayPal): worth knowing when it happens
+    if not session.get("accounts"):
+        logger.warning(
+            "Enable Banking session for %s (%s) shared no accounts: %s",
+            connection.aspsp_name,
+            connection.aspsp_country,
+            {key: value for key, value in session.items() if key != "session_id"},
+        )
     connection.session_id = session["session_id"]
     connection.valid_until = datetime.fromisoformat(session["access"]["valid_until"])
     connection.status = ConnectionStatus.ACTIVE
@@ -102,7 +113,7 @@ def complete_connection(user_id: int, state: str, code: str, client: BankClient,
             BankAccount(
                 uid=raw["uid"],
                 name=account_display_name(raw),
-                currency=raw.get("currency") or DEFAULT_CURRENCY,
+                currency=bank_account_currency(raw.get("currency")),
                 iban_last4=iban_last4(raw),
             )
         )

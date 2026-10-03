@@ -81,7 +81,7 @@ def _reconcile_initial_balance(account: BankAccount, client: BankClient, db: Ses
     Only on the first sync: history before the imported window is unknown, so the
     starting balance absorbs it. Afterwards balances move only through transactions.
     """
-    bank_balance = pick_balance(client.get_balances(account.uid))
+    bank_balance = pick_balance(client.get_balances(account.uid), account.wallet.currency)
     if bank_balance is None:
         return
     # "Invert account balance": the bank reports this account with the opposite sign
@@ -121,7 +121,13 @@ def sync_account(account: BankAccount, client: BankClient, importer: Importer, d
     )
     try:
         raw_transactions = client.iter_transactions(account.uid, _sync_start_date(account, now.date()))
-        booked = [parsed for raw in raw_transactions if (parsed := parse_transaction(raw)) is not None]
+        currency = account.wallet.currency
+        # Booked ones in the account's currency: other currencies of a multi-currency account stay out
+        booked = [
+            parsed
+            for raw in raw_transactions
+            if (parsed := parse_transaction(raw)) is not None and parsed.currency in (None, currency)
+        ]
         for external_id, parsed in assign_external_ids(booked):
             if external_id in known_ids:
                 continue
