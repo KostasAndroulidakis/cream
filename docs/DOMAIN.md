@@ -40,6 +40,19 @@ User
 - Email must be unique across all users
 - Password must be stored as a secure hash, never plaintext
 
+### User Preferences
+
+How the app behaves for one user (Settings › Preferences). A user without saved preferences gets the defaults.
+
+```text
+UserPreferences
+├── user_id: owner (one row per user, created when a preference first changes)
+├── review_new_transactions: every new bank transaction needs review (default off)
+├── review_uncategorized_transactions: new bank transactions left in Uncategorized need review (default on)
+├── created_at: creation timestamp
+└── updated_at: last modification timestamp
+```
+
 ### Wallet
 
 A container representing a source or destination of money.
@@ -133,6 +146,7 @@ Transaction
 ├── merchant_key: normalized merchant (imports), what merchant rules match on
 ├── merchant_id: the merchant the user sees (optional)
 ├── is_hidden: left out of lists and statistics, still part of the balance
+├── needs_review: waiting in the review inbox (independent of category and hiding)
 ├── created_at: record creation timestamp
 └── updated_at: last modification timestamp
 ```
@@ -330,6 +344,14 @@ wallet.balance = wallet.initial_balance + SUM(transactions.amount)
 | BR7.4 | Every sync retries the user's transactions still waiting in Uncategorized (`default`) |
 | BR7.5 | Rules only ever touch the owner's transactions |
 | BR7.6 | Deleting a rule keeps the categories it set |
+
+### BR8: Review Rules
+
+| Rule | Description |
+| ------ | ------------- |
+| BR8.1 | A new bank transaction needs review if the user reviews every new one, or it was left in Uncategorized and the user reviews those |
+| BR8.2 | Only the user changes the review status after import: choosing a category or a rule categorizing it doesn't |
+| BR8.3 | The review inbox lists visible transactions that need review; hiding one keeps its status |
 
 ## Aggregations
 

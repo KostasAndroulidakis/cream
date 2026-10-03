@@ -12,33 +12,40 @@ from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.database import as_utc
-from app.models import BankAccount, BankConnection, CategorySource, ConnectionStatus, Transaction
+from app.models import BankAccount, BankConnection, CategorySource, ConnectionStatus, Transaction, UserPreferences
 from app.services.banking.client import BankClient
 from app.services.banking.mapping import ImportedTransaction, assign_external_ids, parse_transaction, pick_balance
 from app.services.categorization.auto import AutoCategorizer
 from app.services.categorization.merchants import merchant_key, merchant_name
 from app.services.merchants import MerchantDirectory
+from app.services.preferences import get_preferences
+from app.services.review import needs_review_on_import
 
 
 @dataclass
 class SyncResult:
     bank_account_id: int
     imported: int = 0
-    # Transactions (new or waiting in the inbox) that a rule or the MCC put in a category
+    # Transactions (new, or still in Uncategorized) that a rule or the MCC put in a category
     categorized: int = 0
     error: str | None = None
 
 
 @dataclass(frozen=True)
 class Importer:
-    """What one user's sync needs in memory: their categorization rules and their merchants."""
+    """What one user's sync needs in memory: their categorization rules, merchants and preferences."""
 
     categorizer: AutoCategorizer
     merchants: MerchantDirectory
+    preferences: UserPreferences
 
     @classmethod
     def for_user(cls, user_id: int, db: Session) -> Importer:
-        return cls(AutoCategorizer.for_user(user_id, db), MerchantDirectory.for_user(user_id, db))
+        return cls(
+            AutoCategorizer.for_user(user_id, db),
+            MerchantDirectory.for_user(user_id, db),
+            get_preferences(user_id, db),
+        )
 
 
 def _new_transaction(
@@ -50,6 +57,7 @@ def _new_transaction(
         wallet_id=wallet_id,
         category_id=decision.category_id,
         category_source=decision.source,
+        needs_review=needs_review_on_import(importer.preferences, decision),
         amount=parsed.amount,
         occurred_at=parsed.occurred_at,
         description=parsed.description,

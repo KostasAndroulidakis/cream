@@ -1,1 +1,1 @@
-"""Automatic categorization: merchant identity, MCC mapping, merchant rules and the review inbox."""
+"""Automatic categorization: merchant identity, MCC mapping and merchant rules."""

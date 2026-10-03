@@ -4,10 +4,10 @@ from decimal import Decimal
 
 import pytest
 
+from tests.conftest import REVIEW_INBOX_URL as INBOX_URL
 from tests.bank_fakes import connect_and_link, raw_transaction, sync
 
 TRANSACTIONS_URL = "/api/v1/transactions"
-INBOX_URL = f"{TRANSACTIONS_URL}/uncategorized"
 
 
 @pytest.fixture

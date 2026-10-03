@@ -2,7 +2,7 @@
 
 Grouping follows Plaid's personal finance taxonomy as a guide, adapted to Monarch's categories.
 Codes that don't say enough about the purchase (e.g. 5511 car dealers, 6051 quasi-cash,
-4829 money transfers) are left out on purpose: those transactions wait in the review inbox.
+4829 money transfers) are left out on purpose: those transactions stay in Uncategorized.
 Pure module: no database, no network.
 """
 

@@ -25,9 +25,9 @@ from app.services.authorization import (
     verify_wallet_access,
 )
 from app.services.categorization.assignment import assign_category
-from app.services.categorization.inbox import uncategorized_page
 from app.services.categorization.rules import categorize_transaction
 from app.services.helpers import apply_update
+from app.services.review import inbox_page
 from app.services.transactions import bulk_delete, bulk_update, ensure_editable
 from app.services.validation import raise_if_invalid, validate_transaction
 
@@ -66,16 +66,16 @@ def list_transactions(
     )
 
 
-# Declared before /{transaction_id} so "uncategorized" isn't read as an ID
-@router.get("/uncategorized", response_model=TransactionPage)
-def list_uncategorized(
+# Declared before /{transaction_id} so "needs-review" isn't read as an ID
+@router.get("/needs-review", response_model=TransactionPage)
+def list_needs_review(
     limit: int = Query(DEFAULT_PAGE_SIZE, ge=1, le=MAX_PAGE_SIZE),
     offset: int = Query(0, ge=0),
     user_id: int = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
-    """The review inbox: transactions still waiting for a category, newest first."""
-    total, items = uncategorized_page(user_id, limit, offset, db)
+    """The review inbox: transactions that need review, newest first. Hidden ones are left out."""
+    total, items = inbox_page(user_id, limit, offset, db)
     return {"total": total, "items": items}
 
 

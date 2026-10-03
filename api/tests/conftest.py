@@ -17,6 +17,7 @@ SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
 
 LOGIN_URL = "/api/v1/auth/login"
 SIGNUP_URL = "/api/v1/auth/signup"
+REVIEW_INBOX_URL = "/api/v1/transactions/needs-review"
 
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL,

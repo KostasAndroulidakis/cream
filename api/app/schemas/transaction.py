@@ -23,6 +23,8 @@ class TransactionUpdate(BaseModel):
     occurred_at: datetime | None = None
     # Not nullable: a transaction is either hidden or not. Omit the field to leave it unchanged.
     is_hidden: bool = False
+    # Not nullable either: true puts it in the review inbox, false marks it reviewed
+    needs_review: bool = False
 
 
 class TransactionRead(BaseModel):
@@ -43,6 +45,8 @@ class TransactionRead(BaseModel):
     is_imported: bool
     # Left out of lists and statistics, still part of the wallet balance
     is_hidden: bool
+    # Waiting in the review inbox; independent of the category and of hiding
+    needs_review: bool
     created_at: datetime
 
     model_config = {"from_attributes": True}
@@ -67,10 +71,11 @@ class BulkTransactionChanges(BaseModel):
     # null clears the notes
     description: str | None = None
     is_hidden: bool | None = None
+    needs_review: bool | None = None
     # The user's merchant with this name (case and spacing ignored), created if there is none yet
     merchant_name: str | None = None
 
-    @field_validator("category_id", "occurred_at", "is_hidden")
+    @field_validator("category_id", "occurred_at", "is_hidden", "needs_review")
     @classmethod
     def not_null(cls, value):
         # Only the notes can be cleared; for the rest, leave the field out to keep it as it is

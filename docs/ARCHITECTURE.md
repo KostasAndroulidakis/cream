@@ -215,8 +215,10 @@ cream/
 │   │   │   ├── auth.py, session.py      # Passwords, JWT, session cookie
 │   │   │   ├── authorization.py         # Ownership and access checks
 │   │   │   ├── wallets.py, statistics.py, validation.py, health.py
+│   │   │   ├── transactions.py, merchants.py   # Edit rules (single and bulk), merchants
+│   │   │   ├── review.py, preferences.py       # Review inbox, user preferences
 │   │   │   ├── banking/                 # Enable Banking: client, mapping, connections, sync
-│   │   │   └── categorization/          # Merchant keys, MCC map, auto-categorizer, rules, review inbox
+│   │   │   └── categorization/          # Merchant keys, MCC map, auto-categorizer, rules
 │   │   ├── config.py       # Settings from the root .env
 │   │   ├── database.py     # Engine, session, Base (global type rules)
 │   │   └── main.py         # FastAPI app entry point
@@ -378,7 +380,25 @@ Uncategorized) and record on every transaction who chose its category (`manual` 
 - The MCC map lives in code (`services/categorization/mcc.py`) and maps to category keys; a test checks
   every key exists in the seeded catalog
 - Each sync retries `default` transactions, so a better map or a new rule also fixes older imports
-- The Uncategorized system category doubles as the review inbox
+- The Uncategorized system category doubled as the review inbox (replaced by ADR10)
+
+### ADR10: Review Status Independent of the Category
+
+**Decision**: A `needs_review` flag on every transaction is the review inbox, as in Monarch. Imports set it
+from the user's preferences (review every new transaction, or only those left in Uncategorized); after that
+only the user changes it.
+
+**Rationale**:
+
+- "I've looked at this" and "this has a category" are different: a category from a rule or the MCC can still
+  be worth a look, and an uncategorized transfer may be fine as it is
+- Hiding and reviewing stay separate too, so showing a transaction again doesn't lose its status
+
+**Consequences**:
+
+- Choosing a category no longer empties the inbox: the user marks transactions reviewed (✓, or in bulk)
+- Preferences live in `user_preferences`, one optional row per user; defaults come from the model
+- Rules that set the review status come with the rules editor
 
 ## Security Architecture
 

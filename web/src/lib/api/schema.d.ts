@@ -219,7 +219,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/transactions/uncategorized": {
+    "/api/v1/transactions/needs-review": {
         parameters: {
             query?: never;
             header?: never;
@@ -227,10 +227,10 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * List Uncategorized
-         * @description The review inbox: transactions still waiting for a category, newest first.
+         * List Needs Review
+         * @description The review inbox: transactions that need review, newest first. Hidden ones are left out.
          */
-        get: operations["list_uncategorized_api_v1_transactions_uncategorized_get"];
+        get: operations["list_needs_review_api_v1_transactions_needs_review_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -602,6 +602,8 @@ export interface components {
             description?: string | null;
             /** Is Hidden */
             is_hidden?: boolean | null;
+            /** Needs Review */
+            needs_review?: boolean | null;
             /** Merchant Name */
             merchant_name?: string | null;
         };
@@ -624,7 +626,7 @@ export interface components {
              * Apply To Similar
              * @default false
              */
-            apply_to_similar: boolean;
+            apply_to_similar?: boolean;
         };
         /** CategorizeResultRead */
         CategorizeResultRead: {
@@ -921,6 +923,8 @@ export interface components {
             is_imported: boolean;
             /** Is Hidden */
             is_hidden: boolean;
+            /** Needs Review */
+            needs_review: boolean;
             /**
              * Created At
              * Format: date-time
@@ -941,7 +945,12 @@ export interface components {
              * Is Hidden
              * @default false
              */
-            is_hidden: boolean;
+            is_hidden?: boolean;
+            /**
+             * Needs Review
+             * @default false
+             */
+            needs_review?: boolean;
         };
         /** UserCreate */
         UserCreate: {
@@ -1023,18 +1032,18 @@ export interface components {
             /** Name */
             name: string;
             /** @default bank */
-            type: components["schemas"]["WalletType"];
+            type?: components["schemas"]["WalletType"];
             /**
              * Currency
              * @description ISO 4217 currency code, e.g. EUR
              * @default EUR
              */
-            currency: string;
+            currency?: string;
             /**
              * Initial Balance
              * @default 0
              */
-            initial_balance: number | string;
+            initial_balance?: number | string;
         };
         /** WalletRead */
         WalletRead: {
@@ -1593,7 +1602,7 @@ export interface operations {
             };
         };
     };
-    list_uncategorized_api_v1_transactions_uncategorized_get: {
+    list_needs_review_api_v1_transactions_needs_review_get: {
         parameters: {
             query?: {
                 limit?: number;

@@ -55,7 +55,7 @@ class AutoCategorizer:
         return self._uncategorized
 
     def retry_uncategorized(self, wallet_id: int, db: Session) -> int:
-        """Categorize the wallet's transactions still waiting in the inbox; returns how many found a category.
+        """Categorize the wallet's transactions still in Uncategorized; returns how many found a category.
 
         They may have been imported before a matching rule or MCC mapping existed.
         """

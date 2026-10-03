@@ -9,15 +9,15 @@ export type TransactionPage = Schemas["TransactionPage"]
 export type MerchantRule = Schemas["MerchantRuleRead"]
 export type CategorizeResult = Schemas["CategorizeResultRead"]
 
-// The inbox shows the newest uncategorized transactions; the rest appear as these get categorized
+// The inbox shows the newest transactions that need review; the rest appear as these get reviewed
 const INBOX_PAGE_SIZE = 50
 const RULES_KEY = ["rules"] as const
 
 /** Under the transactions prefix, so imports and edits refresh the inbox too. */
 export const inboxQueryOptions = queryOptions({
-  queryKey: [...TRANSACTIONS_KEY, "uncategorized", INBOX_PAGE_SIZE],
+  queryKey: [...TRANSACTIONS_KEY, "needs-review", INBOX_PAGE_SIZE],
   queryFn: async (): Promise<TransactionPage> => {
-    const { data, error, response } = await api.GET("/api/v1/transactions/uncategorized", {
+    const { data, error, response } = await api.GET("/api/v1/transactions/needs-review", {
       params: { query: { limit: INBOX_PAGE_SIZE } },
     })
     if (!data) throw toApiError(error, response)

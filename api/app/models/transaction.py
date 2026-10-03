@@ -26,7 +26,7 @@ class CategorySource(str, Enum):
     RULE = "rule"
     # The bank's merchant category code (MCC)
     MCC = "mcc"
-    # Nothing matched on import: the transaction waits in the review inbox
+    # Nothing matched on import: the transaction stays in Uncategorized
     DEFAULT = "default"
 
 

@@ -33,7 +33,7 @@ All endpoints except `/health`, `/auth/signup`, `/auth/login` and `/auth/logout`
 | `DELETE /api/v1/categories/{id}` | Delete category |
 | `GET /api/v1/transactions` | List transactions |
 | `POST /api/v1/transactions` | Create transaction |
-| `GET /api/v1/transactions/uncategorized` | Review inbox: transactions still in Uncategorized |
+| `GET /api/v1/transactions/needs-review` | Review inbox: transactions that need review |
 | `POST /api/v1/transactions/bulk-update` | Same changes on several transactions (all or none) |
 | `POST /api/v1/transactions/bulk-delete` | Delete several transactions entered by hand (all or none) |
 | `GET /api/v1/transactions/{id}` | Get transaction |
@@ -428,7 +428,7 @@ List transactions for the user's wallets, newest first.
 ```
 
 `category_source` says who chose the category: `manual` (the user), `rule` (a merchant rule), `mcc` (the
-bank's merchant category code) or `default` (nothing matched; waiting in the review inbox). Automatic
+bank's merchant category code) or `default` (nothing matched; left in Uncategorized). Automatic
 categorization never changes a `manual` category. `merchant_key` is the normalized merchant of an imported
 transaction (counterparty, else its text; case and spacing ignored), or `null` when there is none.
 `merchant` is who the money went to or came from, as the user sees it: imported transactions start with
@@ -477,9 +477,11 @@ Create a new transaction.
 - `403`: Access denied (not owner of wallet)
 - `422`: Validation error (amount zero, future date, category is a group, etc.)
 
-#### GET /transactions/uncategorized
+#### GET /transactions/needs-review
 
-The review inbox: the user's transactions in **Other → Uncategorized**, newest first.
+The review inbox: the user's transactions with `needs_review`, newest first. Bank imports get it from the
+user's preferences (by default, those that found no category); the user sets or clears it with
+`PATCH /transactions/{id}` or `bulk-update`. Choosing a category doesn't clear it.
 
 **Query Parameters**: `limit` (default 50, max 200), `offset` (default 0)
 
@@ -489,7 +491,8 @@ The review inbox: the user's transactions in **Other → Uncategorized**, newest
 { "total": 12, "items": [ /* transaction objects */ ] }
 ```
 
-`total` counts every uncategorized transaction, not just this page. Hidden transactions are left out.
+`total` counts every transaction that needs review, not just this page. Hidden transactions are left out
+but keep their status: shown again, they are back in the inbox.
 
 #### POST /transactions/bulk-update
 
@@ -506,6 +509,7 @@ is refused, none is applied.
     "occurred_at": "2026-09-01T12:00:00Z",
     "description": "string | null (null clears the notes)",
     "is_hidden": true,
+    "needs_review": false,
     "merchant_name": "Corner Shop"
   }
 }
@@ -550,12 +554,14 @@ Update a transaction.
   "amount": "string (decimal)",
   "description": "string | null",
   "occurred_at": "string (ISO 8601)",
-  "is_hidden": "boolean (not null)"
+  "is_hidden": "boolean (not null)",
+  "needs_review": "boolean (not null)"
 }
 ```
 
 **Response** `200 OK`: Updated transaction object. Changing `category_id` makes `category_source` `manual`.
-`is_hidden` hides or shows the transaction; leaving it out keeps it as it is. The bank sets the `amount` and
+`is_hidden` hides or shows the transaction, and `needs_review` puts it in the review inbox or marks it reviewed;
+leaving either out keeps it as it is. The bank sets the `amount` and
 `occurred_at` of its transactions: sending either for an imported transaction returns `422` (send only the
 fields that change).
 
@@ -653,8 +659,9 @@ Optional read-only bank sync through Enable Banking (PSD2). Requires `CREAM_ENAB
   when present, otherwise a fingerprint (reference, date, amount, text). `entry_reference` alone is not
   unique (banks reuse it), and identical same-day transactions are numbered (`#2`, `#3`)
 - Imported transactions get a category automatically: the user's merchant rule, else the MCC mapping
-  (Plaid's taxonomy as a guide), else **Other → Uncategorized** (the review inbox). Every sync also retries
-  transactions still waiting there; `categorized` counts both
+  (Plaid's taxonomy as a guide), else **Other → Uncategorized**. Every sync also retries transactions still
+  there; `categorized` counts both
+- New imports need review as the user's preferences say: by default only those left in Uncategorized
 - First sync reads 90 days back and sets the wallet's initial balance so it matches the bank; later syncs
   re-read the last 3 days to catch late bookings
 - The `state` parameter is single-use and bound to the user who started the connection (CSRF protection)

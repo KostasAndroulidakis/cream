@@ -9,10 +9,10 @@ import pytest
 from app.models import Category, CategorySource, CategoryType, MerchantRule, Transaction
 from app.services.categorization.mcc import MCC_CATEGORY_KEYS, category_key_for_mcc
 from app.services.categorization.merchants import merchant_key, merchant_name
+from tests.conftest import REVIEW_INBOX_URL as INBOX_URL
 from tests.bank_fakes import connect_and_link, raw_transaction, sync
 
 TRANSACTIONS_URL = "/api/v1/transactions"
-INBOX_URL = f"{TRANSACTIONS_URL}/uncategorized"
 RULES_URL = "/api/v1/rules"
 GROCERIES_MCC = "5411"
 RESTAURANTS_MCC = "5812"
@@ -144,7 +144,7 @@ class TestSyncCategorization:
 
 
 class TestInbox:
-    def test_lists_only_uncategorized_newest_first(self, client, auth_headers, bank, linked):
+    def test_by_default_lists_the_uncategorized_newest_first(self, client, auth_headers, bank, linked):
         bank.transactions = [
             raw_transaction("t1", "1", booking_date="2026-09-01"),
             raw_transaction("t2", "2", booking_date="2026-09-02"),

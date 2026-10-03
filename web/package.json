@@ -8,7 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "gen:api": "uv run --directory ../api python -m scripts.export_openapi ../web/openapi.json && openapi-typescript openapi.json -o src/lib/api/schema.d.ts"
+    "gen:api": "uv run --directory ../api python -m scripts.export_openapi ../web/openapi.json && openapi-typescript openapi.json --default-non-nullable false -o src/lib/api/schema.d.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",
