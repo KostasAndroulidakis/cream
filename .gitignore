@@ -188,3 +188,6 @@ claude/
 
 # Local Enable Banking mock data (never commit)
 mock-aspsp-*.json
+
+# Local dev certificate (mkcert): private key, never commit
+web/.cert/

@@ -141,7 +141,9 @@ users ──1:N── wallets ──1:N── transactions ──N:1── categ
 ### Bank Sync (optional)
 
 1. Create an application at [Enable Banking](https://enablebanking.com) (Sandbox to develop, Production
-   in restricted mode for your own accounts). Redirect URL: `http://localhost:5173/connections/callback`.
+   in restricted mode for your own accounts). Redirect URL: `http://localhost:5173/connections/callback`
+   for Sandbox; Production only accepts https, so `https://localhost:5173/connections/callback`.
+   Activate a Production app with **Activate by linking accounts** (it can then read only those accounts).
 2. Store the downloaded private key **outside the repo** and readable only by you:
 
    ```bash
@@ -152,6 +154,16 @@ users ──1:N── wallets ──1:N── transactions ──N:1── categ
 
 3. Set `CREAM_ENABLEBANKING_APP_ID` and `CREAM_ENABLEBANKING_KEY_PATH` (absolute path) in `.env`,
    restart the API, then use **Settings › Institutions** in the app.
+4. Production only: serve the web app over https with a locally trusted certificate
+   ([mkcert](https://github.com/FiloSottile/mkcert)). Vite switches to https when `web/.cert/` has one
+   (git-ignored):
+
+   ```bash
+   mkcert -install
+   mkdir -p web/.cert && mkcert -cert-file web/.cert/localhost.pem -key-file web/.cert/localhost-key.pem localhost
+   ```
+
+   and set `CREAM_ENABLEBANKING_REDIRECT_URL=https://localhost:5173/connections/callback` in `.env`.
 
 ## Future Features
 
