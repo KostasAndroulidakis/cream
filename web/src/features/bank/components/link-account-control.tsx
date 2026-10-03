@@ -20,6 +20,11 @@ export function LinkAccountControl({ account }: { account: BankAccount }) {
   )
   const candidates = wallets.filter((w) => w.currency === account.currency && !linkedWalletIds.has(w.id))
 
+  // The API says which accounts CREAM can take (EUR only for now)
+  if (!account.can_link) {
+    return <p className="text-sm text-muted-foreground">{account.currency} accounts can't be linked yet.</p>
+  }
+
   return (
     <div className="flex items-center gap-2">
       <NativeSelect

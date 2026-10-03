@@ -16,6 +16,8 @@ class FakeBankClient:
         self.transactions: list[dict] = []
         self.balance = "1000.00"
         self.fail_transactions = False
+        # Currency of the account the bank shares
+        self.accounts_currency = "EUR"
 
     def list_aspsps(self, country):
         return [{"name": "Mock ASPSP", "country": country, "logo": "https://logo"}]
@@ -29,7 +31,7 @@ class FakeBankClient:
             "session_id": "session-1",
             "access": {"valid_until": (datetime.now(timezone.utc) + timedelta(days=180)).isoformat()},
             "accounts": [
-                {"uid": ACCOUNT_UID, "details": "Current account", "currency": "EUR",
+                {"uid": ACCOUNT_UID, "details": "Current account", "currency": self.accounts_currency,
                  "account_id": {"iban": "GR1601101250000000012300695"}},
             ],
         }

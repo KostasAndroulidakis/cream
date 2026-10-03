@@ -252,13 +252,28 @@ def _add_transaction(client, headers, wallet_id, amount):
     assert response.status_code == 201, response.text
 
 
+def _set_currency(db_session, wallet_id, currency):
+    """An account from before CREAM went EUR-only: the API no longer creates these."""
+    from app.models import Wallet
+
+    db_session.get(Wallet, wallet_id).currency = currency
+    db_session.commit()
+
+
 class TestWalletCurrency:
     """Currency codes are normalized and validated."""
 
     def test_currency_is_uppercased(self, client, auth_headers):
-        wallet = _create_wallet(client, auth_headers, currency=" usd ")
+        wallet = _create_wallet(client, auth_headers, currency=" eur ")
 
-        assert wallet["currency"] == "USD"
+        assert wallet["currency"] == "EUR"
+
+    def test_only_eur_for_now(self, client, auth_headers, created_wallet):
+        created = client.post(WALLETS_URL, json={"name": "W", "currency": "USD"}, headers=auth_headers)
+        changed = client.patch(f"{WALLETS_URL}/{created_wallet['id']}", json={"currency": "USD"}, headers=auth_headers)
+
+        assert created.status_code == changed.status_code == 422
+        assert "EUR" in str(created.json())
 
     @pytest.mark.parametrize("currency", ["EU", "EURO", "E1R", "€€€"])
     def test_invalid_currency_rejected(self, client, auth_headers, currency):
@@ -266,19 +281,22 @@ class TestWalletCurrency:
 
         assert response.status_code == 422
 
-    def test_currency_change_allowed_without_transactions(self, client, auth_headers, created_wallet):
+    def test_older_account_moves_to_eur_without_transactions(self, client, auth_headers, created_wallet, db_session):
+        _set_currency(db_session, created_wallet["id"], "USD")
+
         response = client.patch(
-            f"{WALLETS_URL}/{created_wallet['id']}", json={"currency": "USD"}, headers=auth_headers
+            f"{WALLETS_URL}/{created_wallet['id']}", json={"currency": "EUR"}, headers=auth_headers
         )
 
         assert response.status_code == 200
-        assert response.json()["currency"] == "USD"
+        assert response.json()["currency"] == "EUR"
 
-    def test_currency_change_blocked_with_transactions(self, client, auth_headers, created_wallet):
+    def test_currency_change_blocked_with_transactions(self, client, auth_headers, created_wallet, db_session):
         _add_transaction(client, auth_headers, created_wallet["id"], "-10.00")
+        _set_currency(db_session, created_wallet["id"], "USD")
 
         response = client.patch(
-            f"{WALLETS_URL}/{created_wallet['id']}", json={"currency": "USD"}, headers=auth_headers
+            f"{WALLETS_URL}/{created_wallet['id']}", json={"currency": "EUR"}, headers=auth_headers
         )
 
         assert response.status_code == 409
@@ -304,10 +322,12 @@ class TestWalletTotals:
         assert response.status_code == 200
         assert response.json() == []
 
-    def test_totals_grouped_by_currency(self, client, auth_headers):
+    def test_totals_grouped_by_currency(self, client, auth_headers, db_session):
+        # Accounts created before CREAM went EUR-only may still be in other currencies
         first = _create_wallet(client, auth_headers, currency="EUR", initial_balance="100.50")
         _create_wallet(client, auth_headers, currency="EUR", initial_balance="200.25")
-        _create_wallet(client, auth_headers, currency="USD", initial_balance="50")
+        older = _create_wallet(client, auth_headers, initial_balance="50")
+        _set_currency(db_session, older["id"], "USD")
         _add_transaction(client, auth_headers, first["id"], "-0.75")
 
         totals = client.get(TOTALS_URL, headers=auth_headers).json()

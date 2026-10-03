@@ -186,7 +186,7 @@ Create a new wallet.
   "name": "string (max 100 chars)",
   "type": "cash | investment | real_estate | vehicle | valuables | other_asset | credit_card | mortgage | loan | other_liability (default: cash)",
   "subtype": "string, one of the type's subtypes (default: the type's first)",
-  "currency": "string (3 chars, default: EUR)",
+  "currency": "EUR (the only currency for now, and the default)",
   "initial_balance": "string (decimal, default: 0)"
 }
 ```

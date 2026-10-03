@@ -627,6 +627,11 @@ export interface components {
             wallet_id: number | null;
             /** Last Synced At */
             last_synced_at: string | null;
+            /**
+             * Can Link
+             * @description Whether CREAM can link this account (its currency is one CREAM supports).
+             */
+            readonly can_link: boolean;
         };
         /** BankConnectionRead */
         BankConnectionRead: {
@@ -1102,7 +1107,7 @@ export interface components {
             subtype?: string | null;
             /**
              * Currency
-             * @description ISO 4217 currency code, e.g. EUR
+             * @description ISO 4217 currency code; only EUR for now
              * @default EUR
              */
             currency?: string;

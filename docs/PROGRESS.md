@@ -103,9 +103,8 @@ Production (restricted mode) with real accounts, starting with the most stable b
 
 ### ⬜ Slice 9: Insights
 
-Monthly income vs expenses (cash flow), spending by category with charts, per-currency statistics.
-Cash flow leaves out own-wallet transfers and hidden transactions.
-Net worth in one currency: totals converted with exchange rates, next to the exact per-currency totals.
+Monthly income vs expenses (cash flow), spending by category with charts, net worth (assets minus liabilities).
+Cash flow leaves out own-wallet transfers and hidden transactions. EUR only, so every total is a plain sum.
 
 ### ⬜ Slice 10: Greek
 
@@ -129,15 +128,16 @@ Cards arrive with their features (e.g. net worth and spending in Slice 9).
 
 Ideas agreed on but not scheduled into a slice yet.
 
-- **Transaction review like Monarch's:** a separate "needs review / reviewed" flag, independent of the
-  category, settable by hand or by rules. Hiding a transaction would then keep its review status. Today the
-  review inbox simply means "Uncategorized", and hiding a transaction takes it out of the inbox.
+- **More currencies:** CREAM is EUR-only for now (as Monarch keeps to one currency). Opening others means
+  adding them to `services/currencies.py`, then per-currency statistics and a net worth converted with
+  exchange rates. Accounts created earlier in other currencies still work and show their own totals.
+- **Rules that set the review status** (Monarch's "Then set review status"), with the rules editor.
 
 ---
 
 ## Known Gaps
 
-- `/statistics` still sums amounts across currencies (`/wallets/totals` is correct); fixed in Slice 9
+- `/statistics` sums amounts across currencies; only matters for accounts created before CREAM went EUR-only
 - No session refresh: sessions end after `CREAM_ACCESS_TOKEN_EXPIRE_MINUTES`
 - Tests run on SQLite; Postgres-specific behavior (e.g. NUMERIC precision) is not covered by tests
 - HTTPS and deployment configuration not set up yet

@@ -64,7 +64,7 @@ Wallet
 ├── name: display name (e.g., "Main Bank Account")
 ├── type: wallet_type enum (Monarch's types: cash, investment, … credit_card, loan, …)
 ├── subtype: one of the type's subtypes (e.g. cash → checking), from the catalog
-├── currency: ISO 4217 code (e.g., "EUR"); fixed once the wallet has transactions
+├── currency: ISO 4217 code; only "EUR" for now (older accounts may differ); fixed once it has transactions
 ├── initial_balance: starting balance (Money)
 ├── created_at: creation timestamp
 └── updated_at: last modification timestamp
@@ -89,7 +89,8 @@ Wallet
 
 - A wallet belongs to exactly one user
 - Wallet name must not be empty
-- Currency code must be exactly 3 characters
+- Currency must be one CREAM supports: EUR only for now (`services/currencies.py`)
+- A bank account links only to an account in its own currency
 - Initial balance can be any value (including negative for debt accounts)
 - The subtype is one of its type's subtypes; a new type without a subtype starts at the type's first
 - A linked bank account starts as Cash › Checking

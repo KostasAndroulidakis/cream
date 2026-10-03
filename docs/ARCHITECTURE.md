@@ -417,6 +417,22 @@ lists Monarch shows for real estate, vehicles, valuables and loans). The catalog
 - Existing wallets became Cash (bank → Checking, digital → PayPal, cash and stash → Savings)
 - The code keeps the name "wallet"; the UI says "account"
 
+### ADR12: EUR Only, for Now
+
+**Decision**: CREAM accepts only EUR accounts, like Monarch, which shows one currency and converts nothing. The
+`currency` column stays, and the set of accepted codes lives in one place (`services/currencies.py`).
+
+**Rationale**:
+
+- Every total, cash flow and net worth becomes a plain sum: no exchange rates, no per-currency splits
+- Kostas's own accounts are in EUR; other currencies can open later without a schema change
+
+**Consequences**:
+
+- Creating or changing an account to another currency returns `422`; bank accounts in other currencies
+  can't be linked (`can_link` tells the web)
+- Accounts created earlier in other currencies keep working and keep their own totals
+
 ## Security Architecture
 
 ```text

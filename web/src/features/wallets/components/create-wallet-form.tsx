@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { userMessage } from "@/lib/api/errors"
 import { fieldA11y } from "@/lib/forms"
-import { SUPPORTED_CURRENCIES } from "@/lib/money"
 import { useCreateWallet } from "../api"
 import { createWalletSchema, type CreateWalletFormInput, type CreateWalletValues } from "../schemas"
 import { useAccountTypes } from "../use-account-types"
@@ -17,7 +16,6 @@ import { DEFAULT_WALLET_TYPE } from "../wallet-types"
 const DEFAULT_VALUES: CreateWalletFormInput = {
   name: "",
   type: DEFAULT_WALLET_TYPE,
-  currency: "EUR",
   initial_balance: "0",
 }
 
@@ -59,27 +57,16 @@ export function CreateWalletForm({ onCreated }: { onCreated: () => void }) {
         </NativeSelect>
       </FormField>
 
-      <div className="grid gap-4 sm:grid-cols-[7rem_1fr]">
-        <FormField id="wallet-currency" label="Currency" error={errors.currency?.message}>
-          <NativeSelect id="wallet-currency" {...fieldA11y("wallet-currency", errors.currency?.message)} {...register("currency")}>
-            {SUPPORTED_CURRENCIES.map((code) => (
-              <option key={code} value={code}>
-                {code}
-              </option>
-            ))}
-          </NativeSelect>
-        </FormField>
-
-        <FormField id="wallet-balance" label="Current balance" error={errors.initial_balance?.message}>
-          <Input
-            id="wallet-balance"
-            inputMode="decimal"
-            className="tabular-nums"
-            {...fieldA11y("wallet-balance", errors.initial_balance?.message)}
-            {...register("initial_balance")}
-          />
-        </FormField>
-      </div>
+      {/* EUR only for now: the API gives every new account its one currency */}
+      <FormField id="wallet-balance" label="Current balance" error={errors.initial_balance?.message}>
+        <Input
+          id="wallet-balance"
+          inputMode="decimal"
+          className="tabular-nums"
+          {...fieldA11y("wallet-balance", errors.initial_balance?.message)}
+          {...register("initial_balance")}
+        />
+      </FormField>
 
       <Button type="submit" size="lg" className="w-full" disabled={createWallet.isPending}>
         {createWallet.isPending ? "Adding account…" : "Add account"}

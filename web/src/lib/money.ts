@@ -19,9 +19,6 @@ export function formatMoney(amount: string, currency: string): string {
   return formatterFor(currency).format(amount as Intl.StringNumericLiteral)
 }
 
-/** ISO 4217 codes the browser knows how to format. */
-export const SUPPORTED_CURRENCIES: readonly string[] = Intl.supportedValuesOf("currency")
-
 // Money in is positive, money out negative (the API's convention)
 function signOf(amount: string): "positive" | "negative" | "zero" {
   if (isZeroAmount(amount)) return "zero"

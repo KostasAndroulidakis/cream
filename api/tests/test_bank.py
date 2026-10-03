@@ -266,3 +266,34 @@ class TestSyncMerchants:
         ).json()
 
         assert created["merchant"] is None
+
+
+class TestLinkCurrency:
+    def _account(self, client, headers, bank, currency):
+        bank.accounts_currency = currency
+        return connect(client, headers, bank)["accounts"][0]
+
+    def test_other_currency_cant_be_linked(self, client, auth_headers, bank, uncategorized):
+        account = self._account(client, auth_headers, bank, "USD")
+
+        response = client.post(f"{BANK_URL}/accounts/{account['id']}/link", json={}, headers=auth_headers)
+
+        assert account["can_link"] is False
+        assert response.status_code == 422 and "EUR" in response.json()["detail"]
+
+    def test_eur_account_can_be_linked(self, client, auth_headers, bank, uncategorized):
+        assert self._account(client, auth_headers, bank, "EUR")["can_link"] is True
+
+    def test_existing_account_must_share_the_currency(self, client, auth_headers, bank, uncategorized, db_session):
+        from app.models import Wallet
+
+        wallet = client.post("/api/v1/wallets", json={"name": "Old USD"}, headers=auth_headers).json()
+        db_session.get(Wallet, wallet["id"]).currency = "USD"
+        db_session.commit()
+        account = self._account(client, auth_headers, bank, "EUR")
+
+        response = client.post(
+            f"{BANK_URL}/accounts/{account['id']}/link", json={"wallet_id": wallet["id"]}, headers=auth_headers
+        )
+
+        assert response.status_code == 422

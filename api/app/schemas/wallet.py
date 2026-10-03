@@ -2,12 +2,12 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Annotated
 
-from pydantic import BaseModel, BeforeValidator, Field, model_validator
+from pydantic import AfterValidator, BaseModel, BeforeValidator, Field, model_validator
 
 from app.models.wallet import SUBTYPE_MAX, AccountClass, WalletType
 from app.services.account_types import resolve_subtype
+from app.services.currencies import DEFAULT_CURRENCY, ensure_supported
 
-DEFAULT_CURRENCY = "EUR"
 CURRENCY_CODE_PATTERN = r"^[A-Z]{3}$"
 
 
@@ -15,11 +15,12 @@ def _normalize_currency(value: object) -> object:
     return value.strip().upper() if isinstance(value, str) else value
 
 
-# ISO 4217 style code, accepted in any case ("eur" -> "EUR")
+# ISO 4217 style code, accepted in any case ("eur" -> "EUR"), and one CREAM supports
 CurrencyCode = Annotated[
     str,
     BeforeValidator(_normalize_currency),
-    Field(pattern=CURRENCY_CODE_PATTERN, description="ISO 4217 currency code, e.g. EUR"),
+    Field(pattern=CURRENCY_CODE_PATTERN, description="ISO 4217 currency code; only EUR for now"),
+    AfterValidator(ensure_supported),
 ]
 
 

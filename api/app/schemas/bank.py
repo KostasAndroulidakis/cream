@@ -1,8 +1,9 @@
 from datetime import datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, computed_field
 
 from app.models.bank import ConnectionStatus
+from app.services.currencies import is_supported
 
 COUNTRY_CODE_PATTERN = r"^[A-Z]{2}$"
 
@@ -37,6 +38,12 @@ class BankAccountRead(BaseModel):
     iban_last4: str | None
     wallet_id: int | None
     last_synced_at: datetime | None
+
+    @computed_field
+    @property
+    def can_link(self) -> bool:
+        """Whether CREAM can link this account (its currency is one CREAM supports)."""
+        return is_supported(self.currency)
 
     model_config = {"from_attributes": True}
 

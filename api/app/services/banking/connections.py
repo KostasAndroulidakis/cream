@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from app.config import settings
 from app.models import BankAccount, BankConnection, ConnectionStatus, Wallet, WalletType
 from app.services.account_types import resolve_subtype
+from app.services.currencies import DEFAULT_CURRENCY, UnsupportedCurrencyError, ensure_supported
 from app.services.authorization import NotFoundError, get_wallet
 from app.services.banking.client import BankClient
 from app.services.banking.mapping import account_display_name, iban_last4
@@ -16,6 +17,14 @@ from app.services.banking.mapping import account_display_name, iban_last4
 STATE_BYTES = 32
 # What a linked bank account is when CREAM creates an account for it
 BANK_ACCOUNT_SUBTYPE = "checking"
+
+
+class CurrencyMismatchError(HTTPException):
+    def __init__(self):
+        super().__init__(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail="Link the bank account to an account in the same currency",
+        )
 
 
 class InvalidAuthorizationError(HTTPException):
@@ -93,7 +102,7 @@ def complete_connection(user_id: int, state: str, code: str, client: BankClient,
             BankAccount(
                 uid=raw["uid"],
                 name=account_display_name(raw),
-                currency=raw.get("currency") or "EUR",
+                currency=raw.get("currency") or DEFAULT_CURRENCY,
                 iban_last4=iban_last4(raw),
             )
         )
@@ -103,7 +112,11 @@ def complete_connection(user_id: int, state: str, code: str, client: BankClient,
 
 
 def link_account(account: BankAccount, wallet_id: int | None, user_id: int, db: Session) -> BankAccount:
-    """Link to an existing wallet, or create a new one for this account when wallet_id is None."""
+    """Link to an existing wallet in the same currency, or create one for this account when wallet_id is None."""
+    try:
+        ensure_supported(account.currency)
+    except UnsupportedCurrencyError as error:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(error)) from error
     if wallet_id is None:
         wallet = Wallet(
             user_id=user_id,
@@ -117,6 +130,8 @@ def link_account(account: BankAccount, wallet_id: int | None, user_id: int, db: 
         db.flush()
     else:
         wallet = get_wallet(wallet_id, user_id, db)
+        if wallet.currency != account.currency:
+            raise CurrencyMismatchError()
         if db.query(BankAccount).filter(BankAccount.wallet_id == wallet.id, BankAccount.id != account.id).first():
             raise WalletAlreadyLinkedError()
     account.wallet_id = wallet.id
