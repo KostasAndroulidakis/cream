@@ -5,7 +5,7 @@ from decimal import Decimal
 from enum import Enum
 from typing import TYPE_CHECKING
 
-from sqlalchemy import ForeignKey, Numeric, String, Text, UniqueConstraint
+from sqlalchemy import ForeignKey, Numeric, String, Text, UniqueConstraint, false
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base, TimestampMixin
@@ -48,6 +48,9 @@ class Transaction(TimestampMixin, Base):
     merchant_category_code: Mapped[str | None] = mapped_column(String(4))
     # Normalized merchant identity of an imported transaction; merchant rules match on it
     merchant_key: Mapped[str | None] = mapped_column(String(255), index=True)
+    # Hidden from lists and statistics, but still part of the wallet balance (so it matches the bank).
+    # Bank transactions are hidden instead of deleted: a deleted one would come back on the next sync.
+    is_hidden: Mapped[bool] = mapped_column(default=False, server_default=false())
 
     wallet: Mapped["Wallet"] = relationship(back_populates="transactions")
     category: Mapped["Category"] = relationship(back_populates="transactions")
