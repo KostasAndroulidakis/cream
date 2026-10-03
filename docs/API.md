@@ -24,6 +24,7 @@ All endpoints except `/health`, `/auth/signup`, `/auth/login` and `/auth/logout`
 | `GET /api/v1/wallets` | List user wallets |
 | `POST /api/v1/wallets` | Create wallet |
 | `GET /api/v1/wallets/totals` | Combined balance per currency |
+| `GET /api/v1/wallets/summary` | Net worth and each account type's total |
 | `GET /api/v1/wallets/{id}` | Get wallet |
 | `PATCH /api/v1/wallets/{id}` | Edit Account: name, type/subtype, `balance` (the starting balance absorbs the difference), `credit_limit`, `invert_balance` (flips the sign), `is_hidden`, `exclude_balance`, `hide_transactions` |
 | `DELETE /api/v1/wallets/{id}` | Delete wallet |
@@ -229,6 +230,24 @@ order. The first subtype is the one a new account gets when none is given.
     "subtypes": [{ "key": "cd", "label": "CD" }, { "key": "checking", "label": "Checking" }]
   }
 ]
+```
+
+#### GET /wallets/summary
+
+The Accounts page's numbers: net worth and each account type's total, counted by one rule (accounts set to
+"Exclude account balance" count in neither). `types` lists only the types the user has accounts of, in
+Monarch's order; liabilities carry their sign (debt is negative), so net worth is the plain sum.
+
+**Response** `200 OK`:
+
+```json
+{
+  "net_worth": [{ "currency": "EUR", "balance": "8800.5000", "wallet_count": 4 }],
+  "types": [
+    { "type": "cash", "account_class": "asset", "totals": [{ "currency": "EUR", "balance": "1250.5000", "wallet_count": 2 }] },
+    { "type": "credit_card", "account_class": "liability", "totals": [{ "currency": "EUR", "balance": "-450.0000", "wallet_count": 1 }] }
+  ]
+}
 ```
 
 #### GET /wallets/totals

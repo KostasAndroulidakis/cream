@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import Wallet
-from app.schemas import AccountTypeRead, CurrencyTotal, WalletCreate, WalletRead, WalletUpdate
+from app.schemas import AccountsSummary, AccountTypeRead, CurrencyTotal, WalletCreate, WalletRead, WalletUpdate
 from app.services.auth import get_current_user_id
 from app.services.authorization import get_wallet as get_user_wallet
 from app.services.helpers import apply_update
@@ -14,6 +14,7 @@ from app.services.wallets import (
     apply_account_settings,
     ensure_currency_change_allowed,
     get_user_wallets,
+    summarize_accounts,
 )
 
 router = APIRouter()
@@ -32,6 +33,13 @@ def list_wallets(
 def list_account_types(user_id: int = Depends(get_current_user_id)):
     """What an account can be: the types (asset or liability) and their subtypes, in Monarch's order."""
     return account_type_catalog()
+
+
+# Declared before /{wallet_id} so "summary" isn't parsed as an ID
+@router.get("/summary", response_model=AccountsSummary)
+def get_accounts_summary(user_id: int = Depends(get_current_user_id), db: Session = Depends(get_db)):
+    """Net worth and each account type's total (assets and liabilities), for the Accounts page."""
+    return summarize_accounts(get_user_wallets(user_id, db))
 
 
 # Declared before /{wallet_id} so "totals" isn't parsed as an ID

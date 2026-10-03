@@ -1,24 +1,30 @@
-import { totalsByCurrency, type CurrencyTotal } from "@/lib/currency-totals"
-import type { AccountTypeInfo, Wallet } from "./api"
+import type { CurrencyTotal } from "@/lib/currency-totals"
+import type { AccountTypeInfo, AccountsSummary, Wallet } from "./api"
 
 export type AccountGroup = {
   info: AccountTypeInfo
   wallets: Wallet[]
-  // The group's balance per currency (currencies are never mixed)
+  // The group's balance per currency, as the API counts it (excluded balances left out)
   totals: CurrencyTotal[]
 }
 
-/**
- * Accounts under their type, in Monarch's order (the catalog's); types without accounts are left out.
- * A group's totals leave out the accounts set to "Exclude account balance".
- */
-export function groupByType(wallets: readonly Wallet[], catalog: readonly AccountTypeInfo[]): AccountGroup[] {
+/** The API's totals ({currency, balance}) in the shape the amount components take. */
+export function toCurrencyTotals(totals: AccountsSummary["net_worth"]): CurrencyTotal[] {
+  return totals.map(({ currency, balance }) => ({ currency, amount: balance }))
+}
+
+/** Accounts under their type, in Monarch's order (the catalog's); types without accounts are left out. */
+export function groupByType(
+  wallets: readonly Wallet[],
+  catalog: readonly AccountTypeInfo[],
+  summary: AccountsSummary | undefined,
+): AccountGroup[] {
+  const totalsByType = new Map(summary?.types.map((total) => [total.type, toCurrencyTotals(total.totals)]))
   return catalog
-    .map((info) => {
-      const members = wallets.filter((wallet) => wallet.type === info.type)
-      const counted = members.filter((wallet) => !wallet.exclude_balance)
-      const totals = totalsByCurrency(counted.map((wallet) => ({ currency: wallet.currency, amount: wallet.balance })))
-      return { info, wallets: members, totals }
-    })
+    .map((info) => ({
+      info,
+      wallets: wallets.filter((wallet) => wallet.type === info.type),
+      totals: totalsByType.get(info.type) ?? [],
+    }))
     .filter((group) => group.wallets.length > 0)
 }

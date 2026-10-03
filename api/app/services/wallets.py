@@ -8,7 +8,7 @@ from sqlalchemy import exists, func, select
 from sqlalchemy.orm import Session
 
 from app.models import Transaction, Wallet, WalletType
-from app.schemas import AccountTypeRead, CurrencyTotal, WalletUpdate
+from app.schemas import AccountsSummary, AccountTypeRead, CurrencyTotal, WalletUpdate
 from app.services.account_types import ACCOUNT_TYPES, InvalidSubtypeError, resolve_subtype
 
 
@@ -104,3 +104,13 @@ def apply_account_settings(wallet: Wallet, changes: WalletUpdate, db: Session) -
     for flag in ("is_hidden", "exclude_balance", "hide_transactions"):
         if values.get(flag) is not None:
             setattr(wallet, flag, values[flag])
+
+
+def summarize_accounts(wallets: list[Wallet]) -> AccountsSummary:
+    """Net worth and each type's total, from the same rule (calculate_currency_totals) so they always agree."""
+    types = [
+        {"type": wallet_type, "account_class": info.account_class, "totals": calculate_currency_totals(members)}
+        for wallet_type, info in ACCOUNT_TYPES.items()
+        if (members := [wallet for wallet in wallets if wallet.type == wallet_type])
+    ]
+    return AccountsSummary(net_worth=calculate_currency_totals(wallets), types=types)

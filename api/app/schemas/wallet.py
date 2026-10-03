@@ -86,6 +86,25 @@ class CurrencyTotal(BaseModel):
     wallet_count: int
 
 
+class TypeTotal(BaseModel):
+    """What the accounts of one type add up to (an asset or a liability), per currency."""
+
+    type: WalletType
+    account_class: AccountClass
+    totals: list[CurrencyTotal]
+
+
+class AccountsSummary(BaseModel):
+    """The Accounts page's numbers: net worth, and each type's total, in Monarch's order of types.
+
+    Accounts set to "Exclude account balance" count in neither.
+    """
+
+    net_worth: list[CurrencyTotal]
+    # Only types the user has accounts of
+    types: list[TypeTotal]
+
+
 class SubtypeRead(BaseModel):
     key: str
     label: str

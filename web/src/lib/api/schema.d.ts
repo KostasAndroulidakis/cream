@@ -143,6 +143,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/wallets/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Accounts Summary
+         * @description Net worth and each account type's total (assets and liabilities), for the Accounts page.
+         */
+        get: operations["get_accounts_summary_api_v1_wallets_summary_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/wallets/totals": {
         parameters: {
             query?: never;
@@ -637,6 +657,18 @@ export interface components {
             subtypes: components["schemas"]["SubtypeRead"][];
         };
         /**
+         * AccountsSummary
+         * @description The Accounts page's numbers: net worth, and each type's total, in Monarch's order of types.
+         *
+         *     Accounts set to "Exclude account balance" count in neither.
+         */
+        AccountsSummary: {
+            /** Net Worth */
+            net_worth: components["schemas"]["CurrencyTotal"][];
+            /** Types */
+            types: components["schemas"]["TypeTotal"][];
+        };
+        /**
          * AspspRead
          * @description A bank (ASPSP = Account Servicing Payment Service Provider) available for connection.
          */
@@ -1099,6 +1131,16 @@ export interface components {
              */
             needs_review?: boolean;
         };
+        /**
+         * TypeTotal
+         * @description What the accounts of one type add up to (an asset or a liability), per currency.
+         */
+        TypeTotal: {
+            type: components["schemas"]["WalletType"];
+            account_class: components["schemas"]["AccountClass"];
+            /** Totals */
+            totals: components["schemas"]["CurrencyTotal"][];
+        };
         /** UserCreate */
         UserCreate: {
             /** Username */
@@ -1522,6 +1564,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AccountTypeRead"][];
+                };
+            };
+        };
+    };
+    get_accounts_summary_api_v1_wallets_summary_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountsSummary"];
                 };
             };
         };

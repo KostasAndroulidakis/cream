@@ -10,6 +10,8 @@ export type WalletCreateInput = Schemas["WalletCreate"]
 export type WalletUpdateInput = Schemas["WalletUpdate"]
 export type CurrencyTotal = Schemas["CurrencyTotal"]
 export type AccountTypeInfo = Schemas["AccountTypeRead"]
+export type AccountsSummary = Schemas["AccountsSummary"]
+export type TypeTotal = Schemas["TypeTotal"]
 
 // Every wallet query lives under this prefix so one invalidation refreshes them all
 export const WALLETS_KEY = ["wallets"] as const
@@ -32,6 +34,16 @@ export const accountTypesQueryOptions = queryOptions({
     return data
   },
   staleTime: Infinity,
+})
+
+/** Net worth and each type's total, counted by the API's one rule (excluded balances left out). */
+export const accountsSummaryQueryOptions = queryOptions({
+  queryKey: [...WALLETS_KEY, "summary"],
+  queryFn: async (): Promise<AccountsSummary> => {
+    const { data, error, response } = await api.GET("/api/v1/wallets/summary")
+    if (!data) throw toApiError(error, response)
+    return data
+  },
 })
 
 export const walletTotalsQueryOptions = queryOptions({

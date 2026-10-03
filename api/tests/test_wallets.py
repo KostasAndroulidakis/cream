@@ -489,3 +489,40 @@ class TestEditAccount:
 
         listed = client.get(WALLETS_URL, headers=auth_headers).json()
         assert [w["is_hidden"] for w in listed] == [True]
+
+
+SUMMARY_URL = f"{WALLETS_URL}/summary"
+
+
+class TestAccountsSummary:
+    def test_net_worth_and_each_types_total(self, client, auth_headers):
+        _create(client, auth_headers, type="cash", initial_balance="1000")
+        _create(client, auth_headers, type="cash", initial_balance="250.50")
+        _create(client, auth_headers, type="vehicle", initial_balance="8000")
+        _create(client, auth_headers, type="credit_card", initial_balance="-450")
+
+        summary = client.get(SUMMARY_URL, headers=auth_headers).json()
+
+        assert summary["net_worth"] == [{"currency": "EUR", "balance": "8800.5000", "wallet_count": 4}]
+        assert [(t["type"], t["account_class"], t["totals"][0]["balance"]) for t in summary["types"]] == [
+            ("cash", "asset", "1250.5000"),
+            ("vehicle", "asset", "8000.0000"),
+            ("credit_card", "liability", "-450.0000"),
+        ]
+
+    def test_excluded_balances_count_nowhere(self, client, auth_headers):
+        _create(client, auth_headers, type="cash", initial_balance="100")
+        excluded = _create(client, auth_headers, type="cash", initial_balance="900").json()
+        client.patch(f"{WALLETS_URL}/{excluded['id']}", json={"exclude_balance": True}, headers=auth_headers)
+
+        summary = client.get(SUMMARY_URL, headers=auth_headers).json()
+
+        assert summary["net_worth"][0]["balance"] == summary["types"][0]["totals"][0]["balance"] == "100.0000"
+
+    def test_empty_and_only_own(self, client, auth_headers, second_auth_headers):
+        _create(client, second_auth_headers, initial_balance="5")
+
+        assert client.get(SUMMARY_URL, headers=auth_headers).json() == {"net_worth": [], "types": []}
+
+    def test_requires_login(self, client):
+        assert client.get(SUMMARY_URL).status_code == 401
