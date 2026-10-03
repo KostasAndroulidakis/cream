@@ -11,7 +11,7 @@ export type CategorizeResult = Schemas["CategorizeResultRead"]
 
 // The inbox shows the newest transactions that need review; the rest appear as these get reviewed
 const INBOX_PAGE_SIZE = 50
-const RULES_KEY = ["rules"] as const
+export const RULES_KEY = ["rules"] as const
 
 /** Under the transactions prefix, so imports and edits refresh the inbox too. */
 export const inboxQueryOptions = queryOptions({

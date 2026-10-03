@@ -1,25 +1,25 @@
 import { useQuery } from "@tanstack/react-query"
 import { Info } from "lucide-react"
 
-import { COMING_SOON } from "@/components/coming-soon-button"
 import { FormAlert } from "@/components/form-alert"
 import { userMessage } from "@/lib/api/errors"
 import { cn } from "@/lib/utils"
 import { categoriesQueryOptions } from "../api"
 import { categorySections, type CategoryGroupBlock, type CategorySection } from "../settings-sections"
+import { CreateCategoryDialog } from "./create-category-dialog"
+import { CreateGroupDialog, EditGroupDialog } from "./group-dialogs"
 import { SortableCategoryList } from "./sortable-category-list"
 
 // Name of the block for categories that belong to no group
 const UNGROUPED_TITLE = "My categories"
 
-/** Monarch's small text actions ("Edit", "Create Category"); their dialogs come next. */
-function TextAction({ children, className }: { children: string; className?: string }) {
+/** Monarch's small text actions ("Edit", "Create Category", "Create group"). */
+function TextAction({ children, className, onClick }: { children: string; className?: string; onClick: () => void }) {
   return (
     <button
       type="button"
-      aria-disabled
-      title={COMING_SOON}
-      className={cn("cursor-not-allowed text-xs font-medium", className)}
+      onClick={onClick}
+      className={cn("rounded-sm text-xs font-medium hover:underline focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none", className)}
     >
       {children}
     </button>
@@ -32,16 +32,36 @@ function GroupBlock({ block: { group, categories } }: { block: CategoryGroupBloc
     <section aria-label={title} className="rounded-lg bg-muted/70 p-2">
       <div className="flex items-center gap-2 px-1 pt-1 pb-2">
         <h4 className="text-sm font-medium">{title}</h4>
-        {group && <TextAction className="text-muted-foreground">Edit</TextAction>}
+        {group && (
+          <EditGroupDialog
+            group={group}
+            categoryCount={categories.length}
+            trigger={(open) => (
+              <TextAction className="text-muted-foreground" onClick={open}>
+                Edit
+              </TextAction>
+            )}
+          />
+        )}
       </div>
       {categories.length > 0 ? (
         <SortableCategoryList categories={categories} />
       ) : (
         <p className="px-1 text-sm text-muted-foreground">No categories in this group yet.</p>
       )}
-      <div className="px-1 pt-2">
-        <TextAction className="text-muted-foreground">Create Category</TextAction>
-      </div>
+      {/* The user's ungrouped categories have no group to add to */}
+      {group && (
+        <div className="px-1 pt-2">
+          <CreateCategoryDialog
+            groupId={group.id}
+            trigger={(open) => (
+              <TextAction className="text-muted-foreground" onClick={open}>
+                Create Category
+              </TextAction>
+            )}
+          />
+        </div>
+      )}
     </section>
   )
 }
@@ -54,7 +74,14 @@ function Section({ section }: { section: CategorySection }) {
         <h3 id={headingId} className="font-medium">
           {section.title}
         </h3>
-        <TextAction className="text-primary">Create group</TextAction>
+        <CreateGroupDialog
+          type={section.type}
+          trigger={(open) => (
+            <TextAction className="text-primary" onClick={open}>
+              Create group
+            </TextAction>
+          )}
+        />
       </div>
       <div className="space-y-3">
         {section.groups.map((block) => (

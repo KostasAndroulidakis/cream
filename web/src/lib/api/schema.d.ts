@@ -191,12 +191,15 @@ export interface paths {
         };
         /**
          * List Categories
-         * @description List user's categories and system defaults, in the user's order within each group.
+         * @description List user's categories and system defaults (with the user's changes), in the user's order.
          */
         get: operations["list_categories_api_v1_categories_get"];
         put?: never;
-        /** Create Category */
-        post: operations["create_category_api_v1_categories_post"];
+        /**
+         * Create Category Endpoint
+         * @description Create a category, or a group (`is_group`) to organize categories.
+         */
+        post: operations["create_category_endpoint_api_v1_categories_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -234,12 +237,20 @@ export interface paths {
         get: operations["get_category_endpoint_api_v1_categories__category_id__get"];
         put?: never;
         post?: never;
-        /** Delete Category */
-        delete: operations["delete_category_api_v1_categories__category_id__delete"];
+        /**
+         * Delete Category Endpoint
+         * @description Delete a category, or a group with its categories; refused while they hold transactions.
+         *
+         *     A system category is deleted for this user only.
+         */
+        delete: operations["delete_category_endpoint_api_v1_categories__category_id__delete"];
         options?: never;
         head?: never;
-        /** Update Category */
-        patch: operations["update_category_api_v1_categories__category_id__patch"];
+        /**
+         * Update Category Endpoint
+         * @description Change a category or group. On a system one only `name` and `budget_by` change, for this user.
+         */
+        patch: operations["update_category_endpoint_api_v1_categories__category_id__patch"];
         trace?: never;
     };
     "/api/v1/transactions": {
@@ -671,6 +682,12 @@ export interface components {
             /** Accounts */
             accounts: components["schemas"]["BankAccountRead"][];
         };
+        /**
+         * BudgetBy
+         * @description How a group is budgeted (Monarch's "Budget" choice for groups).
+         * @enum {string}
+         */
+        BudgetBy: "category" | "group";
         /** BulkResult */
         BulkResult: {
             /** Affected */
@@ -746,6 +763,17 @@ export interface components {
             parent_id?: number | null;
             /** Icon */
             icon?: string | null;
+            /**
+             * Is Group
+             * @default false
+             */
+            is_group?: boolean;
+            budget_by?: components["schemas"]["BudgetBy"] | null;
+            /**
+             * Exclude From Budget
+             * @default false
+             */
+            exclude_from_budget?: boolean;
         };
         /**
          * CategoryOrder
@@ -770,6 +798,11 @@ export interface components {
             is_group: boolean;
             /** Icon */
             icon: string | null;
+            budget_by: components["schemas"]["BudgetBy"] | null;
+            /** Exclude From Budget */
+            exclude_from_budget: boolean;
+            /** Is Custom */
+            is_custom: boolean;
             /**
              * Created At
              * Format: date-time
@@ -799,7 +832,10 @@ export interface components {
          * @enum {string}
          */
         CategoryType: "income" | "expense" | "transfer";
-        /** CategoryUpdate */
+        /**
+         * CategoryUpdate
+         * @description Fields left out stay as they are. For system categories, only `name` and `budget_by` can change.
+         */
         CategoryUpdate: {
             /** Name */
             name?: string | null;
@@ -807,6 +843,9 @@ export interface components {
             parent_id?: number | null;
             /** Icon */
             icon?: string | null;
+            budget_by?: components["schemas"]["BudgetBy"] | null;
+            /** Exclude From Budget */
+            exclude_from_budget?: boolean | null;
         };
         /** ConnectionComplete */
         ConnectionComplete: {
@@ -1597,7 +1636,7 @@ export interface operations {
             };
         };
     };
-    create_category_api_v1_categories_post: {
+    create_category_endpoint_api_v1_categories_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -1692,7 +1731,7 @@ export interface operations {
             };
         };
     };
-    delete_category_api_v1_categories__category_id__delete: {
+    delete_category_endpoint_api_v1_categories__category_id__delete: {
         parameters: {
             query?: never;
             header?: never;
@@ -1721,7 +1760,7 @@ export interface operations {
             };
         };
     };
-    update_category_api_v1_categories__category_id__patch: {
+    update_category_endpoint_api_v1_categories__category_id__patch: {
         parameters: {
             query?: never;
             header?: never;

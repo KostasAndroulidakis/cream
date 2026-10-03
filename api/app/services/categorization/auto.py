@@ -12,6 +12,7 @@ from app.services.categorization.assignment import assign_category
 from app.services.categorization.mcc import MCC_CATEGORY_KEYS, category_key_for_mcc
 from app.services.categorization.system_categories import (
     UNCATEGORIZED_KEY,
+    hidden_category_ids,
     system_category_id,
     system_category_ids,
 )
@@ -40,9 +41,16 @@ class AutoCategorizer:
         rules = db.execute(
             select(MerchantRule.merchant_key, MerchantRule.category_id).where(MerchantRule.user_id == user_id)
         )
+        # A system category the user deleted never receives transactions
+        hidden = hidden_category_ids(user_id, db)
+        mcc_category_ids = {
+            key: category_id
+            for key, category_id in system_category_ids(MCC_CATEGORY_KEYS, db).items()
+            if category_id not in hidden
+        }
         return cls(
             rules={key: category_id for key, category_id in rules},
-            mcc_category_ids=system_category_ids(MCC_CATEGORY_KEYS, db),
+            mcc_category_ids=mcc_category_ids,
             uncategorized_id=system_category_id(UNCATEGORIZED_KEY, db),
         )
 

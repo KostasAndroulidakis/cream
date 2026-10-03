@@ -29,10 +29,10 @@ All endpoints except `/health`, `/auth/signup`, `/auth/login` and `/auth/logout`
 | `DELETE /api/v1/wallets/{id}` | Delete wallet |
 | `GET /api/v1/categories` | List categories (in the user's order within each group) |
 | `PUT /api/v1/categories/order` | Reorder one group's categories: `{category_ids}` lists all of them, once (204) |
-| `POST /api/v1/categories` | Create category |
+| `POST /api/v1/categories` | Create category, or group (`is_group`, `budget_by`); `icon`, `exclude_from_budget` |
 | `GET /api/v1/categories/{id}` | Get category |
-| `PATCH /api/v1/categories/{id}` | Update category |
-| `DELETE /api/v1/categories/{id}` | Delete category |
+| `PATCH /api/v1/categories/{id}` | Update category; on a system one only `name` and `budget_by`, for this user only |
+| `DELETE /api/v1/categories/{id}` | Delete category, or group with its categories (409 while they hold transactions); system ones are hidden for this user only |
 | `GET /api/v1/transactions` | List transactions |
 | `POST /api/v1/transactions` | Create transaction |
 | `GET /api/v1/transactions/needs-review` | Review inbox: transactions that need review |

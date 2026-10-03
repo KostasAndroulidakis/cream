@@ -5,7 +5,7 @@ from collections.abc import Iterable
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.models import Category
+from app.models import Category, CategoryOverride
 
 # Imported transactions land here until the user (or a rule) categorizes them
 UNCATEGORIZED_KEY = "other.uncategorized"
@@ -27,3 +27,14 @@ def system_category_id(key: str, db: Session) -> int:
     if category_id is None:
         raise MissingSystemCategoryError(key)
     return category_id
+
+
+def hidden_category_ids(user_id: int, db: Session) -> set[int]:
+    """System categories this user deleted (hidden for them only)."""
+    return set(
+        db.scalars(
+            select(CategoryOverride.category_id).where(
+                CategoryOverride.user_id == user_id, CategoryOverride.is_hidden.is_(True)
+            )
+        )
+    )

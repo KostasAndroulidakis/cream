@@ -6,7 +6,7 @@ Centralizes all ownership and access control checks to ensure SSOT.
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
-from app.models import Category, Transaction, Wallet
+from app.models import Category, CategoryOverride, Transaction, Wallet
 
 
 class NotFoundError(HTTPException):
@@ -120,6 +120,10 @@ def get_category(
 
     # System default category
     if category.user_id is None:
+        # Deleted by this user: gone for them, though it stays for everyone else
+        override = db.get(CategoryOverride, (user_id, category.id))
+        if override is not None and override.is_hidden:
+            raise NotFoundError("Category")
         if require_ownership:
             raise SystemResourceError("category")
         if allow_system:

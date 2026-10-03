@@ -4,7 +4,7 @@ from fastapi import HTTPException, status
 from sqlalchemy import and_, delete, select
 from sqlalchemy.orm import Session
 
-from app.models import Category, CategoryPosition
+from app.models import Category, CategoryOverride, CategoryPosition
 
 
 class CategoryOrderError(HTTPException):
@@ -15,7 +15,7 @@ class CategoryOrderError(HTTPException):
 
 
 def visible_categories(user_id: int, db: Session) -> list[Category]:
-    """The user's categories and the system ones, in the user's order.
+    """The user's categories and the system ones they haven't deleted, in the user's order.
 
     Categories the user placed come first, by position; the rest keep the default order (by ID),
     so a category created after a reorder lands at the end of its group.
@@ -29,6 +29,13 @@ def visible_categories(user_id: int, db: Session) -> list[Category]:
                 and_(CategoryPosition.category_id == Category.id, CategoryPosition.user_id == user_id),
             )
             .where((Category.user_id == user_id) | (Category.user_id.is_(None)))
+            .where(
+                Category.id.not_in(
+                    select(CategoryOverride.category_id).where(
+                        CategoryOverride.user_id == user_id, CategoryOverride.is_hidden.is_(True)
+                    )
+                )
+            )
             .order_by(position.is_(None), position, Category.id)
         )
     )

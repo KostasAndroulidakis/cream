@@ -112,12 +112,20 @@ Category
 ├── key: stable identifier of a system category (e.g. "food_and_dining.groceries"), NULL for user categories
 ├── is_group: true for groups that organize categories (never assigned to transactions)
 ├── icon: emoji shown next to the name (system categories have Monarch's)
+├── budget_by: groups only, "category" (default) or "group": how the group is budgeted
+├── exclude_from_budget: categories only, left out of the budget with their transactions
 └── created_at: creation timestamp
 ```
 
 **Order**: each user can reorder the categories inside a group (Settings › Categories, drag and drop).
 The order is stored per user in `category_positions`, since system categories are shared; categories
 without a position follow in default order.
+
+**Changing system categories**: they are shared, so a user's changes are stored as their own
+`category_overrides` row: a new name, a budget choice, or `is_hidden` when they delete it. A hidden
+category is gone for that user only: not listed, not assignable, never chosen by automatic
+categorization. Deleting is refused while the user has transactions in it, and Uncategorized can't be
+deleted.
 
 **Category Types**:
 
@@ -142,7 +150,7 @@ seeded by an Alembic migration. Each has a stable `key` for translations and aut
 - Category hierarchy must not contain cycles
 - A subcategory has the same type as its parent
 - Transactions use categories, never groups (`is_group = false`)
-- User can only modify categories they own (user_id matches)
+- User can only modify categories they own (user_id matches); system ones only through their own overrides
 - System default categories cannot be modified or deleted
 
 ### Transaction

@@ -291,13 +291,23 @@ class TestUpdateCategory:
 
         assert response.status_code == 403
 
-    def test_update_category_system_default_denied(
-        self, client, auth_headers, system_default_category
+    def test_system_category_rename_is_only_for_this_user(
+        self, client, auth_headers, second_auth_headers, system_default_category
     ):
-        """Test cannot modify system default category."""
+        url = f"/api/v1/categories/{system_default_category['id']}"
+
+        response = client.patch(url, json={"name": "My Food"}, headers=auth_headers)
+
+        assert response.status_code == 200
+        assert response.json()["name"] == "My Food"
+        assert response.json()["is_custom"] is False
+        assert client.get(url, headers=second_auth_headers).json()["name"] == system_default_category["name"]
+
+    def test_system_category_other_fields_denied(self, client, auth_headers, system_default_category):
+        """Shared rows: only the name and the budget choice can change, per user."""
         response = client.patch(
             f"/api/v1/categories/{system_default_category['id']}",
-            json={"name": "Hacked Default"},
+            json={"icon": "🍕"},
             headers=auth_headers,
         )
 
@@ -354,17 +364,16 @@ class TestDeleteCategory:
 
         assert response.status_code == 403
 
-    def test_delete_category_system_default_denied(
-        self, client, auth_headers, system_default_category
+    def test_system_category_delete_is_only_for_this_user(
+        self, client, auth_headers, second_auth_headers, system_default_category
     ):
-        """Test cannot delete system default category."""
-        response = client.delete(
-            f"/api/v1/categories/{system_default_category['id']}",
-            headers=auth_headers,
-        )
+        url = f"/api/v1/categories/{system_default_category['id']}"
 
-        assert response.status_code == 403
-        assert "Cannot modify system default category" in response.json()["detail"]
+        response = client.delete(url, headers=auth_headers)
+
+        assert response.status_code == 204
+        assert client.get(url, headers=auth_headers).status_code == 404
+        assert client.get(url, headers=second_auth_headers).status_code == 200
 
     def test_delete_category_not_found(self, client, auth_headers):
         """Test deleting non-existent category."""
@@ -498,3 +507,179 @@ class TestCategoryOrder:
         response = client.put(ORDER_URL, json={"category_ids": system_group["children"]})
 
         assert response.status_code == 401
+
+
+def create(client, headers, **fields):
+    response = client.post(CATEGORIES_URL, json=fields, headers=headers)
+    assert response.status_code == 201, response.json()
+    return response.json()
+
+
+def visible_names(client, headers):
+    return {category["name"] for category in client.get(CATEGORIES_URL, headers=headers).json()}
+
+
+@pytest.fixture
+def wallet_id(client, auth_headers):
+    response = client.post("/api/v1/wallets", json={"name": "Main"}, headers=auth_headers)
+    assert response.status_code == 201, response.json()
+    return response.json()["id"]
+
+
+def add_transaction(client, headers, wallet_id, category_id):
+    response = client.post(
+        "/api/v1/transactions",
+        json={"wallet_id": wallet_id, "category_id": category_id, "amount": "-5.00", "occurred_at": "2026-10-01T12:00:00Z"},
+        headers=headers,
+    )
+    assert response.status_code == 201, response.json()
+
+
+class TestGroups:
+    """Create Group, Edit Group (name, budget) and Delete in Settings › Categories."""
+
+    def test_new_group_budgets_by_category(self, client, auth_headers):
+        group = create(client, auth_headers, name="Hobbies", type="expense", is_group=True)
+
+        assert group["is_group"] is True
+        assert group["budget_by"] == "category"
+        assert group["is_custom"] is True
+
+    def test_group_can_budget_as_a_whole(self, client, auth_headers):
+        group = create(client, auth_headers, name="Hobbies", type="expense", is_group=True, budget_by="group")
+
+        assert group["budget_by"] == "group"
+
+    def test_group_cannot_be_inside_a_group(self, client, auth_headers):
+        parent = create(client, auth_headers, name="Hobbies", type="expense", is_group=True)
+
+        response = client.post(
+            CATEGORIES_URL,
+            json={"name": "Inner", "type": "expense", "is_group": True, "parent_id": parent["id"]},
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 422
+
+    def test_only_groups_have_a_budget_choice(self, client, auth_headers):
+        response = client.post(
+            CATEGORIES_URL, json={"name": "Books", "type": "expense", "budget_by": "group"}, headers=auth_headers
+        )
+
+        assert response.status_code == 422
+
+    def test_edit_own_group(self, client, auth_headers):
+        group = create(client, auth_headers, name="Hobbies", type="expense", is_group=True)
+
+        response = client.patch(
+            f"{CATEGORIES_URL}/{group['id']}", json={"name": "Free time", "budget_by": "group"}, headers=auth_headers
+        )
+
+        assert (response.json()["name"], response.json()["budget_by"]) == ("Free time", "group")
+
+    def test_edit_system_group_budget_for_this_user(
+        self, client, auth_headers, second_auth_headers, system_group
+    ):
+        url = f"{CATEGORIES_URL}/{system_group['id']}"
+
+        client.patch(url, json={"budget_by": "group"}, headers=auth_headers)
+
+        assert client.get(url, headers=auth_headers).json()["budget_by"] == "group"
+        assert client.get(url, headers=second_auth_headers).json()["budget_by"] is None
+
+    def test_rename_back_to_system_name(self, client, auth_headers, system_group):
+        url = f"{CATEGORIES_URL}/{system_group['id']}"
+        client.patch(url, json={"name": "Eating"}, headers=auth_headers)
+
+        response = client.patch(url, json={"name": "Food & Dining"}, headers=auth_headers)
+
+        assert response.json()["name"] == "Food & Dining"
+
+    def test_delete_own_group_with_its_categories(self, client, auth_headers):
+        group = create(client, auth_headers, name="Hobbies", type="expense", is_group=True)
+        create(client, auth_headers, name="Books", type="expense", parent_id=group["id"], icon="📚")
+
+        response = client.delete(f"{CATEGORIES_URL}/{group['id']}", headers=auth_headers)
+
+        assert response.status_code == 204
+        assert {"Hobbies", "Books"}.isdisjoint(visible_names(client, auth_headers))
+
+    def test_delete_system_group_hides_it_and_its_categories(
+        self, client, auth_headers, second_auth_headers, system_group
+    ):
+        own = create(client, auth_headers, name="Bakery", type="expense", parent_id=system_group["id"])
+
+        response = client.delete(f"{CATEGORIES_URL}/{system_group['id']}", headers=auth_headers)
+
+        assert response.status_code == 204
+        assert {"Food & Dining", "Groceries", "Coffee Shops", "Bakery"}.isdisjoint(visible_names(client, auth_headers))
+        assert {"Food & Dining", "Groceries"} <= visible_names(client, second_auth_headers)
+        assert client.get(f"{CATEGORIES_URL}/{own['id']}", headers=auth_headers).status_code == 404
+
+    def test_hidden_category_cannot_be_used(self, client, auth_headers, system_group, wallet_id):
+        client.delete(f"{CATEGORIES_URL}/{system_group['id']}", headers=auth_headers)
+
+        response = client.post(
+            "/api/v1/transactions",
+            json={
+                "wallet_id": wallet_id,
+                "category_id": system_group["children"][0],
+                "amount": "-5.00",
+                "occurred_at": "2026-10-01T12:00:00Z",
+            },
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 404
+
+    def test_group_with_transactions_is_kept(self, client, auth_headers, system_group, wallet_id):
+        add_transaction(client, auth_headers, wallet_id, system_group["children"][0])
+
+        response = client.delete(f"{CATEGORIES_URL}/{system_group['id']}", headers=auth_headers)
+
+        assert response.status_code == 409
+        assert "Move them to another category first" in response.json()["detail"]
+        assert "Groceries" in visible_names(client, auth_headers)
+
+    def test_other_users_transactions_dont_block_delete(
+        self, client, auth_headers, second_auth_headers, system_group
+    ):
+        other_wallet = client.post(
+            "/api/v1/wallets", json={"name": "Theirs"}, headers=second_auth_headers
+        ).json()["id"]
+        add_transaction(client, second_auth_headers, other_wallet, system_group["children"][0])
+
+        response = client.delete(f"{CATEGORIES_URL}/{system_group['id']}", headers=auth_headers)
+
+        assert response.status_code == 204
+
+
+class TestCreateCategoryInGroup:
+    """Create Category: icon, name, group, exclude from budget."""
+
+    def test_creates_with_icon_and_budget_exclusion(self, client, auth_headers, system_group):
+        category = create(
+            client,
+            auth_headers,
+            name="Bakery",
+            type="expense",
+            parent_id=system_group["id"],
+            icon="🥐",
+            exclude_from_budget=True,
+        )
+
+        assert (category["icon"], category["exclude_from_budget"], category["budget_by"]) == ("🥐", True, None)
+
+    def test_name_is_trimmed(self, client, auth_headers, system_group):
+        category = create(client, auth_headers, name="  Bakery ", type="expense", parent_id=system_group["id"])
+
+        assert category["name"] == "Bakery"
+
+    def test_type_must_match_the_group(self, client, auth_headers, system_group):
+        response = client.post(
+            CATEGORIES_URL,
+            json={"name": "Bonus", "type": "income", "parent_id": system_group["id"]},
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 400

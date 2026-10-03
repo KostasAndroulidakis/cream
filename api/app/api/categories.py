@@ -1,19 +1,19 @@
 from fastapi import APIRouter, Depends, status
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models import Category
 from app.schemas import CategoryCreate, CategoryOrder, CategoryRead, CategoryUpdate
 from app.services.auth import get_current_user_id
-from app.services.authorization import (
-    get_category,
-    verify_parent_category,
-    check_category_cycle,
-    CategoryInUseError,
+from app.services.authorization import get_category
+from app.services.categories import (
+    create_category,
+    delete_category,
+    read_for_user,
+    to_read,
+    update_category,
+    user_overrides,
 )
 from app.services.category_order import set_group_order, visible_categories
-from app.services.helpers import apply_update
 
 router = APIRouter()
 
@@ -23,8 +23,9 @@ def list_categories(
     user_id: int = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
-    """List user's categories and system defaults, in the user's order within each group."""
-    return visible_categories(user_id, db)
+    """List user's categories and system defaults (with the user's changes), in the user's order."""
+    overrides = user_overrides(user_id, db)
+    return [to_read(category, overrides.get(category.id)) for category in visible_categories(user_id, db)]
 
 
 @router.put("/order", status_code=status.HTTP_204_NO_CONTENT)
@@ -38,20 +39,13 @@ def reorder_categories(
 
 
 @router.post("", response_model=CategoryRead, status_code=status.HTTP_201_CREATED)
-def create_category(
+def create_category_endpoint(
     category_in: CategoryCreate,
     user_id: int = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
-    # Verify user has access to the parent category if specified
-    if category_in.parent_id is not None:
-        verify_parent_category(category_in.parent_id, category_in.type, user_id, db)
-
-    category = Category(user_id=user_id, **category_in.model_dump())
-    db.add(category)
-    db.commit()
-    db.refresh(category)
-    return category
+    """Create a category, or a group (`is_group`) to organize categories."""
+    return to_read(create_category(category_in, user_id, db))
 
 
 @router.get("/{category_id}", response_model=CategoryRead)
@@ -60,41 +54,31 @@ def get_category_endpoint(
     user_id: int = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
-    return get_category(category_id, user_id, db, allow_system=True)
+    return read_for_user(get_category(category_id, user_id, db, allow_system=True), user_id, db)
 
 
 @router.patch("/{category_id}", response_model=CategoryRead)
-def update_category(
+def update_category_endpoint(
     category_id: int,
     category_in: CategoryUpdate,
     user_id: int = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
-    category = get_category(category_id, user_id, db, require_ownership=True)
-
-    # Verify user has access to the new parent category if being changed
-    update_data = category_in.model_dump(exclude_unset=True)
-    if "parent_id" in update_data and update_data["parent_id"] is not None:
-        verify_parent_category(update_data["parent_id"], category.type, user_id, db)
-        # Check for cycles in hierarchy
-        check_category_cycle(category_id, update_data["parent_id"], db)
-
-    apply_update(category, category_in)
-    db.commit()
+    """Change a category or group. On a system one only `name` and `budget_by` change, for this user."""
+    category = get_category(category_id, user_id, db, allow_system=True)
+    update_category(category, category_in, user_id, db)
     db.refresh(category)
-    return category
+    return read_for_user(category, user_id, db)
 
 
 @router.delete("/{category_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_category(
+def delete_category_endpoint(
     category_id: int,
     user_id: int = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
-    category = get_category(category_id, user_id, db, require_ownership=True)
-    db.delete(category)
-    try:
-        db.commit()
-    except IntegrityError:
-        db.rollback()
-        raise CategoryInUseError()
+    """Delete a category, or a group with its categories; refused while they hold transactions.
+
+    A system category is deleted for this user only.
+    """
+    delete_category(get_category(category_id, user_id, db, allow_system=True), user_id, db)
