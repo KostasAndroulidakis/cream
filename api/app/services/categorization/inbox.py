@@ -9,10 +9,14 @@ from app.services.categorization.system_categories import UNCATEGORIZED_KEY, sys
 
 
 def uncategorized_page(user_id: int, limit: int, offset: int, db: Session) -> tuple[int, list[Transaction]]:
-    """Total count and one page (newest first) of the user's uncategorized transactions."""
+    """Total count and one page (newest first) of the user's uncategorized transactions.
+
+    Hidden transactions are left out: hiding one is also a way to clear it from the inbox.
+    """
     condition = (
         Transaction.wallet_id.in_(get_user_wallet_ids_subquery(user_id, db)),
         Transaction.category_id == system_category_id(UNCATEGORIZED_KEY, db),
+        Transaction.is_visible,
     )
     total = db.scalar(select(func.count()).select_from(Transaction).where(*condition)) or 0
     items = db.scalars(

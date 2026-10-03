@@ -42,12 +42,13 @@ def _raise_if_invalid(result: ValidationResult) -> None:
 @router.get("", response_model=list[TransactionRead])
 def list_transactions(
     wallet_id: int | None = None,
+    include_hidden: bool = False,
     limit: int = Query(DEFAULT_PAGE_SIZE, ge=1, le=MAX_PAGE_SIZE),
     offset: int = Query(0, ge=0),
     user_id: int = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
-    """List transactions for the user's wallets, newest first."""
+    """List transactions for the user's wallets, newest first. Hidden ones only on request."""
     if wallet_id is not None:
         # Filter by specific wallet - verify ownership first
         verify_wallet_access(wallet_id, user_id, db)
@@ -56,6 +57,8 @@ def list_transactions(
         # List all transactions - use subquery for efficiency
         wallet_ids_subquery = get_user_wallet_ids_subquery(user_id, db)
         query = db.query(Transaction).filter(Transaction.wallet_id.in_(wallet_ids_subquery))
+    if not include_hidden:
+        query = query.filter(Transaction.is_visible)
 
     return (
         query.order_by(Transaction.occurred_at.desc(), Transaction.id.desc())
