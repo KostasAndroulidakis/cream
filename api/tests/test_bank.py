@@ -66,14 +66,6 @@ class TestConnections:
         assert connection["accounts"][0]["iban_last4"] == "0695"
         assert connection["accounts"][0]["wallet_id"] is None
 
-    def test_connection_and_accounts_say_when_they_were_added(self, client, auth_headers, bank):
-        connect(client, auth_headers, bank)
-
-        connection = client.get(f"{BANK_URL}/connections", headers=auth_headers).json()[0]
-
-        assert datetime.fromisoformat(connection["created_at"])
-        assert datetime.fromisoformat(connection["accounts"][0]["created_at"])
-
     def test_state_is_single_use(self, client, auth_headers, bank):
         connect(client, auth_headers, bank)
         state = bank.started[-1]["state"]

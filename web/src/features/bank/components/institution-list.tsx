@@ -1,27 +1,38 @@
 import { useQuery } from "@tanstack/react-query"
-import { ArrowRight } from "lucide-react"
 
+import { COMING_SOON } from "@/components/coming-soon-button"
 import { FormAlert } from "@/components/form-alert"
 import { Button } from "@/components/ui/button"
-import { walletsQueryOptions } from "@/features/wallets/api"
+import { walletsQueryOptions, type Wallet } from "@/features/wallets/api"
+import { useAccountTypes } from "@/features/wallets/use-account-types"
 import { userMessage } from "@/lib/api/errors"
-import { formatNumericDate, timeAgo } from "@/lib/dates"
-import { pluralize } from "@/lib/text"
+import { timeAgo } from "@/lib/dates"
 import { cn } from "@/lib/utils"
-import { connectionsQueryOptions, useStartConnection, type BankAccount, type BankConnection } from "../api"
+import {
+  aspspsQueryOptions,
+  connectionsQueryOptions,
+  useStartConnection,
+  type BankAccount,
+  type BankConnection,
+} from "../api"
 import { DisconnectMenu } from "./disconnect-menu"
 import { LinkAccountControl } from "./link-account-control"
 
 // The service CREAM reaches banks through, where Monarch names Plaid or MX
 const PROVIDER = "Enable Banking"
 
-function InstitutionAvatar({ name }: { name: string }) {
+/** The bank's logo from the provider's list of banks, or its initial while that loads or has none. */
+function InstitutionLogo({ connection }: { connection: BankConnection }) {
+  const { data: banks } = useQuery(aspspsQueryOptions(connection.aspsp_country))
+  const logo = banks?.find((bank) => bank.name === connection.aspsp_name)?.logo
+
+  if (logo) return <img src={logo} alt="" className="size-8 shrink-0 rounded-full object-contain" />
   return (
     <span
       aria-hidden
-      className="inline-grid size-10 shrink-0 place-items-center rounded-full bg-muted text-base font-semibold text-muted-foreground"
+      className="inline-grid size-8 shrink-0 place-items-center rounded-full bg-muted text-sm font-semibold text-muted-foreground"
     >
-      {name.charAt(0).toUpperCase()}
+      {connection.aspsp_name.charAt(0).toUpperCase()}
     </span>
   )
 }
@@ -32,11 +43,12 @@ function lastSynced(connection: BankConnection): string | null {
   return times.length > 0 ? times.reduce((latest, time) => (time > latest ? time : latest)) : null
 }
 
-function syncStatus(connection: BankConnection): { text: string; problem: boolean } {
-  if (connection.status === "expired") return { text: "Access expired. Update to reconnect", problem: true }
+/** Monarch's small line above the name, e.g. "PLAID • LAST UPDATE 1 MONTH AGO". */
+function statusLine(connection: BankConnection): { text: string; problem: boolean } {
+  if (connection.status === "expired") return { text: "Access expired", problem: true }
   if (connection.status === "pending") return { text: "Waiting for the bank", problem: false }
   const synced = lastSynced(connection)
-  return { text: synced ? `Synced with institution ${timeAgo(synced)}` : "Not synced yet", problem: false }
+  return { text: synced ? `Last update ${timeAgo(synced)}` : "Not synced yet", problem: false }
 }
 
 /** "Update": logs in at the bank again, for a connection whose access ran out. */
@@ -44,6 +56,7 @@ function ReconnectButton({ connection }: { connection: BankConnection }) {
   const reconnect = useStartConnection()
   return (
     <Button
+      size="sm"
       disabled={reconnect.isPending}
       onClick={() => reconnect.mutate({ aspsp_name: connection.aspsp_name, country: connection.aspsp_country })}
     >
@@ -52,67 +65,77 @@ function ReconnectButton({ connection }: { connection: BankConnection }) {
   )
 }
 
-function AccountRow({ account, walletName }: { account: BankAccount; walletName?: string }) {
+/** Monarch's "View" and "Edit"; account pages come later, so for now they only say so. */
+function AccountButton({ children }: { children: string }) {
   return (
-    <li className="grid grid-cols-1 items-center gap-3 py-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]">
+    <Button
+      variant="outline"
+      size="sm"
+      aria-disabled
+      title={COMING_SOON}
+      className="cursor-not-allowed hover:bg-background active:not-aria-[haspopup]:translate-y-0"
+    >
+      {children}
+    </Button>
+  )
+}
+
+function AccountRow({ account, wallet }: { account: BankAccount; wallet?: Wallet }) {
+  const { subtypeLabel } = useAccountTypes()
+
+  return (
+    <li className="flex flex-wrap items-center justify-between gap-3 py-3.5">
       <div className="min-w-0">
-        <p className="truncate font-medium">{account.name}</p>
+        <p className="truncate text-[0.9375rem]">{account.name}</p>
         <p className="text-sm text-muted-foreground">
-          {account.currency}
-          {account.iban_last4 && ` ${account.iban_last4}`}
+          {wallet ? subtypeLabel(wallet.type, wallet.subtype) : "Not linked to a CREAM account yet"}
         </p>
-        <p className="text-sm text-muted-foreground">Added to CREAM on {formatNumericDate(account.created_at)}</p>
       </div>
-      <div className="min-w-0">
-        {walletName ? (
-          <p className="flex items-center gap-2 text-sm">
-            <ArrowRight className="size-4 text-muted-foreground" aria-hidden />
-            <span className="truncate font-medium">{walletName}</span>
-          </p>
-        ) : (
-          <LinkAccountControl account={account} />
-        )}
-      </div>
-      <p className="text-sm text-muted-foreground md:text-right">
-        {account.last_synced_at ? `CREAM synced ${timeAgo(account.last_synced_at)}` : "Not synced yet"}
-      </p>
+      {wallet ? (
+        <div className="flex items-center gap-2">
+          <AccountButton>View</AccountButton>
+          <AccountButton>Edit</AccountButton>
+        </div>
+      ) : (
+        // Monarch adds every account on its own; CREAM asks where the transactions go
+        <LinkAccountControl account={account} />
+      )}
     </li>
   )
 }
 
-function InstitutionCard({ connection, walletNames }: { connection: BankConnection; walletNames: Map<number, string> }) {
-  const status = syncStatus(connection)
+function InstitutionCard({ connection, wallets }: { connection: BankConnection; wallets: Map<number, Wallet> }) {
+  const status = statusLine(connection)
 
   return (
-    <section
-      aria-label={connection.aspsp_name}
-      className="rounded-xl border bg-card px-6 py-5 shadow-xs"
-    >
-      <header className="flex flex-wrap items-start justify-between gap-4">
-        <div className="flex min-w-0 items-start gap-4">
-          <InstitutionAvatar name={connection.aspsp_name} />
+    <section aria-label={connection.aspsp_name} className="rounded-xl border bg-card px-5 py-4 shadow-xs">
+      <header className="flex items-center justify-between gap-4 pb-2">
+        <div className="flex min-w-0 items-center gap-3">
+          <InstitutionLogo connection={connection} />
           <div className="min-w-0">
-            <h3 className="truncate text-lg font-semibold tracking-tight">{connection.aspsp_name}</h3>
-            <p className="text-sm text-muted-foreground">Connected {formatNumericDate(connection.created_at)}</p>
-            <p className="text-sm text-muted-foreground">{pluralize(connection.accounts.length, "account")}</p>
+            <p
+              className={cn(
+                "text-[0.6875rem] font-medium tracking-wide uppercase",
+                status.problem ? "text-destructive" : "text-muted-foreground",
+              )}
+            >
+              {PROVIDER} • {status.text}
+            </p>
+            <h3 className="truncate text-base font-semibold">{connection.aspsp_name}</h3>
           </div>
         </div>
-        <div className="flex items-start gap-3">
-          <div className="max-w-64 text-sm">
-            <p className="font-medium">{PROVIDER}</p>
-            <p className={cn(status.problem ? "text-destructive" : "text-muted-foreground")}>{status.text}</p>
-          </div>
-          <DisconnectMenu connection={connection} />
+        <div className="flex items-center gap-2">
           {connection.status === "expired" && <ReconnectButton connection={connection} />}
+          <DisconnectMenu connection={connection} />
         </div>
       </header>
       {connection.accounts.length > 0 && (
-        <ul className="mt-2 divide-y">
+        <ul className="divide-y divide-border/60">
           {connection.accounts.map((account) => (
             <AccountRow
               key={account.id}
               account={account}
-              walletName={account.wallet_id === null ? undefined : walletNames.get(account.wallet_id)}
+              wallet={account.wallet_id === null ? undefined : wallets.get(account.wallet_id)}
             />
           ))}
         </ul>
@@ -124,15 +147,15 @@ function InstitutionCard({ connection, walletNames }: { connection: BankConnecti
 /** One card per connected bank, with its accounts; nothing at all when none is connected, like Monarch. */
 export function InstitutionList() {
   const connections = useQuery(connectionsQueryOptions)
-  const { data: wallets = [] } = useQuery(walletsQueryOptions)
+  const { data: walletList = [] } = useQuery(walletsQueryOptions)
 
   if (connections.isPending) {
     return <div className="h-40 animate-pulse rounded-xl bg-muted" aria-label="Loading institutions" />
   }
   if (connections.isError) return <FormAlert message={userMessage(connections.error)} />
 
-  const walletNames = new Map(wallets.map((wallet) => [wallet.id, wallet.name]))
+  const wallets = new Map(walletList.map((wallet) => [wallet.id, wallet]))
   return connections.data.map((connection) => (
-    <InstitutionCard key={connection.id} connection={connection} walletNames={walletNames} />
+    <InstitutionCard key={connection.id} connection={connection} wallets={wallets} />
   ))
 }

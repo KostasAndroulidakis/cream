@@ -40,22 +40,23 @@ export function formatLongDate(dayKey: string): string {
   return LONG_DATE.format(new Date(year, month - 1, day))
 }
 
-const NUMERIC_DATE = new Intl.DateTimeFormat(undefined, { day: "2-digit", month: "2-digit", year: "numeric" })
+const RELATIVE_TIME = new Intl.RelativeTimeFormat("en", { numeric: "auto" })
 
-/** A timestamp as a numeric date, e.g. "17/09/2024" (order follows the user's locale). */
-export function formatNumericDate(iso: string): string {
-  return NUMERIC_DATE.format(new Date(iso))
-}
+// Largest unit first: the first one that fits says how long ago
+const RELATIVE_UNITS: [Intl.RelativeTimeFormatUnit, number][] = [
+  ["year", 365 * 24 * 3600],
+  ["month", 30 * 24 * 3600],
+  ["week", 7 * 24 * 3600],
+  ["day", 24 * 3600],
+  ["hour", 3600],
+  ["minute", 60],
+]
 
-const MINUTE_MS = 60_000
-const HOUR_MS = 60 * MINUTE_MS
-const DAY_MS = 24 * HOUR_MS
-
-/** How long ago a timestamp was, in Monarch's short form: "just now", "5m", "3h", "144d". */
+/** How long ago a timestamp was, e.g. "2 hours ago", "1 month ago", "now". */
 export function timeAgo(iso: string): string {
-  const elapsed = Date.now() - new Date(iso).getTime()
-  if (elapsed < MINUTE_MS) return "just now"
-  if (elapsed < HOUR_MS) return `${Math.floor(elapsed / MINUTE_MS)}m ago`
-  if (elapsed < DAY_MS) return `${Math.floor(elapsed / HOUR_MS)}h ago`
-  return `${Math.floor(elapsed / DAY_MS)}d ago`
+  const seconds = (Date.now() - new Date(iso).getTime()) / 1000
+  for (const [unit, size] of RELATIVE_UNITS) {
+    if (seconds >= size) return RELATIVE_TIME.format(-Math.floor(seconds / size), unit)
+  }
+  return "now"
 }

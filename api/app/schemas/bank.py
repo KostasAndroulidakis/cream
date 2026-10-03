@@ -38,8 +38,6 @@ class BankAccountRead(BaseModel):
     iban_last4: str | None
     wallet_id: int | None
     last_synced_at: datetime | None
-    # When CREAM first saw the account
-    created_at: datetime
 
     @computed_field
     @property
@@ -56,8 +54,6 @@ class BankConnectionRead(BaseModel):
     aspsp_country: str
     status: ConnectionStatus
     valid_until: datetime | None
-    # When the bank was connected
-    created_at: datetime
     accounts: list[BankAccountRead]
 
     model_config = {"from_attributes": True}
