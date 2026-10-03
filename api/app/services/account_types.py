@@ -26,7 +26,8 @@ class TypeInfo:
 
     @property
     def default_subtype(self) -> str:
-        return self.subtypes[0].key
+        # The first one "Add Manual Account" offers, as Monarch preselects it
+        return next(subtype.key for subtype in self.subtypes if subtype.manual)
 
 
 def _subtypes(*pairs: tuple[str, str]) -> tuple[Subtype, ...]:
@@ -56,60 +57,14 @@ ACCOUNT_TYPES: dict[WalletType, TypeInfo] = {
         ("limited_purpose_checking", "Limited Purpose Checking"),
         ("paypal", "PayPal"),
     )),
+    # Only what people in Greece hold, all tracked by hand: PSD2 (Enable Banking) reaches payment accounts,
+    # not securities, so no investment account can be linked. Labels as in Monarch's list.
     WalletType.INVESTMENT: TypeInfo("Investments", AccountClass.ASSET, _subtypes(
-        ("401a", "401a"), ("401k", "401k"), ("403b", "403b"), ("457b", "457b"), ("529", "529"),
         ("brokerage", "Brokerage"),
-        ("cash_isa", "Cash ISA"),
-        ("crypto_exchange", "Crypto Exchange"),
-        ("education_savings_account", "Education Savings Account"),
-        ("fhsa", "FHSA"),
-        ("fixed_annuity", "Fixed Annuity"),
-        ("gic", "GIC"),
-        ("health_reimbursement_arrangement", "Health Reimbursement Arrangement"),
-        ("hsa", "HSA"),
-        ("ira", "IRA"),
-        ("isa", "ISA"),
-        ("keogh", "Keogh"),
-        ("lif", "LIF"),
-        ("life_insurance", "Life Insurance"),
-        ("line_of_credit", "Line of Credit"),
-        ("lira", "LIRA"),
-        ("lrif", "LRIF"),
-        ("lrsp", "LRSP"),
+        ("crypto_exchange", "Cryptocurrency"),
         ("mutual_fund", "Mutual Fund"),
-        ("non_custodial_wallet", "Non-custodial Wallet"),
-        ("non_taxable_brokerage_account", "Non-taxable Brokerage Account"),
-        ("other_annuity", "Other Annuity"),
-        ("other_insurance", "Other Insurance"),
         ("pension", "Pension"),
-        ("prediction_market", "Prediction Market"),
-        ("prif", "PRIF"),
-        ("profit_sharing_plan", "Profit Sharing Plan"),
-        ("qshr", "QSHR"),
-        ("rdsp", "RDSP"),
-        ("resp", "RESP"),
-        ("retirement", "Retirement"),
-        ("rlif", "RLIF"),
-        ("roth", "Roth"),
-        ("roth_401k", "Roth 401k"),
-        ("roth_403b", "Roth 403b"),
-        ("roth_457b", "Roth 457b"),
-        ("roth_pension", "Roth Pension"),
-        ("roth_profit_sharing_plan", "Roth Profit Sharing Plan"),
-        ("roth_thrift_savings_plan", "Roth Thrift Savings Plan"),
-        ("rrif", "RRIF"),
-        ("rrsp", "RRSP"),
-        ("sarsep", "SARSEP"),
-        ("sep_ira", "SEP IRA"),
-        ("simple_ira", "SIMPLE IRA"),
-        ("sipp", "SIPP"),
         ("stock_plan", "Stock Plan"),
-        ("tfsa", "TFSA"),
-        ("thrift_savings_plan", "Thrift Savings Plan"),
-        ("trust", "Trust"),
-        ("ugma", "UGMA"),
-        ("utma", "UTMA"),
-        ("variable_annuity", "Variable Annuity"),
         OTHER,
     )),
     WalletType.REAL_ESTATE: TypeInfo("Real Estate", AccountClass.ASSET, _subtypes(

@@ -375,6 +375,16 @@ class TestAccountTypes:
         # Bank-only ones stay in the catalog: linked accounts and Edit Account use them
         assert {"ebt", "hsa", "limited_purpose_checking", "paypal"} <= {s["key"] for s in cash["subtypes"]}
 
+    def test_investments_only_those_held_in_greece(self, client, auth_headers):
+        investment = next(t for t in client.get(TYPES_URL, headers=auth_headers).json() if t["type"] == "investment")
+
+        assert [s["label"] for s in investment["subtypes"]] == [
+            "Brokerage", "Cryptocurrency", "Mutual Fund", "Pension", "Stock Plan", "Other",
+        ]
+
+    def test_new_investment_starts_as_brokerage(self, client, auth_headers):
+        assert _create(client, auth_headers, type="investment").json()["subtype"] == "brokerage"
+
     def test_every_other_type_offers_all_its_subtypes_by_hand(self, client, auth_headers):
         catalog = client.get(TYPES_URL, headers=auth_headers).json()
 

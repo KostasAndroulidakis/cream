@@ -83,13 +83,13 @@ Wallet
 | Type | Class | Subtypes (examples) |
 | ------ | ------- | ---------- |
 | `cash` | Asset | By hand: CD, Checking, Savings, Money Market, Mobile Payment System, Prepaid, Cash Management; from banks also EBT, HSA, Limited Purpose Checking, PayPal |
-| `investment` | Asset | Brokerage, Crypto Exchange, Pension, … (Plaid's investment list) |
+| `investment` | Asset | Brokerage, Cryptocurrency, Mutual Fund, Pension, Stock Plan, Other (only what's held in Greece; none can be linked, PSD2 doesn't reach securities) |
 | `real_estate` | Asset | Primary Home, Secondary Home, Rental Property |
 | `vehicle` | Asset | Car, Boat, Motorcycle, Snowmobile, Bicycle, Other |
 | `valuables` | Asset | Art, Jewelry, Collectibles, Furniture, Other |
 | `other_asset` | Asset | Other |
 | `credit_card` | Liability | Credit Card, PayPal |
-| `mortgage` | Liability | Mortgage |
+| `mortgage` | Liability | Mortgage (its Add form is Monarch's "Add Loans Account", without Type) |
 | `loan` | Liability | Auto, Business, Commercial, Construction, Consumer, Home, Home Equity, Loan, Mortgage, Overdraft, Line of Credit, Student |
 | `other_liability` | Liability | Other |
 
