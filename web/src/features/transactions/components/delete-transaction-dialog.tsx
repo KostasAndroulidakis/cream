@@ -4,7 +4,7 @@ import { Trash2 } from "lucide-react"
 import { ConfirmDialog } from "@/components/confirm-dialog"
 import { Button } from "@/components/ui/button"
 import { userMessage } from "@/lib/api/errors"
-import { formatMoney } from "@/lib/money"
+import { formatSigned } from "@/lib/money"
 import { cn } from "@/lib/utils"
 import { useDeleteTransaction, type Transaction } from "../api"
 import { transactionLabel } from "../display"
@@ -21,7 +21,7 @@ export function DeleteTransactionDialog({ transaction, currency }: DeleteTransac
   const [open, setOpen] = useState(false)
   const deleteTransaction = useDeleteTransaction()
   const label = transactionLabel(transaction) ?? "This transaction"
-  const amount = currency ? formatMoney(transaction.amount, currency) : transaction.amount
+  const amount = currency ? formatSigned(transaction.amount, currency) : transaction.amount
 
   return (
     <>

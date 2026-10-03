@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react"
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query"
 
+import { Amount, AmountTotals } from "@/components/amount"
 import { FormAlert } from "@/components/form-alert"
 import { ListSkeleton } from "@/components/list-skeleton"
 import { SelectionCheckbox } from "@/components/selection-checkbox"
@@ -9,12 +10,10 @@ import { categoriesQueryOptions } from "@/features/categories/api"
 import { categoriesById } from "@/features/categories/grouping"
 import { walletsQueryOptions } from "@/features/wallets/api"
 import { userMessage } from "@/lib/api/errors"
-import { isMoneyIn } from "@/lib/amount"
 import { formatLongDate } from "@/lib/dates"
-import { formatFlow } from "@/lib/money"
 import { cn } from "@/lib/utils"
 import type { Transaction } from "../api"
-import { formatTotals, type CurrencyTotal } from "@/lib/currency-totals"
+import type { CurrencyTotal } from "@/lib/currency-totals"
 import { groupByDay } from "../day-groups"
 import { transactionLabel } from "../display"
 import { useSelection, useSelectionShortcuts, type Selection } from "../use-selection"
@@ -63,8 +62,8 @@ function TransactionRow({ transaction, categoryName, walletName, currency, selec
       <p className="hidden truncate md:block">{walletName}</p>
       {/* Not while selecting: a click there toggles the row's checkbox */}
       <div>{!selection && transaction.needs_review && <MarkReviewedButton transaction={transaction} />}</div>
-      <p className={cn("text-right tabular-nums", isMoneyIn(transaction.amount) && "text-primary")}>
-        {currency ? formatFlow(transaction.amount, currency) : transaction.amount}
+      <p className="text-right">
+        <Amount value={transaction.amount} currency={currency} />
       </p>
     </>
   )
@@ -86,7 +85,7 @@ function DayHeader({ day, totals }: { day: string; totals: CurrencyTotal[] }) {
   return (
     <div className="flex items-center justify-between gap-4 bg-sidebar px-6 py-2 text-sm font-medium text-muted-foreground">
       <h3>{formatLongDate(day)}</h3>
-      <p className="tabular-nums">{formatTotals(totals, formatFlow)}</p>
+      <AmountTotals totals={totals} />
     </div>
   )
 }

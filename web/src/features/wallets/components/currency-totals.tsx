@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query"
 
-import { formatMoney } from "@/lib/money"
+import { Amount } from "@/components/amount"
 import { walletTotalsQueryOptions } from "../api"
 
 /** The headline number: what you have, one line per currency (never converted or mixed). */
@@ -18,7 +18,7 @@ export function CurrencyTotals() {
           key={currency}
           className="text-[clamp(2.25rem,6vw,3.5rem)] leading-none font-semibold tracking-tight tabular-nums"
         >
-          {formatMoney(balance, currency)}
+          <Amount value={balance} currency={currency} />
         </dd>
       ))}
     </dl>

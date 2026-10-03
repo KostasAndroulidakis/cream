@@ -2,11 +2,11 @@ import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { ChevronDown } from "lucide-react"
 
+import { AmountTotals } from "@/components/amount"
 import { FormAlert } from "@/components/form-alert"
 import { ListSkeleton } from "@/components/list-skeleton"
 import { Surface } from "@/components/surface"
 import { userMessage } from "@/lib/api/errors"
-import { formatTotals } from "@/lib/currency-totals"
 import { cn } from "@/lib/utils"
 import { walletsQueryOptions } from "../api"
 import { groupByType, type AccountGroup } from "../grouping"
@@ -36,7 +36,7 @@ function AccountGroupCard({ group }: { group: AccountGroup }) {
           aria-hidden
         />
         <h2 className="flex-1 text-lg font-semibold tracking-tight">{group.info.label}</h2>
-        <p className="text-lg font-semibold tabular-nums">{formatTotals(group.totals)}</p>
+        <AmountTotals totals={group.totals} className="text-lg font-semibold" />
       </button>
       {open && (
         <ul id={listId} className="divide-y border-t px-6">

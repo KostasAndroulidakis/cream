@@ -1,5 +1,4 @@
-import { formatMoney } from "@/lib/money"
-import { cn } from "@/lib/utils"
+import { Amount } from "@/components/amount"
 import type { Wallet } from "../api"
 import { ACCOUNT_TYPE_ICONS } from "../wallet-types"
 
@@ -15,7 +14,6 @@ type AccountRowProps = {
 /** One account: its type's icon, name and subtype, and its balance. */
 export function AccountRow({ wallet, label }: AccountRowProps) {
   const Icon = ACCOUNT_TYPE_ICONS[wallet.type]
-  const isNegative = wallet.balance.startsWith("-")
 
   return (
     <li className="flex items-center gap-4 py-4">
@@ -26,9 +24,7 @@ export function AccountRow({ wallet, label }: AccountRowProps) {
         <p className="truncate font-medium">{wallet.name}</p>
         <p className="text-sm text-muted-foreground">{label}</p>
       </div>
-      <p className={cn("font-medium tabular-nums", isNegative && "text-destructive")}>
-        {formatMoney(wallet.balance, wallet.currency)}
-      </p>
+      <Amount value={wallet.balance} currency={wallet.currency} className="font-medium" />
     </li>
   )
 }
