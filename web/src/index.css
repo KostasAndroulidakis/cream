@@ -26,6 +26,7 @@
     --color-border: var(--border);
     --color-destructive: var(--destructive);
     --color-positive: var(--positive);
+    --color-chart-accent: var(--chart-accent);
     --color-accent-foreground: var(--accent-foreground);
     --color-accent: var(--accent);
     --color-muted-foreground: var(--muted-foreground);
@@ -68,6 +69,8 @@
     --destructive: oklch(0.577 0.245 27.325);
     /* Money in: the green twin of --destructive (money out) */
     --positive: oklch(0.527 0.154 150.069);
+    /* The single-series chart color (net worth): the brand green, lighter in dark mode */
+    --chart-accent: #1f4d3a;
     --border: oklch(0.922 0 0);
     --input: oklch(0.922 0 0);
     --ring: #1f4d3a;
@@ -108,6 +111,7 @@
     --accent-foreground: oklch(0.985 0 0);
     --destructive: oklch(0.704 0.191 22.216);
     --positive: oklch(0.723 0.192 149.579);
+    --chart-accent: oklch(0.723 0.192 149.579);
     --border: oklch(1 0 0 / 10%);
     --input: oklch(1 0 0 / 15%);
     --ring: oklch(0.556 0 0);

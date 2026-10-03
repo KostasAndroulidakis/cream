@@ -1,6 +1,6 @@
 import { z } from "zod"
 
-import { amountInput, isZeroAmount } from "@/lib/amount"
+import { amountInput } from "@/lib/amount"
 import type { Wallet, WalletType } from "./api"
 import { WALLET_TYPES } from "./wallet-types"
 
@@ -28,12 +28,6 @@ export const CREDIT_CARD: WalletType = "credit_card"
 /** An API amount ("11851.1000") as people type it ("11851.10"): no float, no padding past cents. */
 export function editableAmount(amount: string): string {
   return amount.replace(/(\.\d{2})\d*$/, (cents) => cents.replace(/0+$/, "").padEnd(3, "0"))
-}
-
-/** The same amount with the opposite sign ("12.50" ↔ "-12.50"); zero stays zero. */
-export function negate(amount: string): string {
-  if (isZeroAmount(amount)) return amount
-  return amount.startsWith("-") ? amount.slice(1) : `-${amount}`
 }
 
 export function formValues(wallet: Wallet): EditAccountInput {

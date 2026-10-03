@@ -12,6 +12,8 @@ export type CurrencyTotal = Schemas["CurrencyTotal"]
 export type AccountTypeInfo = Schemas["AccountTypeRead"]
 export type AccountsSummary = Schemas["AccountsSummary"]
 export type TypeTotal = Schemas["TypeTotal"]
+export type NetWorthRange = Schemas["NetWorthRange"]
+export type NetWorthHistory = Schemas["NetWorthHistory"]
 
 // Every wallet query lives under this prefix so one invalidation refreshes them all
 export const WALLETS_KEY = ["wallets"] as const
@@ -45,6 +47,20 @@ export const accountsSummaryQueryOptions = queryOptions({
     return data
   },
 })
+
+/** Net worth day by day over a range, for the Accounts chart. */
+export function netWorthQueryOptions(range: NetWorthRange) {
+  return queryOptions({
+    queryKey: [...WALLETS_KEY, "net-worth", range],
+    queryFn: async (): Promise<NetWorthHistory> => {
+      const { data, error, response } = await api.GET("/api/v1/wallets/net-worth", {
+        params: { query: { range } },
+      })
+      if (!data) throw toApiError(error, response)
+      return data
+    },
+  })
+}
 
 export const walletTotalsQueryOptions = queryOptions({
   queryKey: [...WALLETS_KEY, "totals"],

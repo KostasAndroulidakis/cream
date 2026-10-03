@@ -34,10 +34,20 @@ export function localDayKey(iso: string): string {
 
 const LONG_DATE = new Intl.DateTimeFormat(undefined, { day: "numeric", month: "long", year: "numeric" })
 
+// A day key read as that local calendar day (new Date("2026-03-02") would be UTC midnight)
+function dayKeyToDate(dayKey: string): Date {
+  const [year, month, day] = dayKey.split("-").map(Number)
+  return new Date(year, month - 1, day)
+}
+
 /** A day key (YYYY-MM-DD) as a long date, e.g. "October 2, 2026". */
 export function formatLongDate(dayKey: string): string {
-  const [year, month, day] = dayKey.split("-").map(Number)
-  return LONG_DATE.format(new Date(year, month - 1, day))
+  return LONG_DATE.format(dayKeyToDate(dayKey))
+}
+
+/** A day key (YYYY-MM-DD) as a short date, e.g. "Mar 2". */
+export function formatShortDay(dayKey: string): string {
+  return SHORT_DATE.format(dayKeyToDate(dayKey))
 }
 
 const RELATIVE_TIME = new Intl.RelativeTimeFormat("en", { numeric: "auto" })

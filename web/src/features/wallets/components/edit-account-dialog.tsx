@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { userMessage } from "@/lib/api/errors"
 import { fieldA11y } from "@/lib/forms"
+import { negate } from "@/lib/decimal"
 import { formatMoney } from "@/lib/money"
 import { notifySuccess } from "@/lib/notify"
 import { useDeleteWallet, useUpdateWallet, type Wallet } from "../api"
@@ -20,7 +21,6 @@ import {
   CREDIT_CARD,
   editAccountSchema,
   formValues,
-  negate,
   type EditAccountInput,
   type EditAccountValues,
 } from "../edit-account"

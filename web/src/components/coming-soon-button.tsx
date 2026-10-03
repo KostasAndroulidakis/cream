@@ -2,6 +2,7 @@ import type { ReactNode } from "react"
 import type { LucideIcon } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
 
 /** What every not-yet-built control says when pointed at. */
 export const COMING_SOON = "Coming soon"
@@ -13,12 +14,14 @@ const UNAVAILABLE =
 type ComingSoonButtonProps = {
   icon?: LucideIcon
   children: ReactNode
+  // To match the controls beside it (e.g. a select's height)
+  className?: string
 }
 
 /** A button for a feature that isn't built yet: already in its final place, visibly unavailable. */
-export function ComingSoonButton({ icon: Icon, children }: ComingSoonButtonProps) {
+export function ComingSoonButton({ icon: Icon, children, className }: ComingSoonButtonProps) {
   return (
-    <Button variant="outline" aria-disabled title={COMING_SOON} className={UNAVAILABLE}>
+    <Button variant="outline" aria-disabled title={COMING_SOON} className={cn(UNAVAILABLE, className)}>
       {Icon && <Icon aria-hidden />}
       {children}
     </Button>

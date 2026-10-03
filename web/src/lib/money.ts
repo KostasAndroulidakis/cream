@@ -35,3 +35,20 @@ export function formatSigned(amount: string, currency: string): string {
 export function amountTone(amount: string): string {
   return { positive: "text-positive", negative: "text-destructive", zero: "" }[signOf(amount)]
 }
+
+const compactFormatters = new Map<string, Intl.NumberFormat>()
+
+/** A rounded amount for chart axes ("€115.5K"); only for display, never for sums. */
+export function formatCompactMoney(amount: number, currency: string): string {
+  let formatter = compactFormatters.get(currency)
+  if (!formatter) {
+    formatter = new Intl.NumberFormat(undefined, {
+      style: "currency",
+      currency,
+      notation: "compact",
+      maximumFractionDigits: 1,
+    })
+    compactFormatters.set(currency, formatter)
+  }
+  return formatter.format(amount)
+}
