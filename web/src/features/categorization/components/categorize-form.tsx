@@ -1,6 +1,7 @@
-import { useId, useState, type FormEvent } from "react"
+import { useState, type FormEvent } from "react"
 import { useQuery } from "@tanstack/react-query"
 
+import { CheckboxField } from "@/components/checkbox-field"
 import { FormAlert } from "@/components/form-alert"
 import { Button } from "@/components/ui/button"
 import { categoriesQueryOptions } from "@/features/categories/api"
@@ -24,7 +25,6 @@ type CategorizeFormProps = {
 
 /** Pick a category for one transaction, optionally remembering it for the merchant. */
 export function CategorizeForm({ transaction, layout, onCategorized }: CategorizeFormProps) {
-  const id = useId()
   const categorize = useCategorizeTransaction()
   const { data: categories = [] } = useQuery(categoriesQueryOptions)
   const [categoryId, setCategoryId] = useState(NO_CATEGORY)
@@ -63,24 +63,13 @@ export function CategorizeForm({ transaction, layout, onCategorized }: Categoriz
       </div>
 
       {canRemember && (
-        <label
-          htmlFor={`${id}-similar`}
-          className={cn(
-            "flex min-w-0 cursor-pointer items-center gap-2 text-sm text-muted-foreground",
-            isInline && "col-span-2 row-start-2",
-          )}
+        <CheckboxField
+          checked={applyToSimilar}
+          onCheckedChange={setApplyToSimilar}
+          className={cn(isInline && "col-span-2 row-start-2")}
         >
-          <input
-            id={`${id}-similar`}
-            type="checkbox"
-            checked={applyToSimilar}
-            onChange={(event) => setApplyToSimilar(event.target.checked)}
-            className="size-4 shrink-0 accent-primary"
-          />
-          <span className="truncate">
-            Always use for <span className="font-medium text-foreground">{merchant}</span>
-          </span>
-        </label>
+          Always use for <span className="font-medium text-foreground">{merchant}</span>
+        </CheckboxField>
       )}
 
       <Button

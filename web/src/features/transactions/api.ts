@@ -11,11 +11,14 @@ export type TransactionCreateInput = Schemas["TransactionCreate"]
 // Every transaction query lives under this prefix so one invalidation refreshes them all
 export const TRANSACTIONS_KEY = ["transactions"] as const
 
-export function recentTransactionsQueryOptions(limit: number) {
+/** The newest transactions; hidden ones only when asked for. */
+export function recentTransactionsQueryOptions(limit: number, includeHidden: boolean) {
   return queryOptions({
-    queryKey: [...TRANSACTIONS_KEY, "recent", limit],
+    queryKey: [...TRANSACTIONS_KEY, "recent", limit, { includeHidden }],
     queryFn: async (): Promise<Transaction[]> => {
-      const { data, error, response } = await api.GET("/api/v1/transactions", { params: { query: { limit } } })
+      const { data, error, response } = await api.GET("/api/v1/transactions", {
+        params: { query: { limit, include_hidden: includeHidden } },
+      })
       if (!data) throw toApiError(error, response)
       return data
     },

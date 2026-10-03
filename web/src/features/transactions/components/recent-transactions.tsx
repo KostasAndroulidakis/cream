@@ -7,16 +7,17 @@ import { categoriesById } from "@/features/categories/grouping"
 import { ChangeCategoryDialog } from "@/features/categorization/components/change-category-dialog"
 import { walletsQueryOptions } from "@/features/wallets/api"
 import { userMessage } from "@/lib/api/errors"
+import { cn } from "@/lib/utils"
 import { recentTransactionsQueryOptions } from "../api"
 import { transactionLabel } from "../display"
-import { HideTransactionButton } from "./hide-transaction-button"
 import { TransactionSummary } from "./transaction-summary"
+import { VisibilityButton } from "./visibility-button"
 
 const RECENT_LIMIT = 10
 const SKELETON_ROWS = 4
 
-export function RecentTransactions() {
-  const transactionsQuery = useQuery(recentTransactionsQueryOptions(RECENT_LIMIT))
+export function RecentTransactions({ showHidden }: { showHidden: boolean }) {
+  const transactionsQuery = useQuery(recentTransactionsQueryOptions(RECENT_LIMIT, showHidden))
   const { data: categories = [] } = useQuery(categoriesQueryOptions)
   const { data: wallets = [] } = useQuery(walletsQueryOptions)
 
@@ -43,14 +44,18 @@ export function RecentTransactions() {
         const wallet = walletsById.get(transaction.wallet_id)
         const categoryName = categoryById.get(transaction.category_id)?.name ?? ""
         return (
-          <li key={transaction.id} className="group/row py-3">
+          <li
+            key={transaction.id}
+            className={cn("group/row py-3", transaction.is_hidden && "opacity-60 transition-opacity hover:opacity-100")}
+          >
             <TransactionSummary
               transaction={transaction}
               title={transactionLabel(transaction) ?? categoryName}
               currency={wallet?.currency}
-              action={<HideTransactionButton transaction={transaction} />}
+              action={<VisibilityButton transaction={transaction} />}
               subtitle={
                 <>
+                  {transaction.is_hidden && "Hidden · "}
                   <ChangeCategoryDialog transaction={transaction} categoryName={categoryName} />
                   {wallet && `, ${wallet.name}`}
                 </>

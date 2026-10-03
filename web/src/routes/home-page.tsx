@@ -1,5 +1,7 @@
+import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 
+import { CheckboxField } from "@/components/checkbox-field"
 import { PageColumns } from "@/components/page-columns"
 import { Panel } from "@/components/panel"
 import { SystemStatus } from "@/features/health/components/system-status"
@@ -13,6 +15,7 @@ import { WalletList } from "@/features/wallets/components/wallet-list"
 export function HomePage() {
   const { data: wallets } = useQuery(walletsQueryOptions)
   const hasWallets = (wallets?.length ?? 0) > 0
+  const [showHidden, setShowHidden] = useState(false)
 
   return (
     <div className="space-y-8">
@@ -22,8 +25,16 @@ export function HomePage() {
       </div>
 
       <PageColumns>
-        <Panel id="transactions-heading" title="Recent transactions">
-          <RecentTransactions />
+        <Panel
+          id="transactions-heading"
+          title="Recent transactions"
+          action={
+            <CheckboxField checked={showHidden} onCheckedChange={setShowHidden}>
+              Show hidden
+            </CheckboxField>
+          }
+        >
+          <RecentTransactions showHidden={showHidden} />
         </Panel>
         <Panel id="wallets-heading" title="Wallets" action={hasWallets && <CreateWalletDialog />}>
           <WalletList />
