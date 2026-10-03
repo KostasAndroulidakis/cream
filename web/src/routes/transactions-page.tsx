@@ -1,5 +1,5 @@
 import { CreateTransactionDialog } from "@/features/transactions/components/create-transaction-dialog"
-import { TransactionsList } from "@/features/transactions/components/transactions-list"
+import { TransactionsCard } from "@/features/transactions/components/transactions-card"
 
 export function TransactionsPage() {
   return (
@@ -9,7 +9,7 @@ export function TransactionsPage() {
         <CreateTransactionDialog />
       </header>
       <section aria-label="All transactions" className="overflow-hidden rounded-xl border bg-card shadow-xs">
-        <TransactionsList />
+        <TransactionsCard />
       </section>
     </div>
   )

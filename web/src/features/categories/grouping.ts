@@ -7,6 +7,9 @@ const UNGROUPED_LABEL = "My categories"
 /** Value of a category picker before anything is picked. */
 export const NO_CATEGORY = ""
 
+/** Every category type, most used first, for pickers that aren't tied to one kind of transaction. */
+export const ALL_CATEGORY_TYPES: readonly CategoryType[] = ["expense", "income", "transfer"]
+
 /** Categories by ID, for showing names next to transactions and rules. */
 export function categoriesById(categories: Category[]): Map<number, Category> {
   return new Map(categories.map((category) => [category.id, category]))
