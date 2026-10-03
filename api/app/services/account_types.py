@@ -2,6 +2,7 @@
 
 The one catalog of what an account can be: validation, the API's catalog endpoint and the web all read it.
 Each type's subtypes are in Monarch's order; the first is the one a new account starts with.
+Some subtypes only come from banks: Monarch's "Add Manual Account" doesn't offer them (`manual=False`).
 """
 
 from dataclasses import dataclass
@@ -13,6 +14,8 @@ from app.models.wallet import AccountClass, WalletType
 class Subtype:
     key: str
     label: str
+    # Offered when adding an account by hand; the rest only arrive from a bank
+    manual: bool = True
 
 
 @dataclass(frozen=True)
@@ -30,21 +33,28 @@ def _subtypes(*pairs: tuple[str, str]) -> tuple[Subtype, ...]:
     return tuple(Subtype(key, label) for key, label in pairs)
 
 
+def _bank_only(*pairs: tuple[str, str]) -> tuple[Subtype, ...]:
+    return tuple(Subtype(key, label, manual=False) for key, label in pairs)
+
+
 OTHER = ("other", "Other")
 
 # In the order Monarch lists them: assets, then liabilities
 ACCOUNT_TYPES: dict[WalletType, TypeInfo] = {
+    # Monarch's "Add Manual Account" list first, in its order; then Plaid's bank-only ones
     WalletType.CASH: TypeInfo("Cash", AccountClass.ASSET, _subtypes(
         ("cd", "CD"),
-        ("cash_management", "Cash Management"),
         ("checking", "Checking"),
+        ("savings", "Savings"),
+        ("money_market", "Money Market"),
+        ("mobile_payment_system", "Mobile Payment System"),
+        ("prepaid", "Prepaid"),
+        ("cash_management", "Cash Management"),
+    ) + _bank_only(
         ("ebt", "EBT"),
         ("hsa", "HSA"),
         ("limited_purpose_checking", "Limited Purpose Checking"),
-        ("money_market", "Money Market"),
         ("paypal", "PayPal"),
-        ("prepaid", "Prepaid"),
-        ("savings", "Savings"),
     )),
     WalletType.INVESTMENT: TypeInfo("Investments", AccountClass.ASSET, _subtypes(
         ("401a", "401a"), ("401k", "401k"), ("403b", "403b"), ("457b", "457b"), ("529", "529"),

@@ -82,7 +82,7 @@ Wallet
 
 | Type | Class | Subtypes (examples) |
 | ------ | ------- | ---------- |
-| `cash` | Asset | CD, Checking, Savings, PayPal, Prepaid, Money Market, … (Plaid's depository list) |
+| `cash` | Asset | By hand: CD, Checking, Savings, Money Market, Mobile Payment System, Prepaid, Cash Management; from banks also EBT, HSA, Limited Purpose Checking, PayPal |
 | `investment` | Asset | Brokerage, Crypto Exchange, Pension, … (Plaid's investment list) |
 | `real_estate` | Asset | Primary Home, Secondary Home, Rental Property |
 | `vehicle` | Asset | Car, Boat, Motorcycle, Snowmobile, Bicycle, Other |

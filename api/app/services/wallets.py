@@ -57,7 +57,9 @@ def account_type_catalog() -> list[AccountTypeRead]:
             type=wallet_type,
             label=info.label,
             account_class=info.account_class,
-            subtypes=[{"key": subtype.key, "label": subtype.label} for subtype in info.subtypes],
+            subtypes=[
+                {"key": subtype.key, "label": subtype.label, "manual": subtype.manual} for subtype in info.subtypes
+            ],
         )
         for wallet_type, info in ACCOUNT_TYPES.items()
     ]

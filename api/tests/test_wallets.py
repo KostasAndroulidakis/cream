@@ -366,6 +366,20 @@ class TestAccountTypes:
         ]
         assert all(t["subtypes"] for t in catalog)
 
+    def test_manual_cash_subtypes_as_monarchs_add_manual_account_lists_them(self, client, auth_headers):
+        cash = next(t for t in client.get(TYPES_URL, headers=auth_headers).json() if t["type"] == "cash")
+
+        assert [s["label"] for s in cash["subtypes"] if s["manual"]] == [
+            "CD", "Checking", "Savings", "Money Market", "Mobile Payment System", "Prepaid", "Cash Management",
+        ]
+        # Bank-only ones stay in the catalog: linked accounts and Edit Account use them
+        assert {"ebt", "hsa", "limited_purpose_checking", "paypal"} <= {s["key"] for s in cash["subtypes"]}
+
+    def test_every_other_type_offers_all_its_subtypes_by_hand(self, client, auth_headers):
+        catalog = client.get(TYPES_URL, headers=auth_headers).json()
+
+        assert all(s["manual"] for t in catalog if t["type"] != "cash" for s in t["subtypes"])
+
     def test_catalog_requires_login(self, client):
         assert client.get(TYPES_URL).status_code == 401
 

@@ -109,6 +109,8 @@ class AccountsSummary(BaseModel):
 class SubtypeRead(BaseModel):
     key: str
     label: str
+    # Offered by "Add Manual Account"; the others only come from a bank
+    manual: bool
 
 
 class AccountTypeRead(BaseModel):

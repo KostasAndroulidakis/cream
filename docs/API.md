@@ -218,7 +218,8 @@ Create a new wallet.
 #### GET /wallets/types
 
 What an account can be, as in Monarch: the types (each an asset or a liability) and their subtypes, in Monarch's
-order. The first subtype is the one a new account gets when none is given.
+order. The first subtype is the one a new account gets when none is given. `manual` says whether Monarch's
+"Add Manual Account" offers the subtype; the others (e.g. Cash › EBT, PayPal) only come from a bank.
 
 **Response** `200 OK`:
 
@@ -228,7 +229,11 @@ order. The first subtype is the one a new account gets when none is given.
     "type": "cash",
     "label": "Cash",
     "account_class": "asset",
-    "subtypes": [{ "key": "cd", "label": "CD" }, { "key": "checking", "label": "Checking" }]
+    "subtypes": [
+      { "key": "cd", "label": "CD", "manual": true },
+      { "key": "checking", "label": "Checking", "manual": true },
+      { "key": "paypal", "label": "PayPal", "manual": false }
+    ]
   }
 ]
 ```

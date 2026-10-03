@@ -1090,6 +1090,8 @@ export interface components {
             key: string;
             /** Label */
             label: string;
+            /** Manual */
+            manual: boolean;
         };
         /** SyncResultRead */
         SyncResultRead: {
