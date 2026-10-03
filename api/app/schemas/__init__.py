@@ -1,11 +1,11 @@
 from app.schemas.user import UserCreate, UserRead, LoginRequest
 from app.schemas.wallet import CurrencyTotal, WalletCreate, WalletRead, WalletUpdate
 from app.schemas.category import CategoryCreate, CategoryRead, CategoryUpdate
+from app.schemas.merchant import MerchantRead
 from app.schemas.transaction import (
     BulkResult,
     BulkTransactionDelete,
     BulkTransactionUpdate,
-    MerchantRead,
     TransactionCreate,
     TransactionPage,
     TransactionRead,

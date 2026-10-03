@@ -155,3 +155,55 @@ class TestBulkDelete:
 
         assert response.status_code == 409
         assert client.get(f"{TRANSACTIONS_URL}/{manual[0]['id']}", headers=auth_headers).status_code == 200
+
+
+MERCHANTS_URL = "/api/v1/merchants"
+
+
+def _merchant_names(client, headers):
+    return [merchant["name"] for merchant in client.get(MERCHANTS_URL, headers=headers).json()]
+
+
+class TestBulkMerchant:
+    def test_new_name_creates_a_merchant_for_all(self, client, auth_headers, imported, manual):
+        ids = _ids(imported) + _ids(manual)
+
+        response = _bulk_update(client, auth_headers, ids, {"merchant_name": "  Corner   Shop "})
+
+        assert response.json() == {"affected": 4}
+        merchants = {_get(client, auth_headers, transaction_id)["merchant"]["id"] for transaction_id in ids}
+        assert len(merchants) == 1
+        assert "Corner Shop" in _merchant_names(client, auth_headers)
+
+    def test_existing_name_reuses_the_merchant(self, client, auth_headers, imported, manual):
+        _bulk_update(client, auth_headers, _ids(imported), {"merchant_name": "Corner Shop"})
+
+        _bulk_update(client, auth_headers, _ids(manual), {"merchant_name": "CORNER SHOP"})
+
+        merchant = _get(client, auth_headers, manual[0]["id"])["merchant"]
+        assert merchant == _get(client, auth_headers, imported[0]["id"])["merchant"]
+        assert merchant["name"] == "Corner Shop"
+
+    @pytest.mark.parametrize("name", [None, "", "   "])
+    def test_blank_name_refused(self, client, auth_headers, manual, name):
+        assert _bulk_update(client, auth_headers, _ids(manual), {"merchant_name": name}).status_code == 422
+
+
+class TestListMerchants:
+    def test_by_name_only_those_with_transactions(self, client, auth_headers, manual):
+        _bulk_update(client, auth_headers, _ids(manual)[:1], {"merchant_name": "zeta"})
+        _bulk_update(client, auth_headers, _ids(manual)[1:], {"merchant_name": "Alpha"})
+        assert _merchant_names(client, auth_headers) == ["Alpha", "zeta"]
+
+        # "zeta" is left without transactions
+        _bulk_update(client, auth_headers, _ids(manual), {"merchant_name": "Alpha"})
+
+        assert _merchant_names(client, auth_headers) == ["Alpha"]
+
+    def test_only_the_users_own(self, client, auth_headers, second_auth_headers, manual):
+        _bulk_update(client, auth_headers, _ids(manual), {"merchant_name": "Mine"})
+
+        assert _merchant_names(client, second_auth_headers) == []
+
+    def test_requires_login(self, client):
+        assert client.get(MERCHANTS_URL).status_code == 401

@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from app.models import CategorySource, Transaction
 from app.services.authorization import ImportedTransactionError, get_assignable_category
 from app.services.categorization.assignment import assign_category
+from app.services.merchants import MerchantDirectory
 from app.services.validation import raise_if_invalid, validate_transaction
 
 # What the bank decides for its own transactions; changing them would break the match with the bank balance
@@ -38,12 +39,21 @@ def bulk_update(transactions: list[Transaction], changes: Mapping[str, Any], use
             raise_if_invalid(validate_transaction(amount=transaction.amount, occurred_at=changes["occurred_at"]))
     if "category_id" in changes:
         get_assignable_category(changes["category_id"], user_id, db)
+    # Found or created once, then set on every transaction
+    merchant_name = changes.get("merchant_name")
+    merchant = (
+        MerchantDirectory.for_name(user_id, merchant_name, db).get_or_create(merchant_name, db)
+        if merchant_name
+        else None
+    )
 
     for transaction in transactions:
         for field, value in changes.items():
             if field == "category_id":
                 # The user chose it: automatic categorization leaves it alone from now on
                 assign_category(transaction, value, CategorySource.MANUAL)
+            elif field == "merchant_name":
+                transaction.merchant = merchant
             else:
                 setattr(transaction, field, value)
     db.commit()

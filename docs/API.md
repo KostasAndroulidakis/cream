@@ -42,6 +42,7 @@ All endpoints except `/health`, `/auth/signup`, `/auth/login` and `/auth/logout`
 | `DELETE /api/v1/transactions/{id}` | Delete transaction |
 | `GET /api/v1/rules` | List merchant rules |
 | `DELETE /api/v1/rules/{id}` | Delete a merchant rule |
+| `GET /api/v1/merchants` | List merchants |
 | `GET /api/v1/statistics` | Aggregated statistics |
 | `GET /api/v1/statistics/report` | Period reports |
 
@@ -504,19 +505,21 @@ is refused, none is applied.
     "category_id": 7,
     "occurred_at": "2026-09-01T12:00:00Z",
     "description": "string | null (null clears the notes)",
-    "is_hidden": true
+    "is_hidden": true,
+    "merchant_name": "Corner Shop"
   }
 }
 ```
 
 **Response** `200 OK`: `{ "affected": 3 }` (an ID sent twice counts once). A new category becomes the
-user's own choice (`category_source` `manual`).
+user's own choice (`category_source` `manual`). `merchant_name` sets the user's merchant with that name
+(case and spacing ignored), creating it if there is none yet.
 
 **Errors**:
 
 - `404`: Any of the transactions doesn't exist or isn't the user's
-- `422`: No changes, a `null` other than `description`, a future date, a category group, or a date change
-  that includes a bank transaction (the bank sets its dates)
+- `422`: No changes, a `null` other than `description`, a blank `merchant_name`, a future date, a category
+  group, or a date change that includes a bank transaction (the bank sets its dates)
 
 #### POST /transactions/bulk-delete
 
@@ -614,6 +617,17 @@ them back): hide them with `PATCH {"is_hidden": true}` instead.
 | --- | --- |
 | `GET /rules` | The user's rules, by merchant: `[{id, merchant_name, category_id, created_at, updated_at}]` |
 | `DELETE /rules/{id}` | Forget a rule (`204`). Transactions keep their categories; future imports fall back to the MCC. `404` for another user's rule |
+
+---
+
+### Merchants
+
+Who transactions were with, as the user names them. Bank imports find or create them; the user changes a
+transaction's merchant with `merchant_name` in `POST /transactions/bulk-update`.
+
+| Endpoint | Description |
+| --- | --- |
+| `GET /merchants` | The user's merchants that have transactions, by name: `[{id, name}]` |
 
 ---
 

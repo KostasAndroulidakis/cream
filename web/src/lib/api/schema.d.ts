@@ -519,6 +519,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/merchants": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List User Merchants
+         * @description The user's merchants that have transactions, by name.
+         */
+        get: operations["list_user_merchants_api_v1_merchants_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -582,6 +602,8 @@ export interface components {
             description?: string | null;
             /** Is Hidden */
             is_hidden?: boolean | null;
+            /** Merchant Name */
+            merchant_name?: string | null;
         };
         /** BulkTransactionDelete */
         BulkTransactionDelete: {
@@ -2099,6 +2121,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_user_merchants_api_v1_merchants_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MerchantRead"][];
                 };
             };
         };

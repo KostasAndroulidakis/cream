@@ -4,6 +4,8 @@ from decimal import Decimal
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 from app.models.transaction import CategorySource
+from app.schemas.merchant import MerchantRead
+from app.services.categorization.merchants import tidy_merchant_name
 
 
 class TransactionCreate(BaseModel):
@@ -21,13 +23,6 @@ class TransactionUpdate(BaseModel):
     occurred_at: datetime | None = None
     # Not nullable: a transaction is either hidden or not. Omit the field to leave it unchanged.
     is_hidden: bool = False
-
-
-class MerchantRead(BaseModel):
-    id: int
-    name: str
-
-    model_config = {"from_attributes": True}
 
 
 class TransactionRead(BaseModel):
@@ -72,6 +67,8 @@ class BulkTransactionChanges(BaseModel):
     # null clears the notes
     description: str | None = None
     is_hidden: bool | None = None
+    # The user's merchant with this name (case and spacing ignored), created if there is none yet
+    merchant_name: str | None = None
 
     @field_validator("category_id", "occurred_at", "is_hidden")
     @classmethod
@@ -80,6 +77,14 @@ class BulkTransactionChanges(BaseModel):
         if value is None:
             raise ValueError("Leave the field out to keep it as it is")
         return value
+
+    @field_validator("merchant_name")
+    @classmethod
+    def merchant_name_not_blank(cls, value: str | None) -> str:
+        name = tidy_merchant_name(value)
+        if name is None:
+            raise ValueError("Give the merchant a name, or leave the field out to keep it as it is")
+        return name
 
     @model_validator(mode="after")
     def has_a_change(self):
