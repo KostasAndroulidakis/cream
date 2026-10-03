@@ -12,10 +12,12 @@ type TransactionSummaryProps = {
   subtitle: ReactNode
   // Unknown only for the moment before wallets finish loading
   currency?: string
+  // Optional control at the end of the row, e.g. a hide button
+  action?: ReactNode
 }
 
 /** Date, who and how much: the shared look of a transaction in any list. */
-export function TransactionSummary({ transaction, title, subtitle, currency }: TransactionSummaryProps) {
+export function TransactionSummary({ transaction, title, subtitle, currency, action }: TransactionSummaryProps) {
   const moneyIn = isMoneyIn(transaction.amount)
 
   return (
@@ -31,6 +33,7 @@ export function TransactionSummary({ transaction, title, subtitle, currency }: T
         {moneyIn && "+"}
         {currency ? formatMoney(transaction.amount, currency) : transaction.amount}
       </p>
+      {action}
     </div>
   )
 }

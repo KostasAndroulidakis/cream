@@ -40,3 +40,22 @@ export function useCreateTransaction() {
       ]),
   })
 }
+
+export type SetHiddenInput = { transactionId: number; hidden: boolean }
+
+/** Hide a transaction from lists and statistics, or show it again. */
+export function useSetTransactionHidden() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ transactionId, hidden }: SetHiddenInput): Promise<Transaction> => {
+      const { data, error, response } = await api.PATCH("/api/v1/transactions/{transaction_id}", {
+        params: { path: { transaction_id: transactionId } },
+        body: { is_hidden: hidden },
+      })
+      if (!data) throw toApiError(error, response)
+      return data
+    },
+    // Hidden transactions still count in balances, so only transaction lists need refreshing
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: TRANSACTIONS_KEY }),
+  })
+}

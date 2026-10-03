@@ -9,6 +9,7 @@ import { walletsQueryOptions } from "@/features/wallets/api"
 import { userMessage } from "@/lib/api/errors"
 import { recentTransactionsQueryOptions } from "../api"
 import { transactionLabel } from "../display"
+import { HideTransactionButton } from "./hide-transaction-button"
 import { TransactionSummary } from "./transaction-summary"
 
 const RECENT_LIMIT = 10
@@ -42,11 +43,12 @@ export function RecentTransactions() {
         const wallet = walletsById.get(transaction.wallet_id)
         const categoryName = categoryById.get(transaction.category_id)?.name ?? ""
         return (
-          <li key={transaction.id} className="py-3">
+          <li key={transaction.id} className="group/row py-3">
             <TransactionSummary
               transaction={transaction}
               title={transactionLabel(transaction) ?? categoryName}
               currency={wallet?.currency}
+              action={<HideTransactionButton transaction={transaction} />}
               subtitle={
                 <>
                   <ChangeCategoryDialog transaction={transaction} categoryName={categoryName} />
