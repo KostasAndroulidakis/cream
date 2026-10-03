@@ -29,6 +29,3 @@ export const ACCOUNT_TYPE_ICONS: Record<WalletType, LucideIcon> = {
 }
 
 export const WALLET_TYPES = Object.keys(ACCOUNT_TYPE_ICONS) as [WalletType, ...WalletType[]]
-
-/** What a new account is unless the user picks otherwise. */
-export const DEFAULT_WALLET_TYPE: WalletType = "cash"

@@ -1,6 +1,6 @@
-import { AddInstitutionDialog } from "@/features/bank/components/add-institution-dialog"
 import { InstitutionList } from "@/features/bank/components/institution-list"
 import { RefreshAllButton } from "@/features/bank/components/refresh-all-button"
+import { AddAccountDialog } from "@/features/wallets/components/add-account/add-account-dialog"
 
 /** Settings › Institutions: the connected banks and their accounts, like Monarch's. */
 export function SettingsInstitutionsPage() {
@@ -13,7 +13,7 @@ export function SettingsInstitutionsPage() {
           </h2>
           <div className="flex items-center gap-2 [&_button]:h-9">
             <RefreshAllButton />
-            <AddInstitutionDialog />
+            <AddAccountDialog />
           </div>
         </div>
         <p className="px-6 py-4.5">

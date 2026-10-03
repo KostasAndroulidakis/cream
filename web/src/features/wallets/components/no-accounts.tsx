@@ -1,4 +1,4 @@
-import { CreateWalletDialog } from "./create-wallet-dialog"
+import { AddAccountDialog } from "./add-account/add-account-dialog"
 
 /** What a list of accounts shows before there are any. */
 export function NoAccounts() {
@@ -9,7 +9,7 @@ export function NoAccounts() {
         Add your bank account, the cash in your pocket, or a stash to start tracking.
       </p>
       <div className="mt-5">
-        <CreateWalletDialog />
+        <AddAccountDialog />
       </div>
     </div>
   )

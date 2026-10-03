@@ -3,32 +3,27 @@ import { useForm } from "react-hook-form"
 
 import { FormAlert } from "@/components/form-alert"
 import { FormField } from "@/components/form-field"
-import { NativeSelect } from "@/components/native-select"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { userMessage } from "@/lib/api/errors"
 import { fieldA11y } from "@/lib/forms"
-import { useCreateWallet } from "../api"
+import { useCreateWallet, type WalletType } from "../api"
 import { createWalletSchema, type CreateWalletFormInput, type CreateWalletValues } from "../schemas"
-import { useAccountTypes } from "../use-account-types"
-import { DEFAULT_WALLET_TYPE } from "../wallet-types"
-
-const DEFAULT_VALUES: CreateWalletFormInput = {
-  name: "",
-  type: DEFAULT_WALLET_TYPE,
-  initial_balance: "0",
+type CreateWalletFormProps = {
+  // Chosen on the step before (Add Manual Account)
+  type: WalletType
+  onCreated: () => void
 }
 
-export function CreateWalletForm({ onCreated }: { onCreated: () => void }) {
+export function CreateWalletForm({ type, onCreated }: CreateWalletFormProps) {
   const createWallet = useCreateWallet()
-  const { catalog } = useAccountTypes()
   const {
     register,
     handleSubmit,
     formState: { errors },
   } = useForm<CreateWalletFormInput, unknown, CreateWalletValues>({
     resolver: zodResolver(createWalletSchema),
-    defaultValues: DEFAULT_VALUES,
+    defaultValues: { name: "", type, initial_balance: "0" },
   })
 
   const onSubmit = handleSubmit((values) => createWallet.mutate(values, { onSuccess: onCreated }))
@@ -45,16 +40,6 @@ export function CreateWalletForm({ onCreated }: { onCreated: () => void }) {
           {...fieldA11y("wallet-name", errors.name?.message)}
           {...register("name")}
         />
-      </FormField>
-
-      <FormField id="wallet-type" label="Type" error={errors.type?.message}>
-        <NativeSelect id="wallet-type" {...register("type")}>
-          {catalog.map(({ type, label }) => (
-            <option key={type} value={type}>
-              {label}
-            </option>
-          ))}
-        </NativeSelect>
       </FormField>
 
       {/* EUR only for now: the API gives every new account its one currency */}

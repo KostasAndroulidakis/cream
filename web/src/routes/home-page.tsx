@@ -9,7 +9,7 @@ import { SystemStatus } from "@/features/health/components/system-status"
 import { CreateTransactionDialog } from "@/features/transactions/components/create-transaction-dialog"
 import { RecentTransactions } from "@/features/transactions/components/recent-transactions"
 import { walletsQueryOptions } from "@/features/wallets/api"
-import { CreateWalletDialog } from "@/features/wallets/components/create-wallet-dialog"
+import { AddAccountDialog } from "@/features/wallets/components/add-account/add-account-dialog"
 import { CurrencyTotals } from "@/features/wallets/components/currency-totals"
 import { WalletList } from "@/features/wallets/components/wallet-list"
 
@@ -35,7 +35,7 @@ export function HomePage() {
         >
           <RecentTransactions showHidden={showHidden} />
         </Panel>
-        <Panel id="accounts-heading" title="Accounts" action={hasWallets && <CreateWalletDialog />}>
+        <Panel id="accounts-heading" title="Accounts" action={hasWallets && <AddAccountDialog />}>
           <WalletList />
         </Panel>
       </PageColumns>
