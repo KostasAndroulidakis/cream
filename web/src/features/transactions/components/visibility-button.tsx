@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button"
 import { userMessage } from "@/lib/api/errors"
 import { cn } from "@/lib/utils"
 import { useSetTransactionHidden, type Transaction } from "../api"
-import { transactionLabel } from "../display"
+import { transactionLabel, UNNAMED_TRANSACTION } from "../display"
 import { HIDE_EXPLANATION } from "../hiding"
 import { REVEAL_ON_ROW_HOVER } from "../row-actions"
 
@@ -14,7 +14,7 @@ import { REVEAL_ON_ROW_HOVER } from "../row-actions"
  */
 export function VisibilityButton({ transaction }: { transaction: Transaction }) {
   const setHidden = useSetTransactionHidden()
-  const label = transactionLabel(transaction) ?? "this transaction"
+  const label = transactionLabel(transaction) ?? UNNAMED_TRANSACTION
   const hidden = transaction.is_hidden
   const Icon = hidden ? Eye : EyeOff
 

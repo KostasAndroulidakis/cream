@@ -20,14 +20,15 @@ import { useSelection, useSelectionShortcuts, type Selection } from "../use-sele
 import { useTransactionView } from "../use-transaction-view"
 import { TRANSACTION_VIEWS } from "../views"
 import { BulkEditSheet } from "./bulk-edit-sheet"
+import { MarkReviewedButton } from "./mark-reviewed-button"
 import { MerchantAvatar } from "./merchant-avatar"
 import { TransactionsToolbar } from "./transactions-toolbar"
 
 const SKELETON_ROWS = 8
-// Merchant, category, account, amount. The amount column has a fixed width, so every row
-// (each its own grid) gets the same column positions.
+// Merchant, category, account, row actions, amount. The actions and amount columns have fixed widths,
+// so every row (each its own grid) gets the same column positions.
 const ROW_GRID =
-  "grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-6 md:grid-cols-[minmax(0,5fr)_minmax(0,4fr)_minmax(0,4fr)_8rem]"
+  "grid grid-cols-[minmax(0,1fr)_2rem_auto] items-center gap-x-4 md:grid-cols-[minmax(0,5fr)_minmax(0,4fr)_minmax(0,4fr)_2rem_8rem] md:gap-x-6"
 
 type RowProps = {
   transaction: Transaction
@@ -59,6 +60,8 @@ function TransactionRow({ transaction, categoryName, walletName, currency, selec
       </div>
       <p className="hidden truncate md:block">{categoryName}</p>
       <p className="hidden truncate md:block">{walletName}</p>
+      {/* Not while selecting: a click there toggles the row's checkbox */}
+      <div>{!selection && transaction.needs_review && <MarkReviewedButton transaction={transaction} />}</div>
       <p className={cn("text-right tabular-nums", isMoneyIn(transaction.amount) && "text-primary")}>
         {currency ? formatFlow(transaction.amount, currency) : transaction.amount}
       </p>
@@ -72,7 +75,7 @@ function TransactionRow({ transaction, categoryName, walletName, currency, selec
       {selection ? (
         <label className={cn(rowClass, "cursor-pointer hover:bg-sidebar/60")}>{cells}</label>
       ) : (
-        <div className={rowClass}>{cells}</div>
+        <div className={cn(rowClass, "group/row")}>{cells}</div>
       )}
     </li>
   )

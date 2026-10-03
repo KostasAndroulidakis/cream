@@ -7,6 +7,7 @@ import { WALLETS_KEY } from "@/features/wallets/api"
 
 export type Transaction = Schemas["TransactionRead"]
 export type TransactionCreateInput = Schemas["TransactionCreate"]
+type TransactionUpdate = Schemas["TransactionUpdate"]
 export type BulkChanges = Schemas["BulkTransactionChanges"]
 export type BulkResult = Schemas["BulkResult"]
 
@@ -92,20 +93,34 @@ export function useCreateTransaction() {
   return useMutation({ mutationFn: createTransaction, onSuccess: useRefreshTransactionsAndBalances() })
 }
 
+async function patchTransaction(transactionId: number, changes: TransactionUpdate): Promise<Transaction> {
+  const { data, error, response } = await api.PATCH("/api/v1/transactions/{transaction_id}", {
+    params: { path: { transaction_id: transactionId } },
+    body: changes,
+  })
+  if (!data) throw toApiError(error, response)
+  return data
+}
+
 export type SetHiddenInput = { transactionId: number; hidden: boolean }
 
 /** Hide a transaction from lists and statistics, or show it again. */
 export function useSetTransactionHidden() {
   return useMutation({
-    mutationFn: async ({ transactionId, hidden }: SetHiddenInput): Promise<Transaction> => {
-      const { data, error, response } = await api.PATCH("/api/v1/transactions/{transaction_id}", {
-        params: { path: { transaction_id: transactionId } },
-        body: { is_hidden: hidden },
-      })
-      if (!data) throw toApiError(error, response)
-      return data
-    },
+    mutationFn: ({ transactionId, hidden }: SetHiddenInput) => patchTransaction(transactionId, { is_hidden: hidden }),
     // Hidden transactions still count in balances, so only transaction lists need refreshing
+    onSuccess: useRefreshTransactions(),
+  })
+}
+
+export type SetNeedsReviewInput = { transactionId: number; needsReview: boolean }
+
+/** Put a transaction in the review inbox, or mark it reviewed. */
+export function useSetNeedsReview() {
+  return useMutation({
+    mutationFn: ({ transactionId, needsReview }: SetNeedsReviewInput) =>
+      patchTransaction(transactionId, { needs_review: needsReview }),
+    // Reviewing doesn't move balances
     onSuccess: useRefreshTransactions(),
   })
 }
