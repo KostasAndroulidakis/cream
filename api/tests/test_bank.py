@@ -3,6 +3,8 @@
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 
+import pytest
+
 from app.config import settings
 from app.services.banking.mapping import assign_external_ids, parse_transaction, pick_balance
 from tests.bank_fakes import BANK_URL, connect, connect_and_link, raw_transaction, sync
@@ -186,6 +188,31 @@ class TestSync:
 
         assert response.status_code == 409
         assert client.get(f"/api/v1/transactions/{transaction['id']}", headers=auth_headers).status_code == 200
+
+    @pytest.mark.parametrize("change", [{"amount": "-1.00"}, {"occurred_at": "2026-09-01T12:00:00Z"}])
+    def test_bank_sets_amount_and_date_of_its_transactions(self, client, auth_headers, bank, uncategorized, change):
+        connect_and_link(client, auth_headers, bank)
+        bank.transactions = [raw_transaction("t1", "40.00")]
+        sync(client, auth_headers)
+        [transaction] = client.get("/api/v1/transactions", headers=auth_headers).json()
+
+        response = client.patch(f"/api/v1/transactions/{transaction['id']}", json=change, headers=auth_headers)
+
+        assert response.status_code == 422
+        unchanged = client.get(f"/api/v1/transactions/{transaction['id']}", headers=auth_headers).json()
+        assert (unchanged["amount"], unchanged["occurred_at"]) == (transaction["amount"], transaction["occurred_at"])
+
+    def test_notes_of_bank_transactions_can_change(self, client, auth_headers, bank, uncategorized):
+        connect_and_link(client, auth_headers, bank)
+        bank.transactions = [raw_transaction("t1", "40.00")]
+        sync(client, auth_headers)
+        [transaction] = client.get("/api/v1/transactions", headers=auth_headers).json()
+
+        response = client.patch(
+            f"/api/v1/transactions/{transaction['id']}", json={"description": "Team lunch"}, headers=auth_headers
+        )
+
+        assert response.status_code == 200 and response.json()["description"] == "Team lunch"
 
     def test_unlinked_accounts_are_not_synced(self, client, auth_headers, bank, uncategorized):
         connect(client, auth_headers, bank)

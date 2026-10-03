@@ -25,6 +25,7 @@ from app.services.categorization.assignment import assign_category
 from app.services.categorization.inbox import uncategorized_page
 from app.services.categorization.rules import categorize_transaction
 from app.services.helpers import apply_update
+from app.services.transactions import ensure_editable
 from app.services.validation import ValidationResult, validate_transaction
 
 router = APIRouter()
@@ -129,6 +130,7 @@ def update_transaction(
 
     # Get values for validation (use existing if not provided)
     update_data = transaction_in.model_dump(exclude_unset=True)
+    ensure_editable(transaction, update_data)
     amount = update_data.get("amount", transaction.amount)
     occurred_at = update_data.get("occurred_at", transaction.occurred_at)
     category_id = update_data.get("category_id", transaction.category_id)

@@ -513,7 +513,9 @@ Update a transaction.
 ```
 
 **Response** `200 OK`: Updated transaction object. Changing `category_id` makes `category_source` `manual`.
-`is_hidden` hides or shows the transaction; leaving it out keeps it as it is.
+`is_hidden` hides or shows the transaction; leaving it out keeps it as it is. The bank sets the `amount` and
+`occurred_at` of its transactions: sending either for an imported transaction returns `422` (send only the
+fields that change).
 
 **Errors**:
 
