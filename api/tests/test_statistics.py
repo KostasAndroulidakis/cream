@@ -7,7 +7,7 @@ def wallet_data():
     """Sample wallet data."""
     return {
         "name": "Test Wallet",
-        "type": "bank",
+        "type": "cash",
         "currency": "EUR",
         "initial_balance": "1000.00",
     }

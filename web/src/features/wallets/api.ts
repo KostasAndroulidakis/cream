@@ -8,6 +8,7 @@ export type Wallet = Schemas["WalletRead"]
 export type WalletType = Schemas["WalletType"]
 export type WalletCreateInput = Schemas["WalletCreate"]
 export type CurrencyTotal = Schemas["CurrencyTotal"]
+export type AccountTypeInfo = Schemas["AccountTypeRead"]
 
 // Every wallet query lives under this prefix so one invalidation refreshes them all
 export const WALLETS_KEY = ["wallets"] as const
@@ -19,6 +20,17 @@ export const walletsQueryOptions = queryOptions({
     if (!data) throw toApiError(error, response)
     return data
   },
+})
+
+/** What an account can be: types and subtypes, in Monarch's order. Fixed in the API, so loaded once. */
+export const accountTypesQueryOptions = queryOptions({
+  queryKey: [...WALLETS_KEY, "types"],
+  queryFn: async (): Promise<AccountTypeInfo[]> => {
+    const { data, error, response } = await api.GET("/api/v1/wallets/types")
+    if (!data) throw toApiError(error, response)
+    return data
+  },
+  staleTime: Infinity,
 })
 
 export const walletTotalsQueryOptions = queryOptions({

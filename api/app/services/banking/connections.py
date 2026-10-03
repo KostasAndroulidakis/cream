@@ -8,11 +8,14 @@ from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.models import BankAccount, BankConnection, ConnectionStatus, Wallet, WalletType
+from app.services.account_types import resolve_subtype
 from app.services.authorization import NotFoundError, get_wallet
 from app.services.banking.client import BankClient
 from app.services.banking.mapping import account_display_name, iban_last4
 
 STATE_BYTES = 32
+# What a linked bank account is when CREAM creates an account for it
+BANK_ACCOUNT_SUBTYPE = "checking"
 
 
 class InvalidAuthorizationError(HTTPException):
@@ -105,7 +108,9 @@ def link_account(account: BankAccount, wallet_id: int | None, user_id: int, db: 
         wallet = Wallet(
             user_id=user_id,
             name=f"{account.connection.aspsp_name} {account.name}".strip(),
-            type=WalletType.BANK,
+            # A bank account starts as checking; the user can change it
+            type=WalletType.CASH,
+            subtype=resolve_subtype(WalletType.CASH, BANK_ACCOUNT_SUBTYPE),
             currency=account.currency,
         )
         db.add(wallet)

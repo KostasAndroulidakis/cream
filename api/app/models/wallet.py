@@ -14,11 +14,30 @@ if TYPE_CHECKING:
     from app.models.transaction import Transaction
 
 
+# Longest subtype key the catalog may use
+SUBTYPE_MAX = 50
+
+
+class AccountClass(str, Enum):
+    """What an account means for net worth: something you own, or something you owe."""
+
+    ASSET = "asset"
+    LIABILITY = "liability"
+
+
 class WalletType(str, Enum):
-    BANK = "bank"
+    """The kind of account, as Monarch groups them; the subtypes are in `services/account_types.py`."""
+
     CASH = "cash"
-    DIGITAL = "digital"
-    STASH = "stash"
+    INVESTMENT = "investment"
+    REAL_ESTATE = "real_estate"
+    VEHICLE = "vehicle"
+    VALUABLES = "valuables"
+    OTHER_ASSET = "other_asset"
+    CREDIT_CARD = "credit_card"
+    MORTGAGE = "mortgage"
+    LOAN = "loan"
+    OTHER_LIABILITY = "other_liability"
 
 
 class Wallet(TimestampMixin, Base):
@@ -28,6 +47,8 @@ class Wallet(TimestampMixin, Base):
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
     name: Mapped[str] = mapped_column(String(100))
     type: Mapped[WalletType]
+    # One of the type's subtypes (e.g. "checking" for cash), checked against the catalog on every change
+    subtype: Mapped[str] = mapped_column(String(SUBTYPE_MAX))
     currency: Mapped[str] = mapped_column(String(3), default="EUR")
     initial_balance: Mapped[Decimal] = mapped_column(Numeric(19, 4), default=Decimal("0"))
 

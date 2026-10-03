@@ -400,6 +400,23 @@ only the user changes it.
 - Preferences live in `user_preferences`, one optional row per user; defaults come from the model
 - Rules that set the review status come with the rules editor
 
+### ADR11: Monarch's Account Types, One Catalog in Code
+
+**Decision**: Accounts use Monarch's types (each an asset or a liability) and subtypes (Plaid's taxonomy, with the
+lists Monarch shows for real estate, vehicles, valuables and loans). The catalog lives in
+`services/account_types.py`; the API validates against it and serves it (`GET /wallets/types`) with labels.
+
+**Rationale**:
+
+- Monarch's grouping (Cash, Investments, … Credit Card, Loans) drives the Accounts page and net worth
+- One catalog: validation, labels and order can't drift apart; the web keeps only the icons
+
+**Consequences**:
+
+- `wallets.type` is the group, `wallets.subtype` a key checked against it; a type alone gets its first subtype
+- Existing wallets became Cash (bank → Checking, digital → PayPal, cash and stash → Savings)
+- The code keeps the name "wallet"; the UI says "account"
+
 ## Security Architecture
 
 ```text

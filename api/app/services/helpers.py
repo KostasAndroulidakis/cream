@@ -11,7 +11,7 @@ from sqlalchemy.orm import DeclarativeBase
 T = TypeVar("T", bound=DeclarativeBase)
 
 
-def apply_update(model: T, schema: BaseModel) -> T:
+def apply_update(model: T, schema: BaseModel, exclude: set[str] | None = None) -> T:
     """Apply partial update from a Pydantic schema to a SQLAlchemy model.
 
     Only updates fields that were explicitly set in the schema.
@@ -19,6 +19,7 @@ def apply_update(model: T, schema: BaseModel) -> T:
     Args:
         model: The SQLAlchemy model instance to update
         schema: The Pydantic schema with update data
+        exclude: Fields the caller applies itself (e.g. ones that need checking together)
 
     Returns:
         The updated model instance
@@ -26,6 +27,6 @@ def apply_update(model: T, schema: BaseModel) -> T:
     Example:
         wallet = apply_update(wallet, wallet_update_schema)
     """
-    for key, value in schema.model_dump(exclude_unset=True).items():
+    for key, value in schema.model_dump(exclude_unset=True, exclude=exclude).items():
         setattr(model, key, value)
     return model

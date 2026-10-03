@@ -7,7 +7,7 @@ def wallet_data():
     """Sample wallet data."""
     return {
         "name": "Test Wallet",
-        "type": "bank",
+        "type": "cash",
         "currency": "EUR",
         "initial_balance": "1000.00",
     }
@@ -42,7 +42,7 @@ def other_user_wallet(client, second_auth_headers):
     """Create a wallet owned by the second user."""
     response = client.post(
         "/api/v1/wallets",
-        json={"name": "Other User Wallet", "type": "bank"},
+        json={"name": "Other User Wallet", "type": "cash"},
         headers=second_auth_headers,
     )
     assert response.status_code == 201

@@ -11,17 +11,19 @@ import { fieldA11y } from "@/lib/forms"
 import { SUPPORTED_CURRENCIES } from "@/lib/money"
 import { useCreateWallet } from "../api"
 import { createWalletSchema, type CreateWalletFormInput, type CreateWalletValues } from "../schemas"
-import { WALLET_TYPE_META, WALLET_TYPES } from "../wallet-types"
+import { useAccountTypes } from "../use-account-types"
+import { DEFAULT_WALLET_TYPE } from "../wallet-types"
 
 const DEFAULT_VALUES: CreateWalletFormInput = {
   name: "",
-  type: "bank",
+  type: DEFAULT_WALLET_TYPE,
   currency: "EUR",
   initial_balance: "0",
 }
 
 export function CreateWalletForm({ onCreated }: { onCreated: () => void }) {
   const createWallet = useCreateWallet()
+  const { catalog } = useAccountTypes()
   const {
     register,
     handleSubmit,
@@ -49,9 +51,9 @@ export function CreateWalletForm({ onCreated }: { onCreated: () => void }) {
 
       <FormField id="wallet-type" label="Type" error={errors.type?.message}>
         <NativeSelect id="wallet-type" {...register("type")}>
-          {WALLET_TYPES.map((type) => (
+          {catalog.map(({ type, label }) => (
             <option key={type} value={type}>
-              {WALLET_TYPE_META[type].label} ({WALLET_TYPE_META[type].hint})
+              {label}
             </option>
           ))}
         </NativeSelect>

@@ -1,6 +1,6 @@
 import { pluralize } from "@/lib/text"
 import type { Wallet } from "../api"
-import { WALLET_TYPE_META } from "../wallet-types"
+import { ACCOUNT_TYPE_ICONS } from "../wallet-types"
 
 // More icons than this would only overlap into noise
 const MAX_ICONS = 3
@@ -11,7 +11,7 @@ export function WalletsSummary({ wallets }: { wallets: Wallet[] }) {
     <div className="flex items-center gap-4 bg-sidebar px-6 py-5">
       <div className="flex shrink-0 -space-x-3">
         {wallets.slice(0, MAX_ICONS).map((wallet) => {
-          const Icon = WALLET_TYPE_META[wallet.type].icon
+          const Icon = ACCOUNT_TYPE_ICONS[wallet.type]
           return (
             <span
               key={wallet.id}

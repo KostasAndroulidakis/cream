@@ -3,11 +3,17 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import Wallet
-from app.schemas import CurrencyTotal, WalletCreate, WalletRead, WalletUpdate
+from app.schemas import AccountTypeRead, CurrencyTotal, WalletCreate, WalletRead, WalletUpdate
 from app.services.auth import get_current_user_id
 from app.services.authorization import get_wallet as get_user_wallet
 from app.services.helpers import apply_update
-from app.services.wallets import calculate_currency_totals, ensure_currency_change_allowed, get_user_wallets
+from app.services.wallets import (
+    account_type_catalog,
+    calculate_currency_totals,
+    change_type,
+    ensure_currency_change_allowed,
+    get_user_wallets,
+)
 
 router = APIRouter()
 
@@ -18,6 +24,13 @@ def list_wallets(
     db: Session = Depends(get_db),
 ):
     return get_user_wallets(user_id, db)
+
+
+# Declared before /{wallet_id} so "types" isn't parsed as an ID
+@router.get("/types", response_model=list[AccountTypeRead])
+def list_account_types(user_id: int = Depends(get_current_user_id)):
+    """What an account can be: the types (asset or liability) and their subtypes, in Monarch's order."""
+    return account_type_catalog()
 
 
 # Declared before /{wallet_id} so "totals" isn't parsed as an ID
@@ -61,7 +74,8 @@ def update_wallet(
 ):
     wallet = get_user_wallet(wallet_id, user_id, db)
     ensure_currency_change_allowed(wallet, wallet_in.currency, db)
-    apply_update(wallet, wallet_in)
+    change_type(wallet, wallet_in.type, wallet_in.subtype)
+    apply_update(wallet, wallet_in, exclude={"type", "subtype"})
     db.commit()
     db.refresh(wallet)
     return wallet

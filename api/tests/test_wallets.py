@@ -6,7 +6,7 @@ def wallet_data():
     """Sample wallet data."""
     return {
         "name": "Test Wallet",
-        "type": "bank",
+        "type": "cash",
         "currency": "EUR",
         "initial_balance": "1000.00",
     }
@@ -71,7 +71,7 @@ class TestCreateWallet:
 
     def test_create_wallet_different_types(self, client, auth_headers):
         """Test creating wallets with different types."""
-        for wallet_type in ["bank", "cash", "digital", "stash"]:
+        for wallet_type in ["cash", "investment", "real_estate", "credit_card", "loan", "other_liability"]:
             response = client.post(
                 "/api/v1/wallets",
                 json={"name": f"{wallet_type} wallet", "type": wallet_type},
@@ -324,3 +324,60 @@ class TestWalletTotals:
 
     def test_totals_unauthenticated(self, client):
         assert client.get(TOTALS_URL).status_code == 401
+
+
+TYPES_URL = f"{WALLETS_URL}/types"
+
+
+def _create(client, headers, **fields):
+    return client.post(WALLETS_URL, json={"name": "Account", **fields}, headers=headers)
+
+
+class TestAccountTypes:
+    def test_catalog_in_monarchs_order_with_asset_or_liability(self, client, auth_headers):
+        catalog = client.get(TYPES_URL, headers=auth_headers).json()
+
+        assert [(t["type"], t["account_class"]) for t in catalog] == [
+            ("cash", "asset"), ("investment", "asset"), ("real_estate", "asset"), ("vehicle", "asset"),
+            ("valuables", "asset"), ("other_asset", "asset"), ("credit_card", "liability"),
+            ("mortgage", "liability"), ("loan", "liability"), ("other_liability", "liability"),
+        ]
+        assert all(t["subtypes"] for t in catalog)
+
+    def test_catalog_requires_login(self, client):
+        assert client.get(TYPES_URL).status_code == 401
+
+    def test_subtype_defaults_to_the_types_first(self, client, auth_headers):
+        catalog = {t["type"]: t for t in client.get(TYPES_URL, headers=auth_headers).json()}
+
+        created = _create(client, auth_headers, type="vehicle").json()
+
+        assert created["subtype"] == catalog["vehicle"]["subtypes"][0]["key"] == "car"
+
+    def test_subtype_of_the_type_is_kept(self, client, auth_headers):
+        assert _create(client, auth_headers, type="cash", subtype="savings").json()["subtype"] == "savings"
+
+    @pytest.mark.parametrize("subtype", ["car", "nonsense", ""])
+    def test_subtype_of_another_type_refused(self, client, auth_headers, subtype):
+        assert _create(client, auth_headers, type="cash", subtype=subtype).status_code == 422
+
+    def test_new_type_alone_starts_at_its_default(self, client, auth_headers):
+        wallet = _create(client, auth_headers, type="cash", subtype="savings").json()
+
+        updated = client.patch(f"{WALLETS_URL}/{wallet['id']}", json={"type": "loan"}, headers=auth_headers).json()
+
+        assert (updated["type"], updated["subtype"]) == ("loan", "auto")
+
+    def test_subtype_alone_must_fit_the_current_type(self, client, auth_headers):
+        wallet = _create(client, auth_headers, type="cash").json()
+        url = f"{WALLETS_URL}/{wallet['id']}"
+
+        assert client.patch(url, json={"subtype": "checking"}, headers=auth_headers).json()["subtype"] == "checking"
+        assert client.patch(url, json={"subtype": "car"}, headers=auth_headers).status_code == 422
+
+    def test_other_changes_keep_type_and_subtype(self, client, auth_headers):
+        wallet = _create(client, auth_headers, type="vehicle", subtype="boat").json()
+
+        updated = client.patch(f"{WALLETS_URL}/{wallet['id']}", json={"name": "Sailboat"}, headers=auth_headers).json()
+
+        assert (updated["type"], updated["subtype"]) == ("vehicle", "boat")

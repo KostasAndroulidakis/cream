@@ -164,7 +164,8 @@ List all wallets for the authenticated user.
   {
     "id": 1,
     "name": "Main Bank",
-    "type": "bank",
+    "type": "cash",
+    "subtype": "checking",
     "currency": "EUR",
     "initial_balance": "1000.0000",
     "balance": "1250.5000",
@@ -183,7 +184,8 @@ Create a new wallet.
 ```json
 {
   "name": "string (max 100 chars)",
-  "type": "bank | cash | digital | stash",
+  "type": "cash | investment | real_estate | vehicle | valuables | other_asset | credit_card | mortgage | loan | other_liability (default: cash)",
+  "subtype": "string, one of the type's subtypes (default: the type's first)",
   "currency": "string (3 chars, default: EUR)",
   "initial_balance": "string (decimal, default: 0)"
 }
@@ -195,7 +197,8 @@ Create a new wallet.
 {
   "id": 1,
   "name": "Main Bank",
-  "type": "bank",
+  "type": "cash",
+  "subtype": "checking",
   "currency": "EUR",
   "initial_balance": "1000.0000",
   "balance": "1000.0000",
@@ -206,7 +209,25 @@ Create a new wallet.
 
 **Errors**:
 
-- `422`: Validation error
+- `422`: Validation error, or a subtype that isn't one of the type's
+
+#### GET /wallets/types
+
+What an account can be, as in Monarch: the types (each an asset or a liability) and their subtypes, in Monarch's
+order. The first subtype is the one a new account gets when none is given.
+
+**Response** `200 OK`:
+
+```json
+[
+  {
+    "type": "cash",
+    "label": "Cash",
+    "account_class": "asset",
+    "subtypes": [{ "key": "cd", "label": "CD" }, { "key": "checking", "label": "Checking" }]
+  }
+]
+```
 
 #### GET /wallets/totals
 
@@ -231,7 +252,8 @@ Get a specific wallet.
 {
   "id": 1,
   "name": "Main Bank",
-  "type": "bank",
+  "type": "cash",
+  "subtype": "checking",
   "currency": "EUR",
   "initial_balance": "1000.0000",
   "balance": "1250.5000",
@@ -254,12 +276,14 @@ Update a wallet.
 ```json
 {
   "name": "string",
-  "type": "bank | cash | digital | stash",
+  "type": "see POST /wallets",
+  "subtype": "string",
   "currency": "string"
 }
 ```
 
-**Response** `200 OK`: Updated wallet object
+**Response** `200 OK`: Updated wallet object. A new `type` without a `subtype` starts at the type's first
+subtype; a `subtype` alone must be one of the current type's (`422` otherwise).
 
 **Errors**:
 
@@ -825,7 +849,8 @@ Get a financial report for a specific period.
 
 ### Enums
 
-**WalletType**: `"bank"`, `"cash"`, `"digital"`, `"stash"`
+**WalletType**: `"cash"`, `"investment"`, `"real_estate"`, `"vehicle"`, `"valuables"`, `"other_asset"` (assets);
+`"credit_card"`, `"mortgage"`, `"loan"`, `"other_liability"` (liabilities). Subtypes: `GET /wallets/types`
 
 **CategoryType**: `"income"`, `"expense"`
 

@@ -62,21 +62,28 @@ Wallet
 ├── id: unique identifier
 ├── user_id: owner reference
 ├── name: display name (e.g., "Main Bank Account")
-├── type: wallet_type enum
+├── type: wallet_type enum (Monarch's types: cash, investment, … credit_card, loan, …)
+├── subtype: one of the type's subtypes (e.g. cash → checking), from the catalog
 ├── currency: ISO 4217 code (e.g., "EUR"); fixed once the wallet has transactions
 ├── initial_balance: starting balance (Money)
 ├── created_at: creation timestamp
 └── updated_at: last modification timestamp
 ```
 
-**Wallet Types**:
+**Wallet Types** (as in Monarch; the full subtype lists are in `api/app/services/account_types.py`):
 
-| Type | Description | Examples |
-| ------ | ------------- | ---------- |
-| `bank` | Traditional bank account | Checking, Savings |
-| `cash` | Physical currency | Wallet, Safe |
-| `digital` | Digital payment service | PayPal, Venmo, Google Pay |
-| `stash` | Savings or reserve | Emergency fund, Vacation fund |
+| Type | Class | Subtypes (examples) |
+| ------ | ------- | ---------- |
+| `cash` | Asset | CD, Checking, Savings, PayPal, Prepaid, Money Market, … (Plaid's depository list) |
+| `investment` | Asset | Brokerage, Crypto Exchange, Pension, … (Plaid's investment list) |
+| `real_estate` | Asset | Primary Home, Secondary Home, Rental Property |
+| `vehicle` | Asset | Car, Boat, Motorcycle, Snowmobile, Bicycle, Other |
+| `valuables` | Asset | Art, Jewelry, Collectibles, Furniture, Other |
+| `other_asset` | Asset | Other |
+| `credit_card` | Liability | Credit Card, PayPal |
+| `mortgage` | Liability | Mortgage |
+| `loan` | Liability | Auto, Business, Commercial, Construction, Consumer, Home, Home Equity, Loan, Mortgage, Overdraft, Line of Credit, Student |
+| `other_liability` | Liability | Other |
 
 **Invariants**:
 
@@ -84,6 +91,8 @@ Wallet
 - Wallet name must not be empty
 - Currency code must be exactly 3 characters
 - Initial balance can be any value (including negative for debt accounts)
+- The subtype is one of its type's subtypes; a new type without a subtype starts at the type's first
+- A linked bank account starts as Cash › Checking
 
 ### Category
 

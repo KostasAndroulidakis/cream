@@ -5,13 +5,15 @@ import { userMessage } from "@/lib/api/errors"
 import { formatMoney } from "@/lib/money"
 import { cn } from "@/lib/utils"
 import { walletsQueryOptions, type Wallet } from "../api"
-import { WALLET_TYPE_META } from "../wallet-types"
+import { useAccountTypes } from "../use-account-types"
+import { ACCOUNT_TYPE_ICONS } from "../wallet-types"
 import { CreateWalletDialog } from "./create-wallet-dialog"
 
 const SKELETON_ROWS = 3
 
-function WalletRow({ wallet }: { wallet: Wallet }) {
-  const { label, icon: Icon } = WALLET_TYPE_META[wallet.type]
+// The subtype, e.g. "Checking", as Monarch shows under the name
+function WalletRow({ wallet, label }: { wallet: Wallet; label: string }) {
+  const Icon = ACCOUNT_TYPE_ICONS[wallet.type]
   const isNegative = wallet.balance.startsWith("-")
 
   return (
@@ -32,6 +34,7 @@ function WalletRow({ wallet }: { wallet: Wallet }) {
 
 export function WalletList() {
   const { data: wallets, isPending, isError, error } = useQuery(walletsQueryOptions)
+  const { subtypeLabel } = useAccountTypes()
 
   if (isPending) {
     return (
@@ -64,7 +67,7 @@ export function WalletList() {
   return (
     <ul className="divide-y">
       {wallets.map((wallet) => (
-        <WalletRow key={wallet.id} wallet={wallet} />
+        <WalletRow key={wallet.id} wallet={wallet} label={subtypeLabel(wallet.type, wallet.subtype)} />
       ))}
     </ul>
   )

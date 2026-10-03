@@ -94,7 +94,7 @@ class TestConnections:
         wallets = client.get("/api/v1/wallets", headers=auth_headers).json()
 
         assert [w["id"] for w in wallets] == [linked["wallet_id"]]
-        assert wallets[0]["currency"] == "EUR" and wallets[0]["type"] == "bank"
+        assert wallets[0]["currency"] == "EUR" and (wallets[0]["type"], wallets[0]["subtype"]) == ("cash", "checking")
 
     def test_cannot_link_to_another_users_wallet(self, client, auth_headers, second_auth_headers, bank):
         other_wallet = client.post("/api/v1/wallets", json={"name": "Theirs"}, headers=second_auth_headers).json()
