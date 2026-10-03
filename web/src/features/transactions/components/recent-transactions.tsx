@@ -10,8 +10,8 @@ import { userMessage } from "@/lib/api/errors"
 import { cn } from "@/lib/utils"
 import { recentTransactionsQueryOptions } from "../api"
 import { transactionLabel } from "../display"
+import { TransactionActions } from "./transaction-actions"
 import { TransactionSummary } from "./transaction-summary"
-import { VisibilityButton } from "./visibility-button"
 
 const RECENT_LIMIT = 10
 const SKELETON_ROWS = 4
@@ -52,7 +52,7 @@ export function RecentTransactions({ showHidden }: { showHidden: boolean }) {
               transaction={transaction}
               title={transactionLabel(transaction) ?? categoryName}
               currency={wallet?.currency}
-              action={<VisibilityButton transaction={transaction} />}
+              action={<TransactionActions transaction={transaction} currency={wallet?.currency} />}
               subtitle={
                 <>
                   {transaction.is_hidden && "Hidden · "}

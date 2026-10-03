@@ -5,7 +5,7 @@ import { CheckCircle2 } from "lucide-react"
 import { FormAlert } from "@/components/form-alert"
 import { ListSkeleton } from "@/components/list-skeleton"
 import { TransactionSummary } from "@/features/transactions/components/transaction-summary"
-import { VisibilityButton } from "@/features/transactions/components/visibility-button"
+import { TransactionActions } from "@/features/transactions/components/transaction-actions"
 import { transactionLabel } from "@/features/transactions/display"
 import { walletsQueryOptions } from "@/features/wallets/api"
 import { userMessage } from "@/lib/api/errors"
@@ -63,7 +63,7 @@ export function ReviewInbox() {
                 title={transactionLabel(transaction) ?? UNKNOWN_MERCHANT}
                 subtitle={wallet?.name}
                 currency={wallet?.currency}
-                action={<VisibilityButton transaction={transaction} />}
+                action={<TransactionActions transaction={transaction} currency={wallet?.currency} />}
               />
               <CategorizeForm transaction={transaction} layout="inline" onCategorized={setLastResult} />
             </li>

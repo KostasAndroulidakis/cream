@@ -31,17 +31,18 @@ async function createTransaction(input: TransactionCreateInput): Promise<Transac
   return data
 }
 
-export function useCreateTransaction() {
+/** Refreshes transaction lists together with wallets, for changes that move balances. */
+function useRefreshTransactionsAndBalances() {
   const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: createTransaction,
-    // Balances and totals depend on transactions, so they refresh together
-    onSuccess: () =>
-      Promise.all([
-        queryClient.invalidateQueries({ queryKey: TRANSACTIONS_KEY }),
-        queryClient.invalidateQueries({ queryKey: WALLETS_KEY }),
-      ]),
-  })
+  return () =>
+    Promise.all([
+      queryClient.invalidateQueries({ queryKey: TRANSACTIONS_KEY }),
+      queryClient.invalidateQueries({ queryKey: WALLETS_KEY }),
+    ])
+}
+
+export function useCreateTransaction() {
+  return useMutation({ mutationFn: createTransaction, onSuccess: useRefreshTransactionsAndBalances() })
 }
 
 export type SetHiddenInput = { transactionId: number; hidden: boolean }
@@ -60,5 +61,18 @@ export function useSetTransactionHidden() {
     },
     // Hidden transactions still count in balances, so only transaction lists need refreshing
     onSuccess: () => queryClient.invalidateQueries({ queryKey: TRANSACTIONS_KEY }),
+  })
+}
+
+/** Delete a transaction entered by hand (the API refuses bank transactions: hide those instead). */
+export function useDeleteTransaction() {
+  return useMutation({
+    mutationFn: async (transactionId: number) => {
+      const { error, response } = await api.DELETE("/api/v1/transactions/{transaction_id}", {
+        params: { path: { transaction_id: transactionId } },
+      })
+      if (!response.ok) throw toApiError(error, response)
+    },
+    onSuccess: useRefreshTransactionsAndBalances(),
   })
 }

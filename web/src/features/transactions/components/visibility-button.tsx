@@ -5,11 +5,11 @@ import { userMessage } from "@/lib/api/errors"
 import { cn } from "@/lib/utils"
 import { useSetTransactionHidden, type Transaction } from "../api"
 import { transactionLabel } from "../display"
+import { REVEAL_ON_ROW_HOVER } from "../row-actions"
 
 /**
  * Hides a transaction from lists and statistics (it still counts in the balance), or shows it again.
- * The hide button appears on row hover or keyboard focus, and always on touch screens (no hover there);
- * the show button is always visible, since a hidden row exists only to be brought back.
+ * The show button is always visible, since a hidden row is listed only to be brought back.
  */
 export function VisibilityButton({ transaction }: { transaction: Transaction }) {
   const setHidden = useSetTransactionHidden()
@@ -33,8 +33,8 @@ export function VisibilityButton({ transaction }: { transaction: Transaction }) 
       disabled={setHidden.isPending}
       onClick={() => setHidden.mutate({ transactionId: transaction.id, hidden: !hidden })}
       className={cn(
-        "text-muted-foreground transition-opacity",
-        !hidden && "opacity-0 group-hover/row:opacity-100 focus-visible:opacity-100 pointer-coarse:opacity-100",
+        "text-muted-foreground",
+        !hidden && REVEAL_ON_ROW_HOVER,
         setHidden.isError && "text-destructive opacity-100",
       )}
     >
