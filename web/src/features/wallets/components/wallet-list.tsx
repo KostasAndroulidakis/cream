@@ -1,73 +1,28 @@
 import { useQuery } from "@tanstack/react-query"
 
 import { FormAlert } from "@/components/form-alert"
+import { ListSkeleton } from "@/components/list-skeleton"
 import { userMessage } from "@/lib/api/errors"
-import { formatMoney } from "@/lib/money"
-import { cn } from "@/lib/utils"
-import { walletsQueryOptions, type Wallet } from "../api"
+import { walletsQueryOptions } from "../api"
 import { useAccountTypes } from "../use-account-types"
-import { ACCOUNT_TYPE_ICONS } from "../wallet-types"
-import { CreateWalletDialog } from "./create-wallet-dialog"
+import { ACCOUNT_ROW_HEIGHT, AccountRow } from "./account-row"
+import { NoAccounts } from "./no-accounts"
 
 const SKELETON_ROWS = 3
 
-// The subtype, e.g. "Checking", as Monarch shows under the name
-function WalletRow({ wallet, label }: { wallet: Wallet; label: string }) {
-  const Icon = ACCOUNT_TYPE_ICONS[wallet.type]
-  const isNegative = wallet.balance.startsWith("-")
-
-  return (
-    <li className="flex items-center gap-4 py-4">
-      <span className="grid size-10 shrink-0 place-items-center rounded-full bg-primary/8 text-primary">
-        <Icon className="size-5" aria-hidden />
-      </span>
-      <div className="min-w-0 flex-1">
-        <p className="truncate font-medium">{wallet.name}</p>
-        <p className="text-sm text-muted-foreground">{label}</p>
-      </div>
-      <p className={cn("font-medium tabular-nums", isNegative && "text-destructive")}>
-        {formatMoney(wallet.balance, wallet.currency)}
-      </p>
-    </li>
-  )
-}
-
+/** Every account in one list (the dashboard's), oldest first. */
 export function WalletList() {
   const { data: wallets, isPending, isError, error } = useQuery(walletsQueryOptions)
   const { subtypeLabel } = useAccountTypes()
 
-  if (isPending) {
-    return (
-      <ul className="divide-y" aria-label="Loading accounts">
-        {Array.from({ length: SKELETON_ROWS }, (_, i) => (
-          <li key={i} className="h-[4.5rem] animate-pulse py-4">
-            <div className="h-full rounded-lg bg-muted" />
-          </li>
-        ))}
-      </ul>
-    )
-  }
-
+  if (isPending) return <ListSkeleton rows={SKELETON_ROWS} label="Loading accounts" rowClassName={ACCOUNT_ROW_HEIGHT} />
   if (isError) return <FormAlert message={userMessage(error)} />
-
-  if (wallets.length === 0) {
-    return (
-      <div className="rounded-xl border border-dashed px-6 py-10 text-center">
-        <p className="font-medium">No accounts yet</p>
-        <p className="mx-auto mt-1 max-w-xs text-sm text-muted-foreground">
-          Add your bank account, the cash in your pocket, or a stash to start tracking.
-        </p>
-        <div className="mt-5">
-          <CreateWalletDialog />
-        </div>
-      </div>
-    )
-  }
+  if (wallets.length === 0) return <NoAccounts />
 
   return (
     <ul className="divide-y">
       {wallets.map((wallet) => (
-        <WalletRow key={wallet.id} wallet={wallet} label={subtypeLabel(wallet.type, wallet.subtype)} />
+        <AccountRow key={wallet.id} wallet={wallet} label={subtypeLabel(wallet.type, wallet.subtype)} />
       ))}
     </ul>
   )

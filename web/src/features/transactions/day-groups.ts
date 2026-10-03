@@ -1,8 +1,6 @@
-import { sumAmounts } from "@/lib/decimal"
+import { totalsByCurrency, type CurrencyTotal } from "@/lib/currency-totals"
 import { localDayKey } from "@/lib/dates"
 import type { Transaction } from "./api"
-
-export type CurrencyTotal = { currency: string; amount: string }
 
 export type DayGroup = {
   // YYYY-MM-DD in the user's time zone
@@ -32,11 +30,10 @@ function dayTotals(
   transactions: readonly Transaction[],
   currencyOf: (walletId: number) => string | undefined,
 ): CurrencyTotal[] {
-  const amountsByCurrency = new Map<string, string[]>()
-  for (const transaction of transactions) {
-    const currency = currencyOf(transaction.wallet_id)
-    if (transaction.is_hidden || !currency) continue
-    amountsByCurrency.set(currency, [...(amountsByCurrency.get(currency) ?? []), transaction.amount])
-  }
-  return [...amountsByCurrency].map(([currency, amounts]) => ({ currency, amount: sumAmounts(amounts) }))
+  return totalsByCurrency(
+    transactions.flatMap((transaction) => {
+      const currency = currencyOf(transaction.wallet_id)
+      return transaction.is_hidden || !currency ? [] : [{ currency, amount: transaction.amount }]
+    }),
+  )
 }

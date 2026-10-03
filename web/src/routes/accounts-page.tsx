@@ -2,10 +2,9 @@ import { ListFilter, Pencil } from "lucide-react"
 
 import { ComingSoonButton } from "@/components/coming-soon-button"
 import { PageHeader, PageHeaderDivider } from "@/components/page-header"
-import { Surface } from "@/components/surface"
 import { RefreshAllButton } from "@/features/bank/components/refresh-all-button"
 import { CreateWalletDialog } from "@/features/wallets/components/create-wallet-dialog"
-import { WalletList } from "@/features/wallets/components/wallet-list"
+import { AccountGroups } from "@/features/wallets/components/account-groups"
 
 export function AccountsPage() {
   return (
@@ -22,11 +21,7 @@ export function AccountsPage() {
           </>
         }
       />
-      <Surface label="Accounts list">
-        <div className="px-6 py-2">
-          <WalletList />
-        </div>
-      </Surface>
+      <AccountGroups />
     </div>
   )
 }

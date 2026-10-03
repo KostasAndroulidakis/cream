@@ -14,7 +14,8 @@ import { formatLongDate } from "@/lib/dates"
 import { formatFlow } from "@/lib/money"
 import { cn } from "@/lib/utils"
 import type { Transaction } from "../api"
-import { groupByDay, type CurrencyTotal } from "../day-groups"
+import { formatTotals, type CurrencyTotal } from "@/lib/currency-totals"
+import { groupByDay } from "../day-groups"
 import { transactionLabel } from "../display"
 import { useSelection, useSelectionShortcuts, type Selection } from "../use-selection"
 import { useTransactionView } from "../use-transaction-view"
@@ -85,7 +86,7 @@ function DayHeader({ day, totals }: { day: string; totals: CurrencyTotal[] }) {
   return (
     <div className="flex items-center justify-between gap-4 bg-sidebar px-6 py-2 text-sm font-medium text-muted-foreground">
       <h3>{formatLongDate(day)}</h3>
-      <p className="tabular-nums">{totals.map((total) => formatFlow(total.amount, total.currency)).join(" · ")}</p>
+      <p className="tabular-nums">{formatTotals(totals, formatFlow)}</p>
     </div>
   )
 }
