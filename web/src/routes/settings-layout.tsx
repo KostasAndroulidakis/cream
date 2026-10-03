@@ -25,7 +25,7 @@ function SettingsLink({ item: { label, to, beta } }: { item: SettingsItem }) {
 
   if (!to) {
     return (
-      <span aria-disabled title={COMING_SOON} className={cn(ITEM, "cursor-not-allowed text-muted-foreground")}>
+      <span aria-disabled title={COMING_SOON} className={cn(ITEM, "cursor-not-allowed")}>
         {content}
       </span>
     )
@@ -47,7 +47,7 @@ function SettingsMenuCard({ group: { title, items } }: { group: SettingsGroup })
   const headingId = `settings-${title.toLowerCase()}`
   return (
     <section aria-labelledby={headingId} className="rounded-xl border bg-card shadow-xs">
-      <h2 id={headingId} className="border-b px-6 py-4 text-lg font-semibold tracking-tight">
+      <h2 id={headingId} className="border-b px-6 py-4 text-lg font-medium tracking-tight">
         {title}
       </h2>
       <ul className="flex flex-col gap-0.5 p-1">
@@ -64,9 +64,9 @@ function SettingsMenuCard({ group: { title, items } }: { group: SettingsGroup })
 /** Settings, like Monarch's: the menu cards on the left, the chosen section on the right. */
 export function SettingsLayout() {
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <PageHeader title="Settings" />
-      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] xl:grid-cols-[26rem_minmax(0,1fr)]">
+      <div className="grid grid-cols-1 items-start gap-4.5 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] xl:grid-cols-[26rem_minmax(0,1fr)]">
         <nav aria-label="Settings" className="space-y-4">
           {SETTINGS_GROUPS.map((group) => (
             <SettingsMenuCard key={group.title} group={group} />

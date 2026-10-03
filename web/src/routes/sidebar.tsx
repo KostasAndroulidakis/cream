@@ -40,12 +40,12 @@ function SidebarLink({
       title={collapsed ? label : undefined}
       className={({ isActive }) =>
         cn(
-          "flex h-11 items-center gap-3 rounded-lg px-3 text-[0.9375rem] text-sidebar-foreground transition-colors hover:bg-sidebar-accent/60",
+          "flex h-10 items-center gap-3 rounded-lg px-3 text-[0.9375rem] text-sidebar-foreground transition-colors hover:bg-sidebar-accent/60",
           isActive && "bg-sidebar-accent font-medium",
         )
       }
     >
-      <Icon className="size-[1.125rem] shrink-0" aria-hidden />
+      <Icon className="size-4 shrink-0" aria-hidden />
       <span className={cn("flex-1 truncate", collapsed && "sr-only")}>{label}</span>
       {Badge && !collapsed && <Badge className="rounded-md" />}
     </NavLink>
@@ -69,7 +69,7 @@ export function Sidebar() {
       )}
     >
       {/* Collapsed, only the toggle stays: there is no room for the name and the other tools */}
-      <div className={cn("flex h-14 items-center", collapsed ? "justify-center" : "justify-between pl-3")}>
+      <div className={cn("flex h-16 items-center", collapsed ? "justify-center" : "justify-between pl-3")}>
         {collapsed ? (
           <SidebarToggle collapsed onToggle={toggle} />
         ) : (
@@ -79,7 +79,7 @@ export function Sidebar() {
           </>
         )}
       </div>
-      <nav aria-label="Main" className="flex flex-col gap-0.5">
+      <nav aria-label="Main" className="flex flex-col">
         {NAV_ITEMS.map((item) => (
           <SidebarLink key={item.to} item={item} collapsed={collapsed} />
         ))}

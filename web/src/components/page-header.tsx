@@ -12,8 +12,9 @@ type PageHeaderProps = {
  */
 export function PageHeader({ title, actions }: PageHeaderProps) {
   return (
-    <header className="flex min-h-10 flex-wrap items-center justify-between gap-4">
-      <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
+    <header className="flex min-h-12 flex-wrap items-center justify-between gap-4">
+      {/* Monarch's title is small, on the same line as the logo */}
+      <h1 className="text-lg font-medium tracking-tight">{title}</h1>
       {actions && (
         <div className="flex flex-wrap items-center gap-2 [&_button]:h-10 [&_button]:px-3.5">
           {actions}

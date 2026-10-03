@@ -11,7 +11,7 @@ export function AppLayout() {
       <div className="min-w-0 flex-1">
         <TopBar />
         {/* Full width, like Monarch: pages use the space the sidebar leaves */}
-        <main className="px-4 py-8 sm:px-6 lg:py-6 lg:pr-6 lg:pl-2">
+        <main className="px-4 py-8 sm:px-6 lg:pt-2 lg:pr-6 lg:pb-6 lg:pl-4">
           <Outlet />
         </main>
       </div>

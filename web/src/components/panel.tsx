@@ -12,7 +12,7 @@ export function Panel({ id, title, action, children }: PanelProps) {
   return (
     <section aria-labelledby={id} className="rounded-xl border bg-card px-6 py-5 shadow-xs">
       <div className="flex min-h-8 items-center justify-between gap-4">
-        <h2 id={id} className="text-lg font-semibold tracking-tight">
+        <h2 id={id} className="text-lg font-medium tracking-tight">
           {title}
         </h2>
         {action}

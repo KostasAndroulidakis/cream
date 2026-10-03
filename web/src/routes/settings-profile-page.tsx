@@ -8,7 +8,7 @@ export function SettingsProfilePage() {
 
   return (
     <section aria-labelledby="profile-heading" className="rounded-xl border bg-card shadow-xs">
-      <h2 id="profile-heading" className="border-b px-6 py-4 text-lg font-semibold tracking-tight">
+      <h2 id="profile-heading" className="border-b px-6 py-4 text-lg font-medium tracking-tight">
         Profile
       </h2>
       <div className="px-6 py-6">{user && <ProfileForm user={user} />}</div>
