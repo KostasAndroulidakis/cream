@@ -19,3 +19,8 @@ export function formatMoney(amount: string, currency: string): string {
 
 /** ISO 4217 codes the browser knows how to format. */
 export const SUPPORTED_CURRENCIES: readonly string[] = Intl.supportedValuesOf("currency")
+
+/** Money in and out as lists show it: spending without a sign ("€46.30"), income with a plus ("+€10.00"). */
+export function formatFlow(amount: string, currency: string): string {
+  return amount.startsWith("-") ? formatMoney(amount.slice(1), currency) : `+${formatMoney(amount, currency)}`
+}

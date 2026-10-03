@@ -25,3 +25,17 @@ const SHORT_DATE = new Intl.DateTimeFormat(undefined, { day: "numeric", month: "
 export function formatShortDate(iso: string): string {
   return SHORT_DATE.format(new Date(iso))
 }
+
+/** The calendar day (YYYY-MM-DD) of a timestamp in the user's time zone. */
+export function localDayKey(iso: string): string {
+  const date = new Date(iso)
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
+}
+
+const LONG_DATE = new Intl.DateTimeFormat(undefined, { day: "numeric", month: "long", year: "numeric" })
+
+/** A day key (YYYY-MM-DD) as a long date, e.g. "October 2, 2026". */
+export function formatLongDate(dayKey: string): string {
+  const [year, month, day] = dayKey.split("-").map(Number)
+  return LONG_DATE.format(new Date(year, month - 1, day))
+}

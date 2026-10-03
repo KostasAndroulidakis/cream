@@ -1,4 +1,4 @@
-import { queryOptions, useMutation, useQueryClient } from "@tanstack/react-query"
+import { infiniteQueryOptions, queryOptions, useMutation, useQueryClient } from "@tanstack/react-query"
 
 import { api } from "@/lib/api/client"
 import { toApiError } from "@/lib/api/errors"
@@ -24,6 +24,24 @@ export function recentTransactionsQueryOptions(limit: number, includeHidden: boo
     },
   })
 }
+
+// Transactions page: loaded a page at a time, newest first
+const ALL_PAGE_SIZE = 100
+
+export const allTransactionsQueryOptions = infiniteQueryOptions({
+  queryKey: [...TRANSACTIONS_KEY, "all"],
+  queryFn: async ({ pageParam }): Promise<Transaction[]> => {
+    const { data, error, response } = await api.GET("/api/v1/transactions", {
+      params: { query: { limit: ALL_PAGE_SIZE, offset: pageParam } },
+    })
+    if (!data) throw toApiError(error, response)
+    return data
+  },
+  initialPageParam: 0,
+  // A full page may have more after it; a short one is the end
+  getNextPageParam: (lastPage, allPages) =>
+    lastPage.length === ALL_PAGE_SIZE ? allPages.length * ALL_PAGE_SIZE : undefined,
+})
 
 async function createTransaction(input: TransactionCreateInput): Promise<Transaction> {
   const { data, error, response } = await api.POST("/api/v1/transactions", { body: input })
