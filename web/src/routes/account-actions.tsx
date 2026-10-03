@@ -3,10 +3,27 @@ import { LogOut } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useCurrentUser, useLogout } from "@/features/auth/api"
 
-/** Who is signed in, and the way out. */
-export function AccountActions() {
+/** Who is signed in, and the way out; `compact` keeps only the log out icon, for the collapsed sidebar. */
+export function AccountActions({ compact = false }: { compact?: boolean }) {
   const { data: user } = useCurrentUser()
   const logout = useLogout()
+
+  if (compact) {
+    return (
+      <div className="flex justify-center">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => logout.mutate()}
+          disabled={logout.isPending}
+          aria-label="Log out"
+          title="Log out"
+        >
+          <LogOut aria-hidden />
+        </Button>
+      </div>
+    )
+  }
 
   return (
     <div className="flex items-center justify-between gap-2">
