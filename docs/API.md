@@ -25,6 +25,7 @@ All endpoints except `/health`, `/auth/signup`, `/auth/login` and `/auth/logout`
 | `POST /api/v1/wallets` | Create wallet |
 | `GET /api/v1/wallets/totals` | Combined balance per currency |
 | `GET /api/v1/wallets/summary` | Net worth and each account type's total |
+| `GET /api/v1/wallets/net-worth` | Net worth day by day over a range |
 | `GET /api/v1/wallets/{id}` | Get wallet |
 | `PATCH /api/v1/wallets/{id}` | Edit Account: name, type/subtype, `balance` (the starting balance absorbs the difference), `credit_limit`, `invert_balance` (flips the sign), `is_hidden`, `exclude_balance`, `hide_transactions` |
 | `DELETE /api/v1/wallets/{id}` | Delete wallet |
@@ -249,6 +250,27 @@ Monarch's order; liabilities carry their sign (debt is negative), so net worth i
   ]
 }
 ```
+
+#### GET /wallets/net-worth
+
+Net worth at the end of each day of a range, for the Accounts chart. Worked out from the transactions: a day's
+balance is today's minus everything booked after it, so it needs no stored history. Days follow the user's
+time zone (Settings › Profile; UTC when unset). Counts the same accounts as `/wallets/summary`.
+
+**Query Parameters**: `range`: `1M` (default), `3M`, `6M`, `YTD`, `1Y` or `ALL` (from the first transaction)
+
+**Response** `200 OK`:
+
+```json
+{
+  "range": "1M",
+  "series": [
+    { "currency": "EUR", "points": [{ "date": "2026-09-03", "balance": "1000.0000" }, { "date": "2026-09-04", "balance": "950.0000" }] }
+  ]
+}
+```
+
+A balance set by hand (Edit Account) moves that account's whole history, since it isn't a transaction.
 
 #### GET /wallets/totals
 

@@ -163,6 +163,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/wallets/net-worth": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Net Worth History
+         * @description Net worth at the end of each day of the range (in the user's time zone), for the Accounts chart.
+         */
+        get: operations["get_net_worth_history_api_v1_wallets_net_worth_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/wallets/totals": {
         parameters: {
             query?: never;
@@ -967,6 +987,38 @@ export interface components {
             updated_at: string;
         };
         /**
+         * NetWorthHistory
+         * @description Net worth day by day over a range, per currency (never mixed).
+         */
+        NetWorthHistory: {
+            range: components["schemas"]["NetWorthRange"];
+            /** Series */
+            series: components["schemas"]["NetWorthSeries"][];
+        };
+        /** NetWorthPoint */
+        NetWorthPoint: {
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /** Balance */
+            balance: string;
+        };
+        /**
+         * NetWorthRange
+         * @description The chart's periods (Monarch's dateRange=1M and the like).
+         * @enum {string}
+         */
+        NetWorthRange: "1M" | "3M" | "6M" | "YTD" | "1Y" | "ALL";
+        /** NetWorthSeries */
+        NetWorthSeries: {
+            /** Currency */
+            currency: string;
+            /** Points */
+            points: components["schemas"]["NetWorthPoint"][];
+        };
+        /**
          * ReportPeriod
          * @description Time period for a report.
          */
@@ -1584,6 +1636,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AccountsSummary"];
+                };
+            };
+        };
+    };
+    get_net_worth_history_api_v1_wallets_net_worth_get: {
+        parameters: {
+            query?: {
+                range?: components["schemas"]["NetWorthRange"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NetWorthHistory"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

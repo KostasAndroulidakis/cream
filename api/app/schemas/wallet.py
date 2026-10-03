@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 from typing import Annotated
 
@@ -7,6 +7,7 @@ from pydantic import AfterValidator, BaseModel, BeforeValidator, Field, model_va
 from app.models.wallet import SUBTYPE_MAX, AccountClass, WalletType
 from app.services.account_types import resolve_subtype
 from app.services.currencies import DEFAULT_CURRENCY, ensure_supported
+from app.services.net_worth import NetWorthRange
 
 CURRENCY_CODE_PATTERN = r"^[A-Z]{3}$"
 
@@ -117,3 +118,22 @@ class AccountTypeRead(BaseModel):
     label: str
     account_class: AccountClass
     subtypes: list[SubtypeRead]
+
+
+class NetWorthPoint(BaseModel):
+    date: date
+    # Net worth at the end of that day
+    balance: Decimal
+
+
+class NetWorthSeries(BaseModel):
+    currency: str
+    # One point per day of the range, oldest first
+    points: list[NetWorthPoint]
+
+
+class NetWorthHistory(BaseModel):
+    """Net worth day by day over a range, per currency (never mixed)."""
+
+    range: NetWorthRange
+    series: list[NetWorthSeries]

@@ -2,6 +2,7 @@ from app.schemas.user import UserCreate, UserRead, UserUpdate, LoginRequest
 from app.schemas.wallet import (
     AccountsSummary,
     AccountTypeRead,
+    NetWorthHistory,
     CurrencyTotal,
     WalletCreate,
     WalletRead,
@@ -34,7 +35,7 @@ from app.schemas.error import ValidationErrorDetail, ValidationErrorResponse, Er
 
 __all__ = [
     "UserCreate", "UserRead", "UserUpdate", "LoginRequest",
-    "WalletCreate", "WalletRead", "WalletUpdate", "CurrencyTotal", "AccountTypeRead", "AccountsSummary",
+    "WalletCreate", "WalletRead", "WalletUpdate", "CurrencyTotal", "AccountTypeRead", "AccountsSummary", "NetWorthHistory",
     "CategoryCreate", "CategoryOrder", "CategoryRead", "CategoryUpdate",
     "TransactionCreate", "TransactionRead", "TransactionUpdate", "TransactionPage",
     "BulkTransactionUpdate", "BulkTransactionDelete", "BulkResult", "MerchantRead",

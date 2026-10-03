@@ -1,10 +1,19 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models import Wallet
-from app.schemas import AccountsSummary, AccountTypeRead, CurrencyTotal, WalletCreate, WalletRead, WalletUpdate
-from app.services.auth import get_current_user_id
+from app.models import User, Wallet
+from app.schemas import (
+    AccountsSummary,
+    AccountTypeRead,
+    CurrencyTotal,
+    NetWorthHistory,
+    WalletCreate,
+    WalletRead,
+    WalletUpdate,
+)
+from app.services.auth import get_current_user, get_current_user_id
+from app.services.net_worth import NetWorthRange, net_worth_history
 from app.services.authorization import get_wallet as get_user_wallet
 from app.services.helpers import apply_update
 from app.services.wallets import (
@@ -40,6 +49,24 @@ def list_account_types(user_id: int = Depends(get_current_user_id)):
 def get_accounts_summary(user_id: int = Depends(get_current_user_id), db: Session = Depends(get_db)):
     """Net worth and each account type's total (assets and liabilities), for the Accounts page."""
     return summarize_accounts(get_user_wallets(user_id, db))
+
+
+# Declared before /{wallet_id} so "net-worth" isn't parsed as an ID
+@router.get("/net-worth", response_model=NetWorthHistory)
+def get_net_worth_history(
+    period: NetWorthRange = Query(NetWorthRange.ONE_MONTH, alias="range"),
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Net worth at the end of each day of the range (in the user's time zone), for the Accounts chart."""
+    history = net_worth_history(user, period, db)
+    return {
+        "range": period,
+        "series": [
+            {"currency": currency, "points": [{"date": day, "balance": balance} for day, balance in points]}
+            for currency, points in history.items()
+        ],
+    }
 
 
 # Declared before /{wallet_id} so "totals" isn't parsed as an ID
