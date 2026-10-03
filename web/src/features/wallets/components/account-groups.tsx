@@ -11,7 +11,8 @@ import { cn } from "@/lib/utils"
 import { accountsSummaryQueryOptions, walletsQueryOptions } from "../api"
 import { groupByType, type AccountGroup } from "../grouping"
 import { useAccountTypes } from "../use-account-types"
-import { ACCOUNT_ROW_HEIGHT, AccountRow } from "./account-row"
+import { ACCOUNT_ROW_HEIGHT, AccountRow, AccountTypeIcon } from "./account-row"
+import { EditAccountDialog } from "./edit-account-dialog"
 import { NoAccounts } from "./no-accounts"
 
 const SKELETON_ROWS = 3
@@ -41,7 +42,15 @@ function AccountGroupCard({ group }: { group: AccountGroup }) {
       {open && (
         <ul id={listId} className="divide-y border-t px-6">
           {group.wallets.map((wallet) => (
-            <AccountRow key={wallet.id} wallet={wallet} label={subtypeLabel(wallet.type, wallet.subtype)} />
+            // Until accounts get their own page (Monarch's), a click opens Edit Account
+            <EditAccountDialog
+              key={wallet.id}
+              wallet={wallet}
+              logo={<AccountTypeIcon wallet={wallet} className="size-12" />}
+              trigger={(open) => (
+                <AccountRow wallet={wallet} label={subtypeLabel(wallet.type, wallet.subtype)} onSelect={open} />
+              )}
+            />
           ))}
         </ul>
       )}
