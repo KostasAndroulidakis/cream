@@ -21,7 +21,10 @@ export function WalletList() {
 
   return (
     <ul className="divide-y">
-      {wallets.map((wallet) => (
+      {/* "Hide account" leaves it off the account lists, nothing else */}
+      {wallets
+        .filter((wallet) => !wallet.is_hidden)
+        .map((wallet) => (
         <AccountRow key={wallet.id} wallet={wallet} label={subtypeLabel(wallet.type, wallet.subtype)} />
       ))}
     </ul>

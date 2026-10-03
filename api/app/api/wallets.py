@@ -11,6 +11,7 @@ from app.services.wallets import (
     account_type_catalog,
     calculate_currency_totals,
     change_type,
+    apply_account_settings,
     ensure_currency_change_allowed,
     get_user_wallets,
 )
@@ -75,7 +76,12 @@ def update_wallet(
     wallet = get_user_wallet(wallet_id, user_id, db)
     ensure_currency_change_allowed(wallet, wallet_in.currency, db)
     change_type(wallet, wallet_in.type, wallet_in.subtype)
-    apply_update(wallet, wallet_in, exclude={"type", "subtype"})
+    apply_account_settings(wallet, wallet_in, db)
+    apply_update(
+        wallet,
+        wallet_in,
+        exclude={"type", "subtype", "balance", "credit_limit", "invert_balance", "is_hidden", "exclude_balance", "hide_transactions"},
+    )
     db.commit()
     db.refresh(wallet)
     return wallet

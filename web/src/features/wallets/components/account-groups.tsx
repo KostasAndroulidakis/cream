@@ -68,7 +68,11 @@ export function AccountGroups() {
 
   return (
     <div className="space-y-4">
-      {groupByType(wallets, catalog).map((group) => (
+      {/* "Hide account" leaves it off this page */}
+      {groupByType(
+        wallets.filter((wallet) => !wallet.is_hidden),
+        catalog,
+      ).map((group) => (
         <AccountGroupCard key={group.info.type} group={group} />
       ))}
     </div>

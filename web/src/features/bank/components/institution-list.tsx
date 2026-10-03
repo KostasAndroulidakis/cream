@@ -4,6 +4,7 @@ import { COMING_SOON } from "@/components/coming-soon-button"
 import { FormAlert } from "@/components/form-alert"
 import { Button } from "@/components/ui/button"
 import { walletsQueryOptions, type Wallet } from "@/features/wallets/api"
+import { EditAccountDialog } from "@/features/wallets/components/edit-account-dialog"
 import { useAccountTypes } from "@/features/wallets/use-account-types"
 import { userMessage } from "@/lib/api/errors"
 import { timeAgo } from "@/lib/dates"
@@ -22,15 +23,18 @@ import { LinkAccountControl } from "./link-account-control"
 const PROVIDER = "Enable Banking"
 
 /** The bank's logo from the provider's list of banks, or its initial while that loads or has none. */
-function InstitutionLogo({ connection }: { connection: BankConnection }) {
+function InstitutionLogo({ connection, className }: { connection: BankConnection; className?: string }) {
   const { data: banks } = useQuery(aspspsQueryOptions(connection.aspsp_country))
   const logo = banks?.find((bank) => bank.name === connection.aspsp_name)?.logo
 
-  if (logo) return <img src={logo} alt="" className="size-8 shrink-0 rounded-full object-contain" />
+  if (logo) return <img src={logo} alt="" className={cn("size-8 shrink-0 rounded-full object-contain", className)} />
   return (
     <span
       aria-hidden
-      className="inline-grid size-8 shrink-0 place-items-center rounded-full bg-muted text-sm font-semibold text-muted-foreground"
+      className={cn(
+        "inline-grid size-8 shrink-0 place-items-center rounded-full bg-muted text-sm font-semibold text-muted-foreground",
+        className,
+      )}
     >
       {connection.aspsp_name.charAt(0).toUpperCase()}
     </span>
@@ -65,7 +69,7 @@ function ReconnectButton({ connection }: { connection: BankConnection }) {
   )
 }
 
-/** Monarch's "View" and "Edit"; account pages come later, so for now they only say so. */
+/** Monarch's "View"; account pages come later, so for now it only says so. */
 function AccountButton({ children }: { children: string }) {
   return (
     <Button
@@ -80,7 +84,15 @@ function AccountButton({ children }: { children: string }) {
   )
 }
 
-function AccountRow({ account, wallet }: { account: BankAccount; wallet?: Wallet }) {
+function AccountRow({
+  account,
+  wallet,
+  connection,
+}: {
+  account: BankAccount
+  wallet?: Wallet
+  connection: BankConnection
+}) {
   const { subtypeLabel } = useAccountTypes()
 
   return (
@@ -94,7 +106,15 @@ function AccountRow({ account, wallet }: { account: BankAccount; wallet?: Wallet
       {wallet ? (
         <div className="flex items-center gap-2">
           <AccountButton>View</AccountButton>
-          <AccountButton>Edit</AccountButton>
+          <EditAccountDialog
+            wallet={wallet}
+            logo={<InstitutionLogo connection={connection} className="size-12 text-lg" />}
+            trigger={(open) => (
+              <Button variant="outline" size="sm" onClick={open}>
+                Edit
+              </Button>
+            )}
+          />
         </div>
       ) : (
         // Monarch adds every account on its own; CREAM asks where the transactions go
@@ -136,6 +156,7 @@ function InstitutionCard({ connection, wallets }: { connection: BankConnection; 
               key={account.id}
               account={account}
               wallet={account.wallet_id === null ? undefined : wallets.get(account.wallet_id)}
+              connection={connection}
             />
           ))}
         </ul>

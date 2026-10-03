@@ -1231,6 +1231,16 @@ export interface components {
             initial_balance: string;
             /** Balance */
             balance: string;
+            /** Credit Limit */
+            credit_limit: string | null;
+            /** Invert Balance */
+            invert_balance: boolean;
+            /** Is Hidden */
+            is_hidden: boolean;
+            /** Exclude Balance */
+            exclude_balance: boolean;
+            /** Hide Transactions */
+            hide_transactions: boolean;
             /**
              * Created At
              * Format: date-time
@@ -1243,7 +1253,10 @@ export interface components {
          * @enum {string}
          */
         WalletType: "cash" | "investment" | "real_estate" | "vehicle" | "valuables" | "other_asset" | "credit_card" | "mortgage" | "loan" | "other_liability";
-        /** WalletUpdate */
+        /**
+         * WalletUpdate
+         * @description Edit Account. Fields left out stay as they are.
+         */
         WalletUpdate: {
             /** Name */
             name?: string | null;
@@ -1252,6 +1265,18 @@ export interface components {
             subtype?: string | null;
             /** Currency */
             currency?: string | null;
+            /** Balance */
+            balance?: number | string | null;
+            /** Credit Limit */
+            credit_limit?: number | string | null;
+            /** Invert Balance */
+            invert_balance?: boolean | null;
+            /** Is Hidden */
+            is_hidden?: boolean | null;
+            /** Exclude Balance */
+            exclude_balance?: boolean | null;
+            /** Hide Transactions */
+            hide_transactions?: boolean | null;
         };
     };
     responses: never;

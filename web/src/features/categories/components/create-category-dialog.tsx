@@ -6,10 +6,9 @@ import { Controller, useForm } from "react-hook-form"
 import { FormAlert } from "@/components/form-alert"
 import { FormDialog } from "@/components/form-dialog"
 import { FormField } from "@/components/form-field"
+import { SwitchCard } from "@/components/switch-card"
 import { Button } from "@/components/ui/button"
-import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Switch } from "@/components/ui/switch"
 import { userMessage } from "@/lib/api/errors"
 import { fieldA11y } from "@/lib/forms"
 import { notifySuccess } from "@/lib/notify"
@@ -137,23 +136,19 @@ function CreateCategoryForm({ groupId, onDone }: { groupId: number; onDone: () =
         />
       </FormField>
 
-      <div className="flex items-center gap-4 rounded-lg border px-4 py-3.5">
-        <div className="flex-1 space-y-1">
-          <Label htmlFor="category-exclude" className="font-semibold">
-            Exclude this category from the budget
-          </Label>
-          <p className="text-sm text-muted-foreground">
-            This category and any transactions linked to it will be hidden from your budget.
-          </p>
-        </div>
-        <Controller
-          control={control}
-          name="exclude_from_budget"
-          render={({ field }) => (
-            <Switch id="category-exclude" checked={field.value} onCheckedChange={field.onChange} />
-          )}
-        />
-      </div>
+      <Controller
+        control={control}
+        name="exclude_from_budget"
+        render={({ field }) => (
+          <SwitchCard
+            id="category-exclude"
+            title="Exclude this category from the budget"
+            description="This category and any transactions linked to it will be hidden from your budget."
+            checked={field.value}
+            onCheckedChange={field.onChange}
+          />
+        )}
+      />
     </FormDialog>
   )
 }

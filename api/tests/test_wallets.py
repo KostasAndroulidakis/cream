@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 import pytest
 
 
@@ -401,3 +403,89 @@ class TestAccountTypes:
         updated = client.patch(f"{WALLETS_URL}/{wallet['id']}", json={"name": "Sailboat"}, headers=auth_headers).json()
 
         assert (updated["type"], updated["subtype"]) == ("vehicle", "boat")
+
+
+class TestEditAccount:
+    """PATCH /api/v1/wallets/{id} with Edit Account's fields."""
+
+    def _patch(self, client, headers, wallet_id, **changes):
+        response = client.patch(f"{WALLETS_URL}/{wallet_id}", json=changes, headers=headers)
+        assert response.status_code == 200, response.text
+        return response.json()
+
+    def test_new_account_shows_everything(self, client, auth_headers):
+        wallet = _create_wallet(client, auth_headers)
+
+        assert (wallet["is_hidden"], wallet["exclude_balance"], wallet["hide_transactions"]) == (False, False, False)
+        assert (wallet["invert_balance"], wallet["credit_limit"]) == (False, None)
+
+    def test_set_balance_keeps_transactions(self, client, auth_headers):
+        wallet = _create_wallet(client, auth_headers, initial_balance="100")
+        _add_transaction(client, auth_headers, wallet["id"], "-30")
+
+        updated = self._patch(client, auth_headers, wallet["id"], balance="500")
+
+        assert Decimal(updated["balance"]) == Decimal("500")
+        assert Decimal(updated["initial_balance"]) == Decimal("530")
+
+    def test_invert_flips_the_balance_once(self, client, auth_headers):
+        wallet = _create_wallet(client, auth_headers, initial_balance="200")
+
+        inverted = self._patch(client, auth_headers, wallet["id"], invert_balance=True)
+        again = self._patch(client, auth_headers, wallet["id"], invert_balance=True)
+        back = self._patch(client, auth_headers, wallet["id"], invert_balance=False)
+
+        assert Decimal(inverted["balance"]) == Decimal("-200")
+        assert Decimal(again["balance"]) == Decimal("-200")
+        assert Decimal(back["balance"]) == Decimal("200")
+
+    def test_new_balance_then_invert(self, client, auth_headers):
+        wallet = _create_wallet(client, auth_headers)
+
+        updated = self._patch(client, auth_headers, wallet["id"], balance="75", invert_balance=True)
+
+        assert Decimal(updated["balance"]) == Decimal("-75")
+
+    def test_credit_limit(self, client, auth_headers):
+        wallet = _create_wallet(client, auth_headers, type="credit_card")
+
+        updated = self._patch(client, auth_headers, wallet["id"], credit_limit="5000")
+        cleared = self._patch(client, auth_headers, wallet["id"], credit_limit=None)
+
+        assert Decimal(updated["credit_limit"]) == Decimal("5000")
+        assert cleared["credit_limit"] is None
+
+    def test_credit_limit_cannot_be_negative(self, client, auth_headers):
+        wallet = _create_wallet(client, auth_headers, type="credit_card")
+
+        response = client.patch(f"{WALLETS_URL}/{wallet['id']}", json={"credit_limit": "-1"}, headers=auth_headers)
+
+        assert response.status_code == 422
+
+    def test_excluded_balance_leaves_the_totals(self, client, auth_headers):
+        kept = _create_wallet(client, auth_headers, initial_balance="100")
+        excluded = _create_wallet(client, auth_headers, initial_balance="900")
+
+        self._patch(client, auth_headers, excluded["id"], exclude_balance=True)
+
+        totals = client.get(TOTALS_URL, headers=auth_headers).json()
+        assert [(Decimal(t["balance"]), t["wallet_count"]) for t in totals] == [(Decimal("100"), 1)]
+        assert kept["id"] != excluded["id"]
+
+    def test_hidden_transactions_leave_lists_but_not_the_balance(self, client, auth_headers):
+        wallet = _create_wallet(client, auth_headers, initial_balance="100")
+        _add_transaction(client, auth_headers, wallet["id"], "-30")
+
+        updated = self._patch(client, auth_headers, wallet["id"], hide_transactions=True)
+
+        assert client.get("/api/v1/transactions", headers=auth_headers).json() == []
+        assert Decimal(updated["balance"]) == Decimal("70")
+
+    def test_hidden_account_is_still_listed_for_the_app(self, client, auth_headers):
+        """The Accounts page leaves it out; pickers and totals still need it."""
+        wallet = _create_wallet(client, auth_headers)
+
+        self._patch(client, auth_headers, wallet["id"], is_hidden=True)
+
+        listed = client.get(WALLETS_URL, headers=auth_headers).json()
+        assert [w["is_hidden"] for w in listed] == [True]

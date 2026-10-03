@@ -138,6 +138,17 @@ class TestSync:
         transactions = client.get("/api/v1/transactions", headers=auth_headers).json()
         assert all(t["is_imported"] and t["category_id"] == uncategorized.id for t in transactions)
 
+    def test_inverted_account_takes_the_opposite_of_the_bank_balance(
+        self, client, auth_headers, bank, uncategorized
+    ):
+        linked = connect_and_link(client, auth_headers, bank)
+        client.patch(f"/api/v1/wallets/{linked['wallet_id']}", json={"invert_balance": True}, headers=auth_headers)
+
+        sync(client, auth_headers)
+
+        wallet = client.get(f"/api/v1/wallets/{linked['wallet_id']}", headers=auth_headers).json()
+        assert Decimal(wallet["balance"]) == Decimal("-1000.00")
+
     def test_second_sync_skips_duplicates_and_keeps_balance_moving(self, client, auth_headers, bank, uncategorized):
         linked = connect_and_link(client, auth_headers, bank)
         bank.transactions = [raw_transaction("t1", "40.00")]

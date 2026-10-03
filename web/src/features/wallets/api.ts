@@ -7,6 +7,7 @@ import type { Schemas } from "@/lib/api/types"
 export type Wallet = Schemas["WalletRead"]
 export type WalletType = Schemas["WalletType"]
 export type WalletCreateInput = Schemas["WalletCreate"]
+export type WalletUpdateInput = Schemas["WalletUpdate"]
 export type CurrencyTotal = Schemas["CurrencyTotal"]
 export type AccountTypeInfo = Schemas["AccountTypeRead"]
 
@@ -54,4 +55,36 @@ export function useCreateWallet() {
     mutationFn: createWallet,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: WALLETS_KEY }),
   })
+}
+
+async function updateWallet({ id, changes }: { id: number; changes: WalletUpdateInput }): Promise<Wallet> {
+  const { data, error, response } = await api.PATCH("/api/v1/wallets/{wallet_id}", {
+    params: { path: { wallet_id: id } },
+    body: changes,
+  })
+  if (!data) throw toApiError(error, response)
+  return data
+}
+
+async function deleteWallet(id: number): Promise<void> {
+  const { error, response } = await api.DELETE("/api/v1/wallets/{wallet_id}", { params: { path: { wallet_id: id } } })
+  if (!response.ok) throw toApiError(error, response)
+}
+
+// An account's settings reach far: balances, totals, which transactions show, its bank link
+function useInvalidateEverything() {
+  const queryClient = useQueryClient()
+  return () => queryClient.invalidateQueries()
+}
+
+/** Edit Account: name, balance, type, credit limit and the balance and visibility switches. */
+export function useUpdateWallet() {
+  const invalidate = useInvalidateEverything()
+  return useMutation({ mutationFn: updateWallet, onSuccess: invalidate })
+}
+
+/** Delete account: the account and all its transactions. */
+export function useDeleteWallet() {
+  const invalidate = useInvalidateEverything()
+  return useMutation({ mutationFn: deleteWallet, onSuccess: invalidate })
 }

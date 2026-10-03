@@ -4,11 +4,11 @@ from collections import defaultdict
 from decimal import Decimal
 
 from fastapi import HTTPException, status
-from sqlalchemy import exists, select
+from sqlalchemy import exists, func, select
 from sqlalchemy.orm import Session
 
 from app.models import Transaction, Wallet, WalletType
-from app.schemas import AccountTypeRead, CurrencyTotal
+from app.schemas import AccountTypeRead, CurrencyTotal, WalletUpdate
 from app.services.account_types import ACCOUNT_TYPES, InvalidSubtypeError, resolve_subtype
 
 
@@ -18,10 +18,15 @@ def get_user_wallets(user_id: int, db: Session) -> list[Wallet]:
 
 
 def calculate_currency_totals(wallets: list[Wallet]) -> list[CurrencyTotal]:
-    """Sum wallet balances per currency (no conversion between currencies)."""
+    """Sum wallet balances per currency (no conversion between currencies).
+
+    Accounts set to "Exclude account balance" are left out.
+    """
     balances: dict[str, Decimal] = defaultdict(Decimal)
     counts: dict[str, int] = defaultdict(int)
     for wallet in wallets:
+        if wallet.exclude_balance:
+            continue
         balances[wallet.currency] += wallet.balance
         counts[wallet.currency] += 1
     return [
@@ -68,3 +73,34 @@ def change_type(wallet: Wallet, new_type: WalletType | None, new_subtype: str | 
     except InvalidSubtypeError as error:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(error)) from error
     wallet.type = wallet_type
+
+
+def transactions_total(wallet_id: int, db: Session) -> Decimal:
+    return Decimal(
+        db.scalar(select(func.coalesce(func.sum(Transaction.amount), 0)).where(Transaction.wallet_id == wallet_id))
+    )
+
+
+def set_balance(wallet: Wallet, balance: Decimal, db: Session) -> None:
+    """Make the account show this balance now; its transactions stay as they are."""
+    wallet.initial_balance = balance - transactions_total(wallet.id, db)
+
+
+def apply_account_settings(wallet: Wallet, changes: WalletUpdate, db: Session) -> None:
+    """Edit Account: the new balance first, then the sign flip if "Invert account balance" changed."""
+    values = changes.model_dump(exclude_unset=True)
+    balance = values.get("balance")
+    current = balance if balance is not None else wallet.initial_balance + transactions_total(wallet.id, db)
+
+    invert = values.get("invert_balance")
+    if invert is not None and invert != wallet.invert_balance:
+        current = -current
+        wallet.invert_balance = invert
+    if balance is not None or invert is not None:
+        set_balance(wallet, current, db)
+
+    if "credit_limit" in values:
+        wallet.credit_limit = values["credit_limit"]
+    for flag in ("is_hidden", "exclude_balance", "hide_transactions"):
+        if values.get(flag) is not None:
+            setattr(wallet, flag, values[flag])

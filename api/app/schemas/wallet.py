@@ -42,11 +42,22 @@ class WalletCreate(BaseModel):
 
 
 class WalletUpdate(BaseModel):
+    """Edit Account. Fields left out stay as they are."""
+
     name: str | None = Field(None, min_length=1, max_length=100)
     # A new type without a subtype starts at that type's first subtype
     type: WalletType | None = None
     subtype: Subtype | None = None
     currency: CurrencyCode | None = None
+    # The balance the account should show now; the starting balance absorbs the difference
+    balance: Decimal | None = None
+    # Credit cards only; null clears it
+    credit_limit: Decimal | None = Field(None, ge=0)
+    # Turning it on or off flips the balance's sign (after `balance`, when both are sent)
+    invert_balance: bool | None = None
+    is_hidden: bool | None = None
+    exclude_balance: bool | None = None
+    hide_transactions: bool | None = None
 
 
 class WalletRead(BaseModel):
@@ -57,6 +68,11 @@ class WalletRead(BaseModel):
     currency: str
     initial_balance: Decimal
     balance: Decimal
+    credit_limit: Decimal | None
+    invert_balance: bool
+    is_hidden: bool
+    exclude_balance: bool
+    hide_transactions: bool
     created_at: datetime
 
     model_config = {"from_attributes": True}

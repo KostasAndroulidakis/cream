@@ -25,7 +25,8 @@ export function FormDialog({ open, onOpenChange, title, description, onSubmit, c
         </div>
         <form onSubmit={onSubmit} noValidate>
           {/* Monarch's dialogs use larger text than the pages: 15px labels, 16px fields */}
-          <div className="space-y-5 px-6 py-6 [&_[data-slot=label]]:text-[0.9375rem] [&_[data-slot=label]]:font-semibold [&_[data-slot=select-trigger]]:text-base [&_input]:text-base">
+          {/* Long forms (Edit Account) scroll between the fixed title bar and footer */}
+          <div className="max-h-[calc(100svh-11rem)] space-y-5 overflow-y-auto px-6 py-6 [&_[data-slot=label]]:text-[0.9375rem] [&_[data-slot=label]]:font-semibold [&_[data-slot=select-trigger]]:text-base [&_input]:text-base">
             {children}
           </div>
           <div className="flex items-center gap-3 border-t px-6 py-4 [&_button]:h-9">{footer}</div>

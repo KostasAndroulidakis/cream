@@ -5,7 +5,7 @@ from decimal import Decimal
 from enum import Enum
 from typing import TYPE_CHECKING
 
-from sqlalchemy import ForeignKey, Numeric, String, Text, UniqueConstraint, false
+from sqlalchemy import ForeignKey, Numeric, String, Text, UniqueConstraint, and_, false
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -69,10 +69,15 @@ class Transaction(TimestampMixin, Base):
 
     @hybrid_property
     def is_visible(self) -> bool:
-        """Shown in lists and counted in statistics (usable in queries too)."""
-        return not self.is_hidden
+        """Shown in lists and counted in statistics (usable in queries too).
+
+        Not when hidden itself, nor when its account hides all its transactions.
+        """
+        return not self.is_hidden and not self.wallet.hide_transactions
 
     @is_visible.inplace.expression
     @classmethod
     def _is_visible_expression(cls):
-        return cls.is_hidden.is_(False)
+        from app.models.wallet import Wallet
+
+        return and_(cls.is_hidden.is_(False), ~cls.wallet.has(Wallet.hide_transactions.is_(True)))

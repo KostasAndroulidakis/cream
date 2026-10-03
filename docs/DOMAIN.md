@@ -69,6 +69,11 @@ Wallet
 ├── subtype: one of the type's subtypes (e.g. cash → checking), from the catalog
 ├── currency: ISO 4217 code; only "EUR" for now (older accounts may differ); fixed once it has transactions
 ├── initial_balance: starting balance (Money)
+├── credit_limit: credit cards only, informational (Money, optional)
+├── invert_balance: the bank reports the balance with the wrong sign; CREAM flips it (now and on sync)
+├── is_hidden: left off the Accounts page and the dashboard's account list
+├── exclude_balance: left out of the total balance and the account group totals
+├── hide_transactions: its transactions are left out of every list and statistic (still in its balance)
 ├── created_at: creation timestamp
 └── updated_at: last modification timestamp
 ```

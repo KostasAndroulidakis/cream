@@ -42,7 +42,7 @@ CREAM is built in **vertical slices**: each slice delivers one thing a user can 
 | --- | --- |
 | API | Signup, login, logout, `/auth/me`; JWT in `httpOnly` / `Secure` / `SameSite=Strict` cookie; bcrypt |
 | Web | Login and signup pages with validation, protected routes with return-to, logout, expired session → login |
-| Settings | Monarch's Settings page: menu of Account and Household sections, **Profile** editable (`PATCH /auth/me`), **Institutions** (the former Banks page), **Categories** (groups with emoji, drag and drop to reorder, saved per user; Create/Edit Group with budget choice, Create Category with emoji picker and budget exclusion, delete); the other sections are marked coming soon |
+| Settings | Monarch's Settings page: menu of Account and Household sections, **Profile** editable (`PATCH /auth/me`), **Institutions** (the former Banks page, with Monarch's Edit Account dialog: name, balance, type, credit limit, invert balance, hide account, exclude balance, hide transactions, delete), **Categories** (groups with emoji, drag and drop to reorder, saved per user; Create/Edit Group with budget choice, Create Category with emoji picker and budget exclusion, delete); the other sections are marked coming soon |
 
 ### ✅ Slice 2: Wallets
 

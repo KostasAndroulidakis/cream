@@ -25,7 +25,7 @@ All endpoints except `/health`, `/auth/signup`, `/auth/login` and `/auth/logout`
 | `POST /api/v1/wallets` | Create wallet |
 | `GET /api/v1/wallets/totals` | Combined balance per currency |
 | `GET /api/v1/wallets/{id}` | Get wallet |
-| `PATCH /api/v1/wallets/{id}` | Update wallet |
+| `PATCH /api/v1/wallets/{id}` | Edit Account: name, type/subtype, `balance` (the starting balance absorbs the difference), `credit_limit`, `invert_balance` (flips the sign), `is_hidden`, `exclude_balance`, `hide_transactions` |
 | `DELETE /api/v1/wallets/{id}` | Delete wallet |
 | `GET /api/v1/categories` | List categories (in the user's order within each group) |
 | `PUT /api/v1/categories/order` | Reorder one group's categories: `{category_ids}` lists all of them, once (204) |

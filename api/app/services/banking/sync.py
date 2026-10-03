@@ -84,6 +84,9 @@ def _reconcile_initial_balance(account: BankAccount, client: BankClient, db: Ses
     bank_balance = pick_balance(client.get_balances(account.uid))
     if bank_balance is None:
         return
+    # "Invert account balance": the bank reports this account with the opposite sign
+    if account.wallet.invert_balance:
+        bank_balance = -bank_balance
     transactions_total = db.scalar(
         select(func.coalesce(func.sum(Transaction.amount), 0)).where(Transaction.wallet_id == account.wallet_id)
     )

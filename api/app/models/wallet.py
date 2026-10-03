@@ -4,7 +4,7 @@ from decimal import Decimal
 from enum import Enum
 from typing import TYPE_CHECKING
 
-from sqlalchemy import ForeignKey, Numeric, String, select, func
+from sqlalchemy import ForeignKey, Numeric, String, false, select, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship, column_property
 
 from app.database import Base, TimestampMixin
@@ -51,6 +51,16 @@ class Wallet(TimestampMixin, Base):
     subtype: Mapped[str] = mapped_column(String(SUBTYPE_MAX))
     currency: Mapped[str] = mapped_column(String(3), default="EUR")
     initial_balance: Mapped[Decimal] = mapped_column(Numeric(19, 4), default=Decimal("0"))
+    # Credit cards only; informational (Monarch's "Credit limit")
+    credit_limit: Mapped[Decimal | None] = mapped_column(Numeric(19, 4), default=None)
+    # The bank reports this account's balance with the wrong sign: CREAM flips it
+    invert_balance: Mapped[bool] = mapped_column(default=False, server_default=false())
+    # Left off the Accounts page (and the dashboard's account list)
+    is_hidden: Mapped[bool] = mapped_column(default=False, server_default=false())
+    # Left out of the total balance and the account group totals
+    exclude_balance: Mapped[bool] = mapped_column(default=False, server_default=false())
+    # Its transactions are left out of every list and statistic (they still make up its balance)
+    hide_transactions: Mapped[bool] = mapped_column(default=False, server_default=false())
 
     user: Mapped["User"] = relationship(back_populates="wallets")
     transactions: Mapped[list["Transaction"]] = relationship(back_populates="wallet", cascade="all, delete-orphan")

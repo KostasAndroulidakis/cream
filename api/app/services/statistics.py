@@ -162,7 +162,9 @@ def calculate_statistics(user_id: int, db: Session) -> StatisticsData:
                 balance=balance,
             )
         )
-        total_balance += balance
+        # "Exclude account balance" keeps the account out of the total, as in /wallets/totals
+        if not wallet.exclude_balance:
+            total_balance += balance
 
     # Calculate total income and expenses
     totals = db.query(
