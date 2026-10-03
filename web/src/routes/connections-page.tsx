@@ -1,12 +1,12 @@
 import { PageHeader } from "@/components/page-header"
 import { ConnectBankForm } from "@/features/bank/components/connect-bank-form"
 import { ConnectionList } from "@/features/bank/components/connection-list"
-import { SyncButton } from "@/features/bank/components/sync-button"
+import { RefreshAllButton } from "@/features/bank/components/refresh-all-button"
 
 export function ConnectionsPage() {
   return (
     <div className="space-y-8">
-      <PageHeader title="Banks" actions={<SyncButton />} />
+      <PageHeader title="Banks" actions={<RefreshAllButton />} />
 
       <section aria-labelledby="connected-heading" className="space-y-4">
         <h2 id="connected-heading" className="text-lg font-semibold tracking-tight">

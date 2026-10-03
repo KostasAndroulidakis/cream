@@ -1,5 +1,6 @@
 import { createBrowserRouter, Navigate } from "react-router"
 
+import { AccountsPage } from "./accounts-page"
 import { AppLayout } from "./app-layout"
 import { ConnectionCallbackPage } from "./connection-callback-page"
 import { ConnectionsPage } from "./connections-page"
@@ -19,6 +20,7 @@ export const router = createBrowserRouter([
         element: <AppLayout />,
         children: [
           { path: paths.home, element: <HomePage /> },
+          { path: paths.accounts, element: <AccountsPage /> },
           { path: paths.transactions, element: <TransactionsPage /> },
           { path: paths.review, element: <ReviewPage /> },
           { path: paths.connections, element: <ConnectionsPage /> },

@@ -1,5 +1,5 @@
 import type { ComponentType } from "react"
-import { CreditCard, House, Inbox, Landmark, type LucideIcon } from "lucide-react"
+import { CreditCard, House, Inbox, Landmark, Layers, type LucideIcon } from "lucide-react"
 
 import { InboxCountBadge } from "@/features/categorization/components/inbox-count-badge"
 import { paths } from "./paths"
@@ -17,6 +17,7 @@ export type NavItem = {
 /** Main navigation, shared by the desktop sidebar and the phone top bar. Pages join as they are built. */
 export const NAV_ITEMS: readonly NavItem[] = [
   { to: paths.home, label: "Dashboard", icon: House, end: true },
+  { to: paths.accounts, label: "Accounts", icon: Layers, end: false },
   { to: paths.transactions, label: "Transactions", icon: CreditCard, end: false },
   { to: paths.review, label: "Review", icon: Inbox, end: false, Badge: InboxCountBadge },
   { to: paths.connections, label: "Banks", icon: Landmark, end: false },

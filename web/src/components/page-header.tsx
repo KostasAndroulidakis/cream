@@ -22,3 +22,8 @@ export function PageHeader({ title, actions }: PageHeaderProps) {
     </header>
   )
 }
+
+/** The thin vertical line between groups of header buttons. */
+export function PageHeaderDivider() {
+  return <span aria-hidden className="mx-1 h-6 w-px bg-border" />
+}
