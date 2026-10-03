@@ -187,6 +187,43 @@ class TestSync:
         assert response.status_code == 409
         assert client.get(f"/api/v1/transactions/{transaction['id']}", headers=auth_headers).status_code == 200
 
+    def test_imported_transactions_can_be_hidden_and_shown_again(self, client, auth_headers, bank, uncategorized):
+        connect_and_link(client, auth_headers, bank)
+        bank.transactions = [raw_transaction("t1", "40.00")]
+        sync(client, auth_headers)
+        [transaction] = client.get("/api/v1/transactions", headers=auth_headers).json()
+        url = f"/api/v1/transactions/{transaction['id']}"
+
+        hidden = client.patch(url, json={"is_hidden": True}, headers=auth_headers).json()
+        shown = client.patch(url, json={"is_hidden": False}, headers=auth_headers).json()
+
+        assert transaction["is_hidden"] is False
+        assert hidden["is_hidden"] is True and shown["is_hidden"] is False
+
+    def test_other_changes_keep_it_hidden(self, client, auth_headers, bank, uncategorized):
+        connect_and_link(client, auth_headers, bank)
+        bank.transactions = [raw_transaction("t1", "40.00")]
+        sync(client, auth_headers)
+        [transaction] = client.get("/api/v1/transactions", headers=auth_headers).json()
+        url = f"/api/v1/transactions/{transaction['id']}"
+        client.patch(url, json={"is_hidden": True}, headers=auth_headers)
+
+        updated = client.patch(url, json={"description": "Duplicate"}, headers=auth_headers).json()
+
+        assert updated["is_hidden"] is True
+
+    def test_hiding_needs_a_true_or_false(self, client, auth_headers, bank, uncategorized):
+        connect_and_link(client, auth_headers, bank)
+        bank.transactions = [raw_transaction("t1", "40.00")]
+        sync(client, auth_headers)
+        [transaction] = client.get("/api/v1/transactions", headers=auth_headers).json()
+
+        response = client.patch(
+            f"/api/v1/transactions/{transaction['id']}", json={"is_hidden": None}, headers=auth_headers
+        )
+
+        assert response.status_code == 422
+
     def test_unlinked_accounts_are_not_synced(self, client, auth_headers, bank, uncategorized):
         connect(client, auth_headers, bank)
 

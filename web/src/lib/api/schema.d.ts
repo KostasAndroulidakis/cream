@@ -819,6 +819,8 @@ export interface components {
             merchant_key: string | null;
             /** Is Imported */
             is_imported: boolean;
+            /** Is Hidden */
+            is_hidden: boolean;
             /**
              * Created At
              * Format: date-time
@@ -835,6 +837,11 @@ export interface components {
             description?: string | null;
             /** Occurred At */
             occurred_at?: string | null;
+            /**
+             * Is Hidden
+             * @default false
+             */
+            is_hidden: boolean;
         };
         /** UserCreate */
         UserCreate: {

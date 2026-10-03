@@ -19,6 +19,8 @@ class TransactionUpdate(BaseModel):
     amount: Decimal | None = None
     description: str | None = None
     occurred_at: datetime | None = None
+    # Not nullable: a transaction is either hidden or not. Omit the field to leave it unchanged.
+    is_hidden: bool = False
 
 
 class TransactionRead(BaseModel):
@@ -35,6 +37,8 @@ class TransactionRead(BaseModel):
     merchant_key: str | None
     # True when imported from a bank (not entered by hand)
     is_imported: bool
+    # Left out of lists and statistics, still part of the wallet balance
+    is_hidden: bool
     created_at: datetime
 
     model_config = {"from_attributes": True}
