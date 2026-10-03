@@ -55,6 +55,8 @@ class Transaction(TimestampMixin, Base):
     # Hidden from lists and statistics, but still part of the wallet balance (so it matches the bank).
     # Bank transactions are hidden instead of deleted: a deleted one would come back on the next sync.
     is_hidden: Mapped[bool] = mapped_column(default=False, server_default=false())
+    # Waiting in the review inbox until the user marks it reviewed; independent of category and hiding
+    needs_review: Mapped[bool] = mapped_column(default=False, server_default=false())
 
     wallet: Mapped["Wallet"] = relationship(back_populates="transactions")
     category: Mapped["Category"] = relationship(back_populates="transactions")
