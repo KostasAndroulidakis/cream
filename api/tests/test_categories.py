@@ -377,3 +377,124 @@ class TestDeleteCategory:
         response = client.delete(f"/api/v1/categories/{created_category['id']}")
 
         assert response.status_code == 401
+
+
+CATEGORIES_URL = "/api/v1/categories"
+ORDER_URL = f"{CATEGORIES_URL}/order"
+
+
+@pytest.fixture
+def system_group(db_session):
+    """A system group with three categories, as the seeded catalog has (IDs in default order)."""
+    from app.models import Category
+    from app.models.category import CategoryType
+
+    group = Category(user_id=None, name="Food & Dining", type=CategoryType.EXPENSE, is_group=True)
+    db_session.add(group)
+    db_session.flush()
+    children = [
+        Category(user_id=None, parent_id=group.id, name=name, type=CategoryType.EXPENSE, icon=icon)
+        for name, icon in [("Groceries", "🍏"), ("Restaurants & Bars", "🍽️"), ("Coffee Shops", "☕")]
+    ]
+    db_session.add_all(children)
+    db_session.commit()
+    return {"id": group.id, "children": [child.id for child in children]}
+
+
+def child_ids(client, headers, group_id):
+    categories = client.get(CATEGORIES_URL, headers=headers).json()
+    return [category["id"] for category in categories if category["parent_id"] == group_id]
+
+
+class TestCategoryOrder:
+    """Tests for PUT /api/v1/categories/order (drag and drop in Settings › Categories)"""
+
+    def test_default_order_is_the_catalogs(self, client, auth_headers, system_group):
+        assert child_ids(client, auth_headers, system_group["id"]) == system_group["children"]
+
+    def test_icon_is_listed(self, client, auth_headers, system_group):
+        categories = client.get(CATEGORIES_URL, headers=auth_headers).json()
+
+        assert [c["icon"] for c in categories if c["parent_id"] == system_group["id"]] == ["🍏", "🍽️", "☕"]
+
+    def test_reorders_a_group(self, client, auth_headers, system_group):
+        new_order = list(reversed(system_group["children"]))
+
+        response = client.put(ORDER_URL, json={"category_ids": new_order}, headers=auth_headers)
+
+        assert response.status_code == 204
+        assert child_ids(client, auth_headers, system_group["id"]) == new_order
+
+    def test_reordering_again_replaces_the_order(self, client, auth_headers, system_group):
+        a, b, c = system_group["children"]
+        client.put(ORDER_URL, json={"category_ids": [c, b, a]}, headers=auth_headers)
+
+        client.put(ORDER_URL, json={"category_ids": [b, a, c]}, headers=auth_headers)
+
+        assert child_ids(client, auth_headers, system_group["id"]) == [b, a, c]
+
+    def test_order_is_per_user(self, client, auth_headers, second_auth_headers, system_group):
+        client.put(ORDER_URL, json={"category_ids": list(reversed(system_group["children"]))}, headers=auth_headers)
+
+        assert child_ids(client, second_auth_headers, system_group["id"]) == system_group["children"]
+
+    def test_new_category_goes_to_the_end(self, client, auth_headers, system_group):
+        new_order = list(reversed(system_group["children"]))
+        client.put(ORDER_URL, json={"category_ids": new_order}, headers=auth_headers)
+
+        created = client.post(
+            CATEGORIES_URL,
+            json={"name": "Bakery", "type": "expense", "parent_id": system_group["id"], "icon": "🥐"},
+            headers=auth_headers,
+        ).json()
+
+        assert created["icon"] == "🥐"
+        assert child_ids(client, auth_headers, system_group["id"]) == [*new_order, created["id"]]
+
+    def test_own_categories_can_be_ordered_with_system_ones(self, client, auth_headers, system_group):
+        own = client.post(
+            CATEGORIES_URL,
+            json={"name": "Bakery", "type": "expense", "parent_id": system_group["id"]},
+            headers=auth_headers,
+        ).json()["id"]
+        new_order = [own, *system_group["children"]]
+
+        client.put(ORDER_URL, json={"category_ids": new_order}, headers=auth_headers)
+
+        assert child_ids(client, auth_headers, system_group["id"]) == new_order
+
+    @pytest.mark.parametrize(
+        "pick",
+        [
+            lambda children, group: children[:2],  # not the whole group
+            lambda children, group: [*children, children[0]],  # duplicate
+            lambda children, group: [*children, 999_999],  # unknown
+            lambda children, group: [group, *children],  # the group itself
+        ],
+    )
+    def test_rejects_anything_but_one_whole_group(self, client, auth_headers, system_group, pick):
+        category_ids = pick(system_group["children"], system_group["id"])
+
+        response = client.put(ORDER_URL, json={"category_ids": category_ids}, headers=auth_headers)
+
+        assert response.status_code == 422
+        assert child_ids(client, auth_headers, system_group["id"]) == system_group["children"]
+
+    def test_rejects_categories_from_two_groups(self, client, auth_headers, system_group, created_category):
+        category_ids = [*system_group["children"], created_category["id"]]
+
+        response = client.put(ORDER_URL, json={"category_ids": category_ids}, headers=auth_headers)
+
+        assert response.status_code == 422
+
+    def test_cannot_see_or_order_another_users_categories(
+        self, client, auth_headers, second_auth_headers, created_category
+    ):
+        response = client.put(ORDER_URL, json={"category_ids": [created_category["id"]]}, headers=second_auth_headers)
+
+        assert response.status_code == 422
+
+    def test_requires_session(self, client, system_group):
+        response = client.put(ORDER_URL, json={"category_ids": system_group["children"]})
+
+        assert response.status_code == 401

@@ -111,8 +111,13 @@ Category
 ├── type: category_type enum (income/expense/transfer)
 ├── key: stable identifier of a system category (e.g. "food_and_dining.groceries"), NULL for user categories
 ├── is_group: true for groups that organize categories (never assigned to transactions)
+├── icon: emoji shown next to the name (system categories have Monarch's)
 └── created_at: creation timestamp
 ```
+
+**Order**: each user can reorder the categories inside a group (Settings › Categories, drag and drop).
+The order is stored per user in `category_positions`, since system categories are shared; categories
+without a position follow in default order.
 
 **Category Types**:
 

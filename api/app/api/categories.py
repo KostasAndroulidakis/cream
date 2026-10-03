@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import Category
-from app.schemas import CategoryCreate, CategoryRead, CategoryUpdate
+from app.schemas import CategoryCreate, CategoryOrder, CategoryRead, CategoryUpdate
 from app.services.auth import get_current_user_id
 from app.services.authorization import (
     get_category,
@@ -12,6 +12,7 @@ from app.services.authorization import (
     check_category_cycle,
     CategoryInUseError,
 )
+from app.services.category_order import set_group_order, visible_categories
 from app.services.helpers import apply_update
 
 router = APIRouter()
@@ -22,13 +23,18 @@ def list_categories(
     user_id: int = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
-    """List user's categories and system defaults."""
-    return (
-        db.query(Category)
-        .filter((Category.user_id == user_id) | (Category.user_id.is_(None)))
-        .order_by(Category.id)
-        .all()
-    )
+    """List user's categories and system defaults, in the user's order within each group."""
+    return visible_categories(user_id, db)
+
+
+@router.put("/order", status_code=status.HTTP_204_NO_CONTENT)
+def reorder_categories(
+    order: CategoryOrder,
+    user_id: int = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+) -> None:
+    """Put one group's categories in this order (drag and drop in Settings › Categories)."""
+    set_group_order(order.category_ids, user_id, db)
 
 
 @router.post("", response_model=CategoryRead, status_code=status.HTTP_201_CREATED)

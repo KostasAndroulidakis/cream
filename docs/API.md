@@ -27,7 +27,8 @@ All endpoints except `/health`, `/auth/signup`, `/auth/login` and `/auth/logout`
 | `GET /api/v1/wallets/{id}` | Get wallet |
 | `PATCH /api/v1/wallets/{id}` | Update wallet |
 | `DELETE /api/v1/wallets/{id}` | Delete wallet |
-| `GET /api/v1/categories` | List categories |
+| `GET /api/v1/categories` | List categories (in the user's order within each group) |
+| `PUT /api/v1/categories/order` | Reorder one group's categories: `{category_ids}` lists all of them, once (204) |
 | `POST /api/v1/categories` | Create category |
 | `GET /api/v1/categories/{id}` | Get category |
 | `PATCH /api/v1/categories/{id}` | Update category |

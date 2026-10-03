@@ -8,6 +8,7 @@ import { HomePage } from "./home-page"
 import { LoginPage } from "./login-page"
 import { paths } from "./paths"
 import { ReviewPage } from "./review-page"
+import { SettingsCategoriesPage } from "./settings-categories-page"
 import { SettingsInstitutionsPage } from "./settings-institutions-page"
 import { SettingsLayout } from "./settings-layout"
 import { SettingsProfilePage } from "./settings-profile-page"
@@ -34,6 +35,7 @@ export const router = createBrowserRouter([
               { index: true, element: <Navigate to={paths.settingsProfile} replace /> },
               { path: paths.settingsProfile, element: <SettingsProfilePage /> },
               { path: paths.settingsInstitutions, element: <SettingsInstitutionsPage /> },
+              { path: paths.settingsCategories, element: <SettingsCategoriesPage /> },
             ],
           },
         ],

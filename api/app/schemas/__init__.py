@@ -1,6 +1,6 @@
 from app.schemas.user import UserCreate, UserRead, UserUpdate, LoginRequest
 from app.schemas.wallet import AccountTypeRead, CurrencyTotal, WalletCreate, WalletRead, WalletUpdate
-from app.schemas.category import CategoryCreate, CategoryRead, CategoryUpdate
+from app.schemas.category import CategoryCreate, CategoryOrder, CategoryRead, CategoryUpdate
 from app.schemas.merchant import MerchantRead
 from app.schemas.transaction import (
     BulkResult,
@@ -28,7 +28,7 @@ from app.schemas.error import ValidationErrorDetail, ValidationErrorResponse, Er
 __all__ = [
     "UserCreate", "UserRead", "UserUpdate", "LoginRequest",
     "WalletCreate", "WalletRead", "WalletUpdate", "CurrencyTotal", "AccountTypeRead",
-    "CategoryCreate", "CategoryRead", "CategoryUpdate",
+    "CategoryCreate", "CategoryOrder", "CategoryRead", "CategoryUpdate",
     "TransactionCreate", "TransactionRead", "TransactionUpdate", "TransactionPage",
     "BulkTransactionUpdate", "BulkTransactionDelete", "BulkResult", "MerchantRead",
     "CategorizeRequest", "CategorizeResultRead", "MerchantRuleRead",

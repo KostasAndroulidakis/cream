@@ -191,12 +191,32 @@ export interface paths {
         };
         /**
          * List Categories
-         * @description List user's categories and system defaults.
+         * @description List user's categories and system defaults, in the user's order within each group.
          */
         get: operations["list_categories_api_v1_categories_get"];
         put?: never;
         /** Create Category */
         post: operations["create_category_api_v1_categories_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/categories/order": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Reorder Categories
+         * @description Put one group's categories in this order (drag and drop in Settings › Categories).
+         */
+        put: operations["reorder_categories_api_v1_categories_order_put"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -724,6 +744,16 @@ export interface components {
             type: components["schemas"]["CategoryType"];
             /** Parent Id */
             parent_id?: number | null;
+            /** Icon */
+            icon?: string | null;
+        };
+        /**
+         * CategoryOrder
+         * @description Every category of one group, in the order the user wants them.
+         */
+        CategoryOrder: {
+            /** Category Ids */
+            category_ids: number[];
         };
         /** CategoryRead */
         CategoryRead: {
@@ -738,6 +768,8 @@ export interface components {
             key: string | null;
             /** Is Group */
             is_group: boolean;
+            /** Icon */
+            icon: string | null;
             /**
              * Created At
              * Format: date-time
@@ -773,6 +805,8 @@ export interface components {
             name?: string | null;
             /** Parent Id */
             parent_id?: number | null;
+            /** Icon */
+            icon?: string | null;
         };
         /** ConnectionComplete */
         ConnectionComplete: {
@@ -1584,6 +1618,37 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["CategoryRead"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reorder_categories_api_v1_categories_order_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CategoryOrder"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {
