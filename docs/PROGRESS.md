@@ -87,13 +87,17 @@ Edit and delete wallets and transactions; hide default categories you don't use.
 
 ### ⬜ Slice 7: Transfers
 Record a transfer between two wallets as one action; detect and pair matching in/out bank transactions.
+Only money moving between **your own** wallets is a `transfer` (left out of cash flow). Money sent to
+someone else is an expense; money someone sends you is income, even when the bank calls it a transfer.
 
 ### ⬜ Slice 8: Always in sync
 Scheduled background sync (respecting bank rate limits), reconnect flow before consent expires,
 Production (restricted mode) with real accounts, starting with the most stable banks (Revolut, N26).
 
 ### ⬜ Slice 9: Insights
-Monthly income vs expenses, spending by category with charts, per-currency statistics.
+Monthly income vs expenses (cash flow), spending by category with charts, per-currency statistics.
+Cash flow leaves out own-wallet transfers and hidden transactions.
+Net worth in one currency: totals converted with exchange rates, next to the exact per-currency totals.
 
 ### ⬜ Slice 10: Greek
 Greek UI and category names, using the stable category keys.
