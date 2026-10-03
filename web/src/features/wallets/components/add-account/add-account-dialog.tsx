@@ -25,7 +25,8 @@ const CONTENT_CLASS =
 export function AddAccountDialog() {
   const [open, setOpen] = useState(false)
   const [step, setStep] = useState<Step>(START)
-  const { typeLabel } = useAccountTypes()
+  const { catalog } = useAccountTypes()
+  const formType = step.kind === "form" ? catalog.find((info) => info.type === step.type) : undefined
 
   function onOpenChange(next: boolean) {
     setOpen(next)
@@ -71,16 +72,18 @@ export function AddAccountDialog() {
             <ManualTypesStep onPick={(type) => setStep({ kind: "form", type })} />
           </>
         )}
-        {step.kind === "form" && (
+        {formType && (
           <>
             <StepHeader
-              title={typeLabel(step.type)}
-              description="The account's name and what's in it today."
+              title={`Add ${formType.label} Account`}
+              description="The account's name, kind and what's in it today."
               onBack={() => setStep({ kind: "manual" })}
             />
-            <div className="px-6 pb-6">
-              <CreateWalletForm type={step.type} onCreated={() => onOpenChange(false)} />
-            </div>
+            <CreateWalletForm
+              typeInfo={formType}
+              onCreated={() => onOpenChange(false)}
+              onCancel={() => onOpenChange(false)}
+            />
           </>
         )}
       </DialogContent>

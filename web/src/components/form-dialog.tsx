@@ -1,6 +1,7 @@
 import type { FormEventHandler, ReactNode } from "react"
 
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog"
+import { cn } from "@/lib/utils"
 
 type FormDialogProps = {
   open: boolean
@@ -24,14 +25,33 @@ export function FormDialog({ open, onOpenChange, title, description, onSubmit, c
           <DialogDescription className="sr-only">{description}</DialogDescription>
         </div>
         <form onSubmit={onSubmit} noValidate>
-          {/* Monarch's dialogs use larger text than the pages: 15px labels, 16px fields */}
-          {/* Long forms (Edit Account) scroll between the fixed title bar and footer */}
-          <div className="max-h-[calc(100svh-11rem)] space-y-5 overflow-y-auto px-6 py-6 [&_[data-slot=label]]:text-[0.9375rem] [&_[data-slot=label]]:font-semibold [&_[data-slot=select-trigger]]:text-base [&_input]:text-base">
-            {children}
-          </div>
-          <div className="flex items-center gap-3 border-t px-6 py-4 [&_button]:h-9">{footer}</div>
+          <FormDialogBody>{children}</FormDialogBody>
+          <FormDialogFooter>{footer}</FormDialogFooter>
         </form>
       </DialogContent>
     </Dialog>
   )
+}
+
+/**
+ * A dialog form's fields. Monarch's dialogs use larger text than the pages: 15px labels, 16px fields,
+ * and every field the same 40px height.
+ * Long forms (Edit Account) scroll between the fixed title bar and footer.
+ */
+export function FormDialogBody({ className, children }: { className?: string; children: ReactNode }) {
+  return (
+    <div
+      className={cn(
+        "max-h-[calc(100svh-11rem)] space-y-5 overflow-y-auto px-6 py-6 [&_[data-slot=label]]:text-[0.9375rem] [&_[data-slot=label]]:font-semibold [&_[data-slot=select-trigger]]:text-base [&_input]:h-10 [&_input]:text-base",
+        className,
+      )}
+    >
+      {children}
+    </div>
+  )
+}
+
+/** A dialog form's buttons, under a line: e.g. Delete on the left, Cancel and Save on the right. */
+export function FormDialogFooter({ children }: { children: ReactNode }) {
+  return <div className="flex items-center gap-3 border-t px-6 py-4 [&_button]:h-9">{children}</div>
 }

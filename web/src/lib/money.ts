@@ -1,5 +1,8 @@
 import { isZeroAmount } from "./amount"
 
+/** EUR only for now, as the API enforces (services/currencies.py); e.g. for an empty amount's "€0.00". */
+export const APP_CURRENCY = "EUR"
+
 const formatters = new Map<string, Intl.NumberFormat>()
 
 function formatterFor(currency: string): Intl.NumberFormat {
