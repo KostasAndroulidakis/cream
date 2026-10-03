@@ -120,7 +120,10 @@ def sync_account(account: BankAccount, client: BankClient, importer: Importer, d
         )
     )
     try:
-        raw_transactions = client.iter_transactions(account.uid, _sync_start_date(account, now.date()))
+        # The first sync takes all the history the bank gives; later ones only what's new
+        raw_transactions = client.iter_transactions(
+            account.uid, _sync_start_date(account, now.date()), longest=is_first_sync
+        )
         currency = account.wallet.currency
         # Booked ones in the account's currency: other currencies of a multi-currency account stay out
         booked = [

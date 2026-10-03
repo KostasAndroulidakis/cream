@@ -321,6 +321,20 @@ class TestSyncMerchants:
         assert created["merchant"] is None
 
 
+class TestHistory:
+    def test_first_sync_asks_for_the_longest_history_later_ones_only_whats_new(
+        self, client, auth_headers, bank, uncategorized
+    ):
+        connect_and_link(client, auth_headers, bank)
+
+        sync(client, auth_headers)
+        sync(client, auth_headers)
+
+        (first_from, first_longest), (later_from, later_longest) = bank.transaction_requests
+        assert first_longest is True and later_longest is False
+        assert first_from < later_from
+
+
 class TestLinkCurrency:
     def _account(self, client, headers, bank, currency):
         bank.accounts_currency = currency

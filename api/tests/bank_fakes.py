@@ -19,6 +19,8 @@ class FakeBankClient:
         # Currency of the account the bank shares
         self.accounts_currency = "EUR"
         self.aspsp_names = ["Mock ASPSP"]
+        # How each transactions request asked: (date_from, longest)
+        self.transaction_requests: list[tuple[date, bool]] = []
 
     def list_aspsps(self, country):
         return [{"name": name, "country": country, "logo": "https://logo"} for name in self.aspsp_names]
@@ -43,7 +45,8 @@ class FakeBankClient:
     def get_balances(self, account_uid):
         return [{"balance_type": "CLBD", "balance_amount": {"currency": "EUR", "amount": self.balance}}]
 
-    def iter_transactions(self, account_uid, date_from: date) -> Iterator[dict]:
+    def iter_transactions(self, account_uid, date_from: date, longest: bool = False) -> Iterator[dict]:
+        self.transaction_requests.append((date_from, longest))
         if self.fail_transactions:
             raise BankProviderError()
         yield from self.transactions

@@ -19,6 +19,8 @@ JWT_ALGORITHM = "RS256"
 # The provider accepts tokens valid for at most one hour
 JWT_LIFETIME_SECONDS = 3600
 REQUEST_TIMEOUT_SECONDS = 30
+# Enable Banking's transactions strategy for "everything the bank still has"
+LONGEST_STRATEGY = "longest"
 
 Json = dict[str, Any]
 
@@ -59,7 +61,7 @@ class BankClient(Protocol):
 
     def get_balances(self, account_uid: str) -> list[Json]: ...
 
-    def iter_transactions(self, account_uid: str, date_from: date) -> Iterator[Json]: ...
+    def iter_transactions(self, account_uid: str, date_from: date, longest: bool = False) -> Iterator[Json]: ...
 
 
 class EnableBankingClient:
@@ -110,8 +112,15 @@ class EnableBankingClient:
     def get_balances(self, account_uid: str) -> list[Json]:
         return self._request("GET", f"/accounts/{account_uid}/balances")["balances"]
 
-    def iter_transactions(self, account_uid: str, date_from: date) -> Iterator[Json]:
+    def iter_transactions(self, account_uid: str, date_from: date, longest: bool = False) -> Iterator[Json]:
+        """Booked and pending transactions since date_from, page by page.
+
+        `longest`: the provider finds the earliest transaction the bank still gives and fetches from there,
+        date_from only a hint; instead of refusing a period the bank no longer serves (WRONG_TRANSACTIONS_PERIOD).
+        """
         params: dict[str, str] = {"date_from": date_from.isoformat()}
+        if longest:
+            params["strategy"] = LONGEST_STRATEGY
         while True:
             page = self._request("GET", f"/accounts/{account_uid}/transactions", params=params)
             yield from page.get("transactions", [])

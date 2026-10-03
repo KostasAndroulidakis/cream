@@ -32,8 +32,9 @@ class Settings(BaseSettings):
     enablebanking_redirect_url: str = "http://localhost:5173/connections/callback"
     # Most banks cap consent at 180 days; the provider rejects longer requests
     bank_consent_days: int = 180
-    # History requested on the first sync of an account
-    bank_initial_history_days: int = 90
+    # Where the first sync of an account starts looking. It asks for the "longest" history, so the bank
+    # gives everything it still has from there (often 1-3 years, right after the user logs in)
+    bank_initial_history_days: int = 730
     # Later syncs re-read a few days back, to catch transactions booked late
     bank_sync_overlap_days: int = 3
 
