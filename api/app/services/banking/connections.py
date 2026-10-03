@@ -22,7 +22,7 @@ class InvalidAuthorizationError(HTTPException):
 
 class WalletAlreadyLinkedError(HTTPException):
     def __init__(self):
-        super().__init__(status_code=status.HTTP_409_CONFLICT, detail="This wallet is already linked to a bank account")
+        super().__init__(status_code=status.HTTP_409_CONFLICT, detail="This account is already linked to a bank account")
 
 
 def list_connections(user_id: int, db: Session) -> list[BankConnection]:

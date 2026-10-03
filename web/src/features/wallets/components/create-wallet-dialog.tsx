@@ -19,11 +19,11 @@ export function CreateWalletDialog() {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger render={<Button />}>
         <Plus aria-hidden />
-        Add wallet
+        Add account
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Add a wallet</DialogTitle>
+          <DialogTitle>Add an account</DialogTitle>
           <DialogDescription>
             Anywhere you keep money. Enter what's in it today; transactions take it from there.
           </DialogDescription>

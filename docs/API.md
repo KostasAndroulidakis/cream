@@ -242,7 +242,7 @@ Get a specific wallet.
 
 **Errors**:
 
-- `404`: Wallet not found
+- `404`: Account not found (the wallet doesn't exist)
 - `403`: Access denied (not owner)
 
 #### PATCH /wallets/{id}
@@ -263,7 +263,7 @@ Update a wallet.
 
 **Errors**:
 
-- `404`: Wallet not found
+- `404`: Account not found (the wallet doesn't exist)
 - `403`: Access denied
 - `409`: Currency change on a wallet that already has transactions
 - `422`: Validation error
@@ -276,7 +276,7 @@ Delete a wallet and all its transactions.
 
 **Errors**:
 
-- `404`: Wallet not found
+- `404`: Account not found (the wallet doesn't exist)
 - `403`: Access denied
 
 ---
@@ -474,7 +474,7 @@ Create a new transaction.
 
 **Errors**:
 
-- `404`: Wallet not found
+- `404`: Account not found (the wallet doesn't exist)
 - `403`: Access denied (not owner of wallet)
 - `422`: Validation error (amount zero, future date, category is a group, etc.)
 

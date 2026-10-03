@@ -82,7 +82,8 @@ def get_wallet(wallet_id: int, user_id: int, db: Session) -> Wallet:
     """
     wallet = db.query(Wallet).filter(Wallet.id == wallet_id).first()
     if not wallet:
-        raise NotFoundError("Wallet")
+        # Called "account" in the UI
+        raise NotFoundError("Account")
     if wallet.user_id != user_id:
         raise AccessDeniedError()
     return wallet

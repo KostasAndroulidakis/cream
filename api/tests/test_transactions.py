@@ -297,7 +297,7 @@ class TestCreateTransaction:
         )
 
         assert response.status_code == 404
-        assert "Wallet not found" in response.json()["detail"]
+        assert "Account not found" in response.json()["detail"]
 
     def test_create_transaction_unauthenticated(self, client, transaction_data):
         """Test creating transaction without auth fails."""

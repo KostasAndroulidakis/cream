@@ -80,7 +80,7 @@ export function CreateWalletForm({ onCreated }: { onCreated: () => void }) {
       </div>
 
       <Button type="submit" size="lg" className="w-full" disabled={createWallet.isPending}>
-        {createWallet.isPending ? "Adding wallet…" : "Add wallet"}
+        {createWallet.isPending ? "Adding account…" : "Add account"}
       </Button>
     </form>
   )

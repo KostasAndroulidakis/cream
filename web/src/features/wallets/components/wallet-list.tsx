@@ -35,7 +35,7 @@ export function WalletList() {
 
   if (isPending) {
     return (
-      <ul className="divide-y" aria-label="Loading wallets">
+      <ul className="divide-y" aria-label="Loading accounts">
         {Array.from({ length: SKELETON_ROWS }, (_, i) => (
           <li key={i} className="h-[4.5rem] animate-pulse py-4">
             <div className="h-full rounded-lg bg-muted" />
@@ -50,7 +50,7 @@ export function WalletList() {
   if (wallets.length === 0) {
     return (
       <div className="rounded-xl border border-dashed px-6 py-10 text-center">
-        <p className="font-medium">No wallets yet</p>
+        <p className="font-medium">No accounts yet</p>
         <p className="mx-auto mt-1 max-w-xs text-sm text-muted-foreground">
           Add your bank account, the cash in your pocket, or a stash to start tracking.
         </p>

@@ -22,7 +22,7 @@ export function CreateTransactionDialog() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger
-        render={<Button disabled={!hasWallets} title={hasWallets ? undefined : "Add a wallet first"} />}
+        render={<Button disabled={!hasWallets} title={hasWallets ? undefined : "Add an account first"} />}
       >
         <Plus aria-hidden />
         Add transaction
@@ -30,7 +30,7 @@ export function CreateTransactionDialog() {
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Add a transaction</DialogTitle>
-          <DialogDescription>Money in or out of one of your wallets.</DialogDescription>
+          <DialogDescription>Money in or out of one of your accounts.</DialogDescription>
         </DialogHeader>
         {/* Unmounted on close, so the form starts fresh every time */}
         {open && <CreateTransactionForm onCreated={() => setOpen(false)} />}

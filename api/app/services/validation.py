@@ -164,7 +164,7 @@ class TransactionValidator:
     def _validate_wallet_id(self, wallet_id: int, result: ValidationResult) -> None:
         """Validate wallet ID."""
         if wallet_id <= 0:
-            result.add_error("wallet_id", "Wallet ID must be a positive integer")
+            result.add_error("wallet_id", "Account ID must be a positive integer")
 
     def _validate_category_id(self, category_id: int, result: ValidationResult) -> None:
         """Validate category ID."""

@@ -42,7 +42,7 @@ export function DeleteTransactionDialog({ transaction, currency }: DeleteTransac
         open={open}
         onOpenChange={setOpen}
         title="Delete this transaction?"
-        description={`${label}, ${amount}. The wallet balance changes, and this can't be undone.`}
+        description={`${label}, ${amount}. The account balance changes, and this can't be undone.`}
         confirmLabel="Delete"
         confirmVariant="destructive"
         isPending={deleteTransaction.isPending}

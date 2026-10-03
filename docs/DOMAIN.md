@@ -5,7 +5,7 @@
 | Term | Definition |
 | ------ | ------------ |
 | **User** | A person who uses CREAM to track their finances |
-| **Wallet** | A container for money (bank account, cash, digital wallet) |
+| **Wallet** | A container for money (bank account, cash, digital wallet). Called **Account** in the UI, as in Monarch; the API and code keep "wallet" so it isn't confused with a bank's own accounts |
 | **Transaction** | A single movement of money (income or expense) |
 | **Category** | A classification for transactions (e.g., Food, Salary) |
 | **Balance** | The current amount of money in a wallet |

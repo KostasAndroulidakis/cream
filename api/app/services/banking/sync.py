@@ -100,7 +100,7 @@ def sync_account(account: BankAccount, client: BankClient, importer: Importer, d
     now = datetime.now(timezone.utc)
     connection = account.connection
     if account.wallet_id is None:
-        result.error = "Not linked to a wallet"
+        result.error = "Not linked to an account"
         return result
     if _consent_expired(connection, now):
         connection.status = ConnectionStatus.EXPIRED

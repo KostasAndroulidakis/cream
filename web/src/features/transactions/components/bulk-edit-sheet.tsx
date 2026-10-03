@@ -242,7 +242,7 @@ function BulkEditForm({ transactions, onCancel, onDone }: BulkEditFormProps) {
         open={confirming === "delete"}
         onOpenChange={(open) => setConfirming(open ? "delete" : null)}
         title={`Delete ${pluralize(count, "transaction")}?`}
-        description="They are deleted for good, and the balances of their wallets change."
+        description="They are deleted for good, and the balances of their accounts change."
         confirmLabel={count === 1 ? "Delete" : `Delete ${count}`}
         confirmVariant="destructive"
         isPending={bulkDelete.isPending}

@@ -40,5 +40,5 @@ def ensure_currency_change_allowed(wallet: Wallet, new_currency: str | None, db:
     if has_transactions(wallet.id, db):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="Currency can't be changed once a wallet has transactions",
+            detail="Currency can't be changed once an account has transactions",
         )

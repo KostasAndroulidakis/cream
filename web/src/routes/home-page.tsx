@@ -35,7 +35,7 @@ export function HomePage() {
         >
           <RecentTransactions showHidden={showHidden} />
         </Panel>
-        <Panel id="wallets-heading" title="Wallets" action={hasWallets && <CreateWalletDialog />}>
+        <Panel id="accounts-heading" title="Accounts" action={hasWallets && <CreateWalletDialog />}>
           <WalletList />
         </Panel>
       </PageColumns>

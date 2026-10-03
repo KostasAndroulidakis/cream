@@ -23,12 +23,12 @@ export function LinkAccountControl({ account }: { account: BankAccount }) {
   return (
     <div className="flex items-center gap-2">
       <NativeSelect
-        aria-label={`Wallet for ${account.name}`}
+        aria-label={`CREAM account for ${account.name}`}
         value={choice}
         onChange={(event) => setChoice(event.target.value)}
         className="min-w-44"
       >
-        <option value={NEW_WALLET}>New wallet</option>
+        <option value={NEW_WALLET}>New account</option>
         {candidates.map((wallet) => (
           <option key={wallet.id} value={wallet.id}>
             {wallet.name}

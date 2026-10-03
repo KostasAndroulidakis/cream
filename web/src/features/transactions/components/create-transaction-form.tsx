@@ -93,7 +93,7 @@ export function CreateTransactionForm({ onCreated }: { onCreated: () => void }) 
       </FormField>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <FormField id="tx-wallet" label="Wallet" error={errors.wallet_id?.message}>
+        <FormField id="tx-wallet" label="Account" error={errors.wallet_id?.message}>
           <NativeSelect id="tx-wallet" {...fieldA11y("tx-wallet", errors.wallet_id?.message)} {...register("wallet_id")}>
             <option value={NO_WALLET} disabled>
               Pick a wallet
