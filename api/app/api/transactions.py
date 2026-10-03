@@ -1,20 +1,23 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import CategorySource, Transaction
 from app.schemas import (
+    BulkResult,
+    BulkTransactionDelete,
+    BulkTransactionUpdate,
     CategorizeRequest,
     CategorizeResultRead,
     TransactionCreate,
     TransactionPage,
     TransactionRead,
     TransactionUpdate,
-    ValidationErrorDetail,
 )
 from app.services.auth import get_current_user_id
 from app.services.authorization import (
     get_transaction as get_user_transaction,
+    get_transactions as get_user_transactions,
     get_wallet as verify_wallet_ownership,
     get_assignable_category,
     ImportedTransactionError,
@@ -25,19 +28,13 @@ from app.services.categorization.assignment import assign_category
 from app.services.categorization.inbox import uncategorized_page
 from app.services.categorization.rules import categorize_transaction
 from app.services.helpers import apply_update
-from app.services.transactions import ensure_editable
-from app.services.validation import ValidationResult, validate_transaction
+from app.services.transactions import bulk_delete, bulk_update, ensure_editable
+from app.services.validation import raise_if_invalid, validate_transaction
 
 router = APIRouter()
 
 DEFAULT_PAGE_SIZE = 50
 MAX_PAGE_SIZE = 200
-
-
-def _raise_if_invalid(result: ValidationResult) -> None:
-    if not result.is_valid:
-        errors = [ValidationErrorDetail(field=e.field, message=e.message).model_dump() for e in result.errors]
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=errors)
 
 
 @router.get("", response_model=list[TransactionRead])
@@ -82,6 +79,30 @@ def list_uncategorized(
     return {"total": total, "items": items}
 
 
+# Bulk routes are declared before /{transaction_id} so their names aren't read as IDs
+@router.post("/bulk-update", response_model=BulkResult)
+def bulk_update_transactions(
+    request: BulkTransactionUpdate,
+    user_id: int = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """Apply the same changes to several transactions: all of them or, if any is refused, none."""
+    transactions = get_user_transactions(request.transaction_ids, user_id, db)
+    changes = request.changes.model_dump(exclude_unset=True)
+    return BulkResult(affected=bulk_update(transactions, changes, user_id, db))
+
+
+@router.post("/bulk-delete", response_model=BulkResult)
+def bulk_delete_transactions(
+    request: BulkTransactionDelete,
+    user_id: int = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """Delete several transactions entered by hand; refused (409) if any came from a bank."""
+    transactions = get_user_transactions(request.transaction_ids, user_id, db)
+    return BulkResult(affected=bulk_delete(transactions, db))
+
+
 @router.post("", response_model=TransactionRead, status_code=status.HTTP_201_CREATED)
 def create_transaction(
     transaction_in: TransactionCreate,
@@ -95,7 +116,7 @@ def create_transaction(
         wallet_id=transaction_in.wallet_id,
         category_id=transaction_in.category_id,
     )
-    _raise_if_invalid(validation_result)
+    raise_if_invalid(validation_result)
 
     # Verify user owns the wallet
     verify_wallet_ownership(transaction_in.wallet_id, user_id, db)
@@ -141,7 +162,7 @@ def update_transaction(
         occurred_at=occurred_at,
         category_id=category_id,
     )
-    _raise_if_invalid(validation_result)
+    raise_if_invalid(validation_result)
 
     # Verify user has access to the new category if being changed
     if "category_id" in update_data and update_data["category_id"] is not None:

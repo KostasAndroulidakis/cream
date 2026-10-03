@@ -1,7 +1,15 @@
 from app.schemas.user import UserCreate, UserRead, LoginRequest
 from app.schemas.wallet import CurrencyTotal, WalletCreate, WalletRead, WalletUpdate
 from app.schemas.category import CategoryCreate, CategoryRead, CategoryUpdate
-from app.schemas.transaction import TransactionCreate, TransactionPage, TransactionRead, TransactionUpdate
+from app.schemas.transaction import (
+    BulkResult,
+    BulkTransactionDelete,
+    BulkTransactionUpdate,
+    TransactionCreate,
+    TransactionPage,
+    TransactionRead,
+    TransactionUpdate,
+)
 from app.schemas.categorization import CategorizeRequest, CategorizeResultRead, MerchantRuleRead
 from app.schemas.statistics import (
     StatisticsResponse,
@@ -21,6 +29,7 @@ __all__ = [
     "WalletCreate", "WalletRead", "WalletUpdate", "CurrencyTotal",
     "CategoryCreate", "CategoryRead", "CategoryUpdate",
     "TransactionCreate", "TransactionRead", "TransactionUpdate", "TransactionPage",
+    "BulkTransactionUpdate", "BulkTransactionDelete", "BulkResult",
     "CategorizeRequest", "CategorizeResultRead", "MerchantRuleRead",
     "StatisticsResponse", "WalletBalance", "CategoryTotal",
     "ReportResponse", "ReportPeriod", "ReportSummary",

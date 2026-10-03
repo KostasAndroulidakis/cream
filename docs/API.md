@@ -34,6 +34,8 @@ All endpoints except `/health`, `/auth/signup`, `/auth/login` and `/auth/logout`
 | `GET /api/v1/transactions` | List transactions |
 | `POST /api/v1/transactions` | Create transaction |
 | `GET /api/v1/transactions/uncategorized` | Review inbox: transactions still in Uncategorized |
+| `POST /api/v1/transactions/bulk-update` | Same changes on several transactions (all or none) |
+| `POST /api/v1/transactions/bulk-delete` | Delete several transactions entered by hand (all or none) |
 | `GET /api/v1/transactions/{id}` | Get transaction |
 | `PATCH /api/v1/transactions/{id}` | Update transaction |
 | `POST /api/v1/transactions/{id}/categorize` | Set the category, optionally as a merchant rule |
@@ -484,6 +486,40 @@ The review inbox: the user's transactions in **Other → Uncategorized**, newest
 ```
 
 `total` counts every uncategorized transaction, not just this page. Hidden transactions are left out.
+
+#### POST /transactions/bulk-update
+
+Apply the same changes to up to 500 transactions. Every change is checked on every transaction first: if any
+is refused, none is applied.
+
+**Request** (`changes` needs at least one field; a field left out means "no change"):
+
+```json
+{
+  "transaction_ids": [12, 15, 19],
+  "changes": {
+    "category_id": 7,
+    "occurred_at": "2026-09-01T12:00:00Z",
+    "description": "string | null (null clears the notes)",
+    "is_hidden": true
+  }
+}
+```
+
+**Response** `200 OK`: `{ "affected": 3 }` (an ID sent twice counts once). A new category becomes the
+user's own choice (`category_source` `manual`).
+
+**Errors**:
+
+- `404`: Any of the transactions doesn't exist or isn't the user's
+- `422`: No changes, a `null` other than `description`, a future date, a category group, or a date change
+  that includes a bank transaction (the bank sets its dates)
+
+#### POST /transactions/bulk-delete
+
+Delete up to 500 transactions entered by hand: `{ "transaction_ids": [3, 4] }` → `{ "affected": 2 }`.
+
+**Errors**: `404` as above; `409` if any of them came from a bank (hide those instead).
 
 #### GET /transactions/{id}
 

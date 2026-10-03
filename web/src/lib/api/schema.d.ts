@@ -207,7 +207,7 @@ export interface paths {
         };
         /**
          * List Transactions
-         * @description List transactions for the user's wallets, newest first.
+         * @description List transactions for the user's wallets, newest first. Hidden ones only on request.
          */
         get: operations["list_transactions_api_v1_transactions_get"];
         put?: never;
@@ -233,6 +233,46 @@ export interface paths {
         get: operations["list_uncategorized_api_v1_transactions_uncategorized_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/transactions/bulk-update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Bulk Update Transactions
+         * @description Apply the same changes to several transactions: all of them or, if any is refused, none.
+         */
+        post: operations["bulk_update_transactions_api_v1_transactions_bulk_update_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/transactions/bulk-delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Bulk Delete Transactions
+         * @description Delete several transactions entered by hand; refused (409) if any came from a bank.
+         */
+        post: operations["bulk_delete_transactions_api_v1_transactions_bulk_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -523,6 +563,36 @@ export interface components {
             valid_until: string | null;
             /** Accounts */
             accounts: components["schemas"]["BankAccountRead"][];
+        };
+        /** BulkResult */
+        BulkResult: {
+            /** Affected */
+            affected: number;
+        };
+        /**
+         * BulkTransactionChanges
+         * @description Changes for every selected transaction. A field left out means "no change".
+         */
+        BulkTransactionChanges: {
+            /** Category Id */
+            category_id?: number | null;
+            /** Occurred At */
+            occurred_at?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Is Hidden */
+            is_hidden?: boolean | null;
+        };
+        /** BulkTransactionDelete */
+        BulkTransactionDelete: {
+            /** Transaction Ids */
+            transaction_ids: number[];
+        };
+        /** BulkTransactionUpdate */
+        BulkTransactionUpdate: {
+            /** Transaction Ids */
+            transaction_ids: number[];
+            changes: components["schemas"]["BulkTransactionChanges"];
         };
         /** CategorizeRequest */
         CategorizeRequest: {
@@ -1430,6 +1500,7 @@ export interface operations {
         parameters: {
             query?: {
                 wallet_id?: number | null;
+                include_hidden?: boolean;
                 limit?: number;
                 offset?: number;
             };
@@ -1511,6 +1582,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TransactionPage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    bulk_update_transactions_api_v1_transactions_bulk_update_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BulkTransactionUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BulkResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    bulk_delete_transactions_api_v1_transactions_bulk_delete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BulkTransactionDelete"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BulkResult"];
                 };
             };
             /** @description Validation Error */

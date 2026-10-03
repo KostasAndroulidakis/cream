@@ -13,6 +13,10 @@ from datetime import datetime, timezone
 from decimal import Decimal
 from typing import Optional
 
+from fastapi import HTTPException, status
+
+from app.schemas.error import ValidationErrorDetail
+
 logger = logging.getLogger(__name__)
 
 
@@ -187,3 +191,10 @@ def validate_transaction(
     """
     validator = TransactionValidator()
     return validator.validate(amount, occurred_at, wallet_id, category_id)
+
+
+def raise_if_invalid(result: ValidationResult) -> None:
+    """Turn validation errors into a 422 response listing each field and message."""
+    if not result.is_valid:
+        errors = [ValidationErrorDetail(field=e.field, message=e.message).model_dump() for e in result.errors]
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=errors)

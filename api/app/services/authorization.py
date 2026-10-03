@@ -159,6 +159,23 @@ def get_transaction(transaction_id: int, user_id: int, db: Session) -> Transacti
     return transaction
 
 
+def get_transactions(transaction_ids: list[int], user_id: int, db: Session) -> list[Transaction]:
+    """Get several transactions, all of them the user's.
+
+    Raises:
+        NotFoundError: Any of them doesn't exist or isn't the user's (without telling which)
+    """
+    unique_ids = set(transaction_ids)
+    transactions = (
+        db.query(Transaction)
+        .filter(Transaction.id.in_(unique_ids), Transaction.wallet_id.in_(get_user_wallet_ids_subquery(user_id, db)))
+        .all()
+    )
+    if len(transactions) != len(unique_ids):
+        raise NotFoundError("Transaction")
+    return transactions
+
+
 def get_user_wallet_ids(user_id: int, db: Session) -> list[int]:
     """Get all wallet IDs owned by a user.
 
