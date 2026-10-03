@@ -78,3 +78,30 @@ class TestWhereHiddenShows:
         _hide(client, auth_headers, imported["id"])
 
         assert Decimal(client.get(wallet_url, headers=auth_headers).json()["balance"]) == balance_before
+
+
+class TestStatistics:
+    """The imported fixture is a 40.00 expense booked on 2026-09-20, in a wallet the bank says holds 1000.00."""
+
+    STATISTICS_URL = "/api/v1/statistics"
+    REPORT_PERIOD = {"start_date": "2026-09-01T00:00:00Z", "end_date": "2026-09-30T23:59:59Z"}
+
+    def test_left_out_of_totals_but_not_balance(self, client, auth_headers, imported):
+        before = client.get(self.STATISTICS_URL, headers=auth_headers).json()
+
+        _hide(client, auth_headers, imported["id"])
+
+        after = client.get(self.STATISTICS_URL, headers=auth_headers).json()
+        assert Decimal(before["total_expenses"]) == Decimal("40")
+        assert Decimal(after["total_expenses"]) == 0
+        assert after["spending_by_category"] == []
+        assert Decimal(after["total_balance"]) == Decimal(before["total_balance"]) == Decimal("1000")
+
+    def test_left_out_of_the_report(self, client, auth_headers, imported):
+        _hide(client, auth_headers, imported["id"])
+
+        report = client.get(f"{self.STATISTICS_URL}/report", params=self.REPORT_PERIOD, headers=auth_headers).json()
+
+        assert report["summary"]["transaction_count"] == 0
+        assert Decimal(report["summary"]["expenses"]) == 0
+        assert report["by_category"] == [] and report["by_wallet"] == []

@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from decimal import Decimal
 
-from sqlalchemy import case, func, select
+from sqlalchemy import and_, case, func, select
 from sqlalchemy.orm import Session
 
 from app.models import Category, Transaction, Wallet
@@ -94,9 +94,13 @@ def _to_decimal(value) -> Decimal:
     return Decimal(str(value)) if value else Decimal("0")
 
 
-def _excludes_transfers():
-    """Filter: only transactions whose category is income or expense (not a transfer)."""
-    return Transaction.category_id.in_(select(Category.id).where(Category.type != CategoryType.TRANSFER))
+def _counts_in_statistics():
+    """Filter: income and expenses only. Transfers between own wallets and hidden transactions
+    are left out (they still move wallet balances, which are calculated separately)."""
+    return and_(
+        Transaction.is_visible,
+        Transaction.category_id.in_(select(Category.id).where(Category.type != CategoryType.TRANSFER)),
+    )
 
 
 def _sum_income_expr():
@@ -164,7 +168,7 @@ def calculate_statistics(user_id: int, db: Session) -> StatisticsData:
     totals = db.query(
         _sum_income_expr().label("income"),
         _sum_expenses_expr().label("expenses"),
-    ).filter(Transaction.wallet_id.in_(wallet_ids), _excludes_transfers()).first()
+    ).filter(Transaction.wallet_id.in_(wallet_ids), _counts_in_statistics()).first()
 
     total_income = _to_decimal(totals.income)
     total_expenses = _to_decimal(totals.expenses)
@@ -217,7 +221,7 @@ def _get_category_totals(
         .join(Transaction, Transaction.category_id == Category.id)
         .filter(Transaction.wallet_id.in_(wallet_ids))
         .filter(amount_filter)
-        .filter(Category.type != CategoryType.TRANSFER)
+        .filter(_counts_in_statistics())
         .group_by(Category.id, Category.name)
         .order_by(sum_expr.desc())
         .limit(limit)
@@ -274,7 +278,7 @@ def calculate_report(
         Transaction.wallet_id.in_(wallet_ids),
         Transaction.occurred_at >= start_date,
         Transaction.occurred_at <= end_date,
-        _excludes_transfers(),
+        _counts_in_statistics(),
     ]
 
     # Summary statistics
