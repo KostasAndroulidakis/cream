@@ -7,6 +7,7 @@ import pytest
 
 from app.config import settings
 from app.services.banking.mapping import assign_external_ids, parse_transaction, pick_balance
+from tests.conftest import SIGNUP_URL
 from tests.bank_fakes import BANK_URL, connect, connect_and_link, raw_transaction, sync
 
 
@@ -218,3 +219,50 @@ class TestSync:
         connect(client, auth_headers, bank)
 
         assert sync(client, auth_headers) == []
+
+
+class TestSyncMerchants:
+    def _merchants(self, client, headers):
+        return {t["counterparty"]: t["merchant"] for t in client.get("/api/v1/transactions", headers=headers).json()}
+
+    def test_imported_transactions_get_the_banks_merchant(self, client, auth_headers, bank, uncategorized):
+        connect_and_link(client, auth_headers, bank)
+        bank.transactions = [raw_transaction("t1", "4.00", creditor={"name": "  Coffee   Island "})]
+
+        sync(client, auth_headers)
+
+        assert self._merchants(client, auth_headers)["  Coffee   Island "]["name"] == "Coffee Island"
+
+    def test_spellings_of_one_merchant_share_it_across_syncs(self, client, auth_headers, bank, uncategorized):
+        connect_and_link(client, auth_headers, bank)
+        bank.transactions = [raw_transaction("t1", "4.00", creditor={"name": "SKLAVENITIS ATHENS"})]
+        sync(client, auth_headers)
+        bank.transactions.append(raw_transaction("t2", "6.00", creditor={"name": "Sklavenitis  Athens"}))
+
+        sync(client, auth_headers)
+
+        merchants = self._merchants(client, auth_headers)
+        assert merchants["SKLAVENITIS ATHENS"] == merchants["Sklavenitis  Athens"]
+        # The first spelling seen names the merchant
+        assert merchants["SKLAVENITIS ATHENS"]["name"] == "SKLAVENITIS ATHENS"
+
+    def test_merchants_are_per_user(self, client, registered_user, second_user_data, db_session):
+        from app.services.merchants import MerchantDirectory
+
+        other_id = client.post(SIGNUP_URL, json=second_user_data).json()["id"]
+        theirs = MerchantDirectory.for_user(other_id, db_session).get_or_create("Kiosk", db_session)
+        db_session.commit()
+
+        mine = MerchantDirectory.for_user(registered_user["id"], db_session).get_or_create("KIOSK", db_session)
+
+        assert mine is not theirs and mine.user_id == registered_user["id"]
+
+    def test_manual_transactions_have_no_merchant(self, client, auth_headers, uncategorized):
+        wallet = client.post("/api/v1/wallets", json={"name": "Cash"}, headers=auth_headers).json()
+        created = client.post(
+            "/api/v1/transactions",
+            json={"wallet_id": wallet["id"], "category_id": uncategorized.id, "amount": "-2", "occurred_at": "2026-09-20T10:00:00Z"},
+            headers=auth_headers,
+        ).json()
+
+        assert created["merchant"] is None

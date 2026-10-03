@@ -23,6 +23,13 @@ class TransactionUpdate(BaseModel):
     is_hidden: bool = False
 
 
+class MerchantRead(BaseModel):
+    id: int
+    name: str
+
+    model_config = {"from_attributes": True}
+
+
 class TransactionRead(BaseModel):
     id: int
     wallet_id: int
@@ -35,6 +42,8 @@ class TransactionRead(BaseModel):
     merchant_category_code: str | None
     # Normalized merchant of an imported transaction; null when there is nothing to match rules on
     merchant_key: str | None
+    # Who the money went to or came from, as the user sees it; null when unknown
+    merchant: MerchantRead | None
     # True when imported from a bank (not entered by hand)
     is_imported: bool
     # Left out of lists and statistics, still part of the wallet balance

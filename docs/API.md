@@ -418,6 +418,7 @@ List transactions for the user's wallets, newest first.
     "counterparty": "SKLAVENITIS",
     "merchant_category_code": "5411",
     "merchant_key": "sklavenitis",
+    "merchant": { "id": 4, "name": "SKLAVENITIS" },
     "is_imported": true,
     "is_hidden": false,
     "created_at": "2025-01-15T14:35:00Z"
@@ -429,6 +430,8 @@ List transactions for the user's wallets, newest first.
 bank's merchant category code) or `default` (nothing matched; waiting in the review inbox). Automatic
 categorization never changes a `manual` category. `merchant_key` is the normalized merchant of an imported
 transaction (counterparty, else its text; case and spacing ignored), or `null` when there is none.
+`merchant` is who the money went to or came from, as the user sees it: imported transactions start with
+the bank's merchant; `null` when unknown (e.g. manual entries).
 A hidden transaction (`is_hidden`) still counts in its wallet's balance, but is left out of lists, the
 review inbox and statistics.
 

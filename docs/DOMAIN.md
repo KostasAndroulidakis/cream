@@ -12,7 +12,7 @@
 | **Income** | Money received (positive transaction) |
 | **Expense** | Money spent (negative transaction) |
 | **Period** | A date range for reporting purposes |
-| **Merchant** | Who an imported transaction was with: the bank's counterparty, else the transaction text |
+| **Merchant** | Who a transaction was with, under a name the user can change; imports start with the bank's counterparty, else the transaction text |
 | **MCC** | Merchant category code (ISO 18245) the bank reports for card payments, e.g. 5411 = grocery stores |
 | **Merchant rule** | The user's choice "this merchant always goes to this category" |
 
@@ -131,6 +131,7 @@ Transaction
 ├── counterparty: who the money went to / came from (imports)
 ├── merchant_category_code: the bank's MCC (imports)
 ├── merchant_key: normalized merchant (imports), what merchant rules match on
+├── merchant_id: the merchant the user sees (optional)
 ├── is_hidden: left out of lists and statistics, still part of the balance
 ├── created_at: record creation timestamp
 └── updated_at: last modification timestamp
@@ -143,6 +144,24 @@ Transaction
 - Wallet must exist and belong to the user
 - Category must be accessible to the user
 - occurred_at must not be in the future
+
+### Merchant
+
+```text
+Merchant
+├── id: unique identifier
+├── user_id: owner reference
+├── name: what the user sees, e.g. "Sklavenitis"
+├── key: normalized name (case and spacing ignored)
+├── created_at: creation timestamp
+└── updated_at: last modification timestamp
+```
+
+**Invariants**:
+
+- At most one merchant per name (case and spacing ignored) per user
+- A bank import finds the user's merchant by the bank's name, or creates it (named as the bank first wrote it)
+- Deleting a merchant leaves its transactions without a merchant
 
 ### Merchant Rule
 

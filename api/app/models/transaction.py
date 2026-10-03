@@ -58,7 +58,8 @@ class Transaction(TimestampMixin, Base):
 
     wallet: Mapped["Wallet"] = relationship(back_populates="transactions")
     category: Mapped["Category"] = relationship(back_populates="transactions")
-    merchant: Mapped["Merchant | None"] = relationship()
+    # Loaded together with the transaction: every transaction response shows its merchant
+    merchant: Mapped["Merchant | None"] = relationship(lazy="joined")
 
     @property
     def is_imported(self) -> bool:

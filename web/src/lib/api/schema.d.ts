@@ -744,6 +744,13 @@ export interface components {
             /** Password */
             password: string;
         };
+        /** MerchantRead */
+        MerchantRead: {
+            /** Id */
+            id: number;
+            /** Name */
+            name: string;
+        };
         /** MerchantRuleRead */
         MerchantRuleRead: {
             /** Id */
@@ -887,6 +894,7 @@ export interface components {
             merchant_category_code: string | null;
             /** Merchant Key */
             merchant_key: string | null;
+            merchant: components["schemas"]["MerchantRead"] | null;
             /** Is Imported */
             is_imported: boolean;
             /** Is Hidden */

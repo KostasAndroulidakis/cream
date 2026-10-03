@@ -1,5 +1,7 @@
 """Import booked bank transactions into linked wallets, without duplicates."""
 
+from __future__ import annotations
+
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
@@ -14,7 +16,8 @@ from app.models import BankAccount, BankConnection, CategorySource, ConnectionSt
 from app.services.banking.client import BankClient
 from app.services.banking.mapping import ImportedTransaction, assign_external_ids, parse_transaction, pick_balance
 from app.services.categorization.auto import AutoCategorizer
-from app.services.categorization.merchants import merchant_key
+from app.services.categorization.merchants import merchant_key, merchant_name
+from app.services.merchants import MerchantDirectory
 
 
 @dataclass
@@ -26,11 +29,23 @@ class SyncResult:
     error: str | None = None
 
 
+@dataclass(frozen=True)
+class Importer:
+    """What one user's sync needs in memory: their categorization rules and their merchants."""
+
+    categorizer: AutoCategorizer
+    merchants: MerchantDirectory
+
+    @classmethod
+    def for_user(cls, user_id: int, db: Session) -> Importer:
+        return cls(AutoCategorizer.for_user(user_id, db), MerchantDirectory.for_user(user_id, db))
+
+
 def _new_transaction(
-    wallet_id: int, external_id: str, parsed: ImportedTransaction, categorizer: AutoCategorizer
+    wallet_id: int, external_id: str, parsed: ImportedTransaction, importer: Importer, db: Session
 ) -> Transaction:
     key = merchant_key(parsed.counterparty, parsed.description)
-    decision = categorizer.decide(key, parsed.merchant_category_code)
+    decision = importer.categorizer.decide(key, parsed.merchant_category_code)
     return Transaction(
         wallet_id=wallet_id,
         category_id=decision.category_id,
@@ -41,6 +56,7 @@ def _new_transaction(
         counterparty=parsed.counterparty,
         merchant_category_code=parsed.merchant_category_code,
         merchant_key=key,
+        merchant=importer.merchants.get_or_create(merchant_name(parsed.counterparty, parsed.description), db),
         external_id=external_id,
     )
 
@@ -70,7 +86,7 @@ def _consent_expired(connection: BankConnection, now: datetime) -> bool:
     return connection.valid_until is not None and as_utc(connection.valid_until) <= now
 
 
-def sync_account(account: BankAccount, client: BankClient, categorizer: AutoCategorizer, db: Session) -> SyncResult:
+def sync_account(account: BankAccount, client: BankClient, importer: Importer, db: Session) -> SyncResult:
     """Import new booked transactions of one linked account, categorizing them on the way in."""
     result = SyncResult(bank_account_id=account.id)
     now = datetime.now(timezone.utc)
@@ -98,13 +114,13 @@ def sync_account(account: BankAccount, client: BankClient, categorizer: AutoCate
         for external_id, parsed in assign_external_ids(booked):
             if external_id in known_ids:
                 continue
-            transaction = _new_transaction(account.wallet_id, external_id, parsed, categorizer)
+            transaction = _new_transaction(account.wallet_id, external_id, parsed, importer, db)
             db.add(transaction)
             result.imported += 1
             if transaction.category_source is not CategorySource.DEFAULT:
                 result.categorized += 1
         db.flush()
-        result.categorized += categorizer.retry_uncategorized(account.wallet_id, db)
+        result.categorized += importer.categorizer.retry_uncategorized(account.wallet_id, db)
         if is_first_sync:
             _reconcile_initial_balance(account, client, db)
     except HTTPException as exc:
@@ -134,5 +150,5 @@ def sync_user_accounts(user_id: int, client: BankClient, db: Session) -> list[Sy
     )
     if not accounts:
         return []
-    categorizer = AutoCategorizer.for_user(user_id, db)
-    return [sync_account(account, client, categorizer, db) for account in accounts]
+    importer = Importer.for_user(user_id, db)
+    return [sync_account(account, client, importer, db) for account in accounts]
