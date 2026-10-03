@@ -151,7 +151,7 @@ users ──1:N── wallets ──1:N── transactions ──N:1── categ
    ```
 
 3. Set `CREAM_ENABLEBANKING_APP_ID` and `CREAM_ENABLEBANKING_KEY_PATH` (absolute path) in `.env`,
-   restart the API, then use **Banks** in the app.
+   restart the API, then use **Settings › Institutions** in the app.
 
 ## Future Features
 

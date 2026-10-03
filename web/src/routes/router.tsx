@@ -3,12 +3,12 @@ import { createBrowserRouter, Navigate } from "react-router"
 import { AccountsPage } from "./accounts-page"
 import { AppLayout } from "./app-layout"
 import { ConnectionCallbackPage } from "./connection-callback-page"
-import { ConnectionsPage } from "./connections-page"
 import { RedirectIfAuthenticated, RequireAuth } from "./guards"
 import { HomePage } from "./home-page"
 import { LoginPage } from "./login-page"
 import { paths } from "./paths"
 import { ReviewPage } from "./review-page"
+import { SettingsInstitutionsPage } from "./settings-institutions-page"
 import { SettingsLayout } from "./settings-layout"
 import { SettingsProfilePage } from "./settings-profile-page"
 import { SignupPage } from "./signup-page"
@@ -25,7 +25,7 @@ export const router = createBrowserRouter([
           { path: paths.accounts, element: <AccountsPage /> },
           { path: paths.transactions, element: <TransactionsPage /> },
           { path: paths.review, element: <ReviewPage /> },
-          { path: paths.connections, element: <ConnectionsPage /> },
+          { path: paths.connections, element: <Navigate to={paths.settingsInstitutions} replace /> },
           {
             path: paths.settings,
             element: <SettingsLayout />,
@@ -33,6 +33,7 @@ export const router = createBrowserRouter([
               // Settings opens on Profile, like Monarch
               { index: true, element: <Navigate to={paths.settingsProfile} replace /> },
               { path: paths.settingsProfile, element: <SettingsProfilePage /> },
+              { path: paths.settingsInstitutions, element: <SettingsInstitutionsPage /> },
             ],
           },
         ],

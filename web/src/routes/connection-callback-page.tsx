@@ -21,7 +21,7 @@ export function ConnectionCallbackPage() {
     completeConnection.mutate({ code, state })
   }, [code, state, completeConnection])
 
-  if (completeConnection.isSuccess) return <Navigate to={paths.connections} replace />
+  if (completeConnection.isSuccess) return <Navigate to={paths.settingsInstitutions} replace />
 
   const failed = !code || !state || completeConnection.isError
   if (failed) {
@@ -31,8 +31,8 @@ export function ConnectionCallbackPage() {
     return (
       <FullPageMessage title="Couldn't connect the bank">
         <p className="text-sm text-muted-foreground">{reason}</p>
-        <Link to={paths.connections} className="text-sm font-medium underline underline-offset-4">
-          Back to banks
+        <Link to={paths.settingsInstitutions} className="text-sm font-medium underline underline-offset-4">
+          Back to institutions
         </Link>
       </FullPageMessage>
     )

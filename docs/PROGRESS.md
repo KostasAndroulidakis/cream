@@ -42,7 +42,7 @@ CREAM is built in **vertical slices**: each slice delivers one thing a user can 
 | --- | --- |
 | API | Signup, login, logout, `/auth/me`; JWT in `httpOnly` / `Secure` / `SameSite=Strict` cookie; bcrypt |
 | Web | Login and signup pages with validation, protected routes with return-to, logout, expired session → login |
-| Settings | Monarch's Settings page: menu of Account and Household sections, **Profile** editable (`PATCH /auth/me`); the other sections are marked coming soon |
+| Settings | Monarch's Settings page: menu of Account and Household sections, **Profile** editable (`PATCH /auth/me`), **Institutions** (the former Banks page); the other sections are marked coming soon |
 
 ### ✅ Slice 2: Wallets
 
@@ -65,7 +65,7 @@ CREAM is built in **vertical slices**: each slice delivers one thing a user can 
 | --- | --- |
 | DB | `bank_connections`, `bank_accounts`; transactions gain `external_id`, `counterparty`, MCC |
 | API | Connect (single-use state), link accounts to wallets, manual sync of booked transactions, duplicate-safe IDs, first-sync balance reconciliation, disconnect |
-| Web | Banks page: connect, callback, link to new/existing wallet, sync now with results |
+| Web | Settings › Institutions (Monarch's layout): connect, callback, link to new/existing wallet, sync now with results, reconnect when access expires |
 | Verified | Sandbox with Mock ASPSP (146 transactions imported, balance matches the bank) |
 
 ### ✅ Slice 5: Auto-categorization

@@ -632,6 +632,11 @@ export interface components {
             /** Last Synced At */
             last_synced_at: string | null;
             /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
              * Can Link
              * @description Whether CREAM can link this account (its currency is one CREAM supports).
              */
@@ -648,6 +653,11 @@ export interface components {
             status: components["schemas"]["ConnectionStatus"];
             /** Valid Until */
             valid_until: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
             /** Accounts */
             accounts: components["schemas"]["BankAccountRead"][];
         };

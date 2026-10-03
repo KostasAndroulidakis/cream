@@ -31,10 +31,10 @@ export const SETTINGS_GROUPS: readonly SettingsGroup[] = [
       { label: "Businesses" },
       { label: "Members" },
       { label: "Preferences" },
-      // Already built as their own pages
-      { label: "Institutions", to: paths.connections },
+      { label: "Institutions", to: paths.settingsInstitutions },
       { label: "Categories" },
       { label: "Merchants" },
+      // Merchant rules are on the Review page for now
       { label: "Rules", to: paths.review },
       { label: "Tags" },
       { label: "Data" },
