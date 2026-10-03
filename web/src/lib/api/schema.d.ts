@@ -482,7 +482,7 @@ export interface paths {
         };
         /**
          * List Banks
-         * @description Banks available for connection in a country.
+         * @description Banks available for connection in a country, the most popular first.
          */
         get: operations["list_banks_api_v1_bank_aspsps_get"];
         put?: never;
@@ -699,6 +699,13 @@ export interface components {
             country: string;
             /** Logo */
             logo?: string | null;
+            /** Website */
+            website?: string | null;
+            /**
+             * Popular
+             * @default false
+             */
+            popular?: boolean;
         };
         /** BankAccountRead */
         BankAccountRead: {

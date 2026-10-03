@@ -3,21 +3,31 @@ import { Plus } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog"
-import { ConnectBankForm } from "@/features/bank/components/connect-bank-form"
+import type { Aspsp } from "@/features/bank/api"
+import { cn } from "@/lib/utils"
 import type { WalletType } from "../../api"
 import { useAccountTypes } from "../../use-account-types"
 import { addFormLabel } from "../../wallet-types"
 import { CreateWalletForm } from "../create-wallet-form"
+import { BankListStep } from "./bank-list-step"
+import { ConsentStep } from "./consent-step"
 import { ManualTypesStep } from "./manual-types-step"
 import { StartStep } from "./start-step"
 import { StepHeader } from "./step-header"
 
-type Step = { kind: "start" } | { kind: "bank" } | { kind: "manual" } | { kind: "form"; type: WalletType }
+type Step =
+  | { kind: "start" }
+  | { kind: "banks"; query: string }
+  | { kind: "consent"; bank: Aspsp }
+  | { kind: "manual" }
+  | { kind: "form"; type: WalletType }
 
 const START: Step = { kind: "start" }
 // Monarch's width; the close button lines up with the title
 const CONTENT_CLASS =
   "gap-0 p-0 sm:max-w-[34rem] [&>[data-slot=dialog-close]]:top-5 [&>[data-slot=dialog-close]]:right-5"
+// The provider's consent screen is narrower, like Plaid's window
+const CONSENT_WIDTH = "sm:max-w-[28rem]"
 
 /**
  * Monarch's "Add account", the same everywhere (Accounts, Dashboard, Settings › Institutions):
@@ -41,28 +51,32 @@ export function AddAccountDialog() {
         <Plus aria-hidden />
         Add account
       </DialogTrigger>
-      <DialogContent className={CONTENT_CLASS}>
+      <DialogContent className={cn(CONTENT_CLASS, step.kind === "consent" && CONSENT_WIDTH)}>
         {step.kind === "start" && (
           <>
             <StepHeader title="Add an account" description="Connect a bank or add an account by hand." />
             <StartStep
-              onConnectBank={() => setStep({ kind: "bank" })}
+              onSearch={(query) => setStep({ kind: "banks", query })}
+              onConnectBank={() => setStep({ kind: "banks", query: "" })}
               onAddManual={() => setStep({ kind: "manual" })}
             />
           </>
         )}
-        {step.kind === "bank" && (
+        {step.kind === "banks" && (
           <>
             <StepHeader
-              title="Connect a bank"
-              description="Pick your bank, then log in on its own page."
+              title="Banks & credit cards"
+              description="Find your bank, then log in on its own page."
               onBack={() => setStep(START)}
             />
-            <div className="px-6 pb-6">
-              <ConnectBankForm />
-            </div>
+            <BankListStep
+              initialQuery={step.query}
+              onPick={(bank) => setStep({ kind: "consent", bank })}
+              onAddManual={() => setStep({ kind: "manual" })}
+            />
           </>
         )}
+        {step.kind === "consent" && <ConsentStep bank={step.bank} />}
         {step.kind === "manual" && (
           <>
             <StepHeader

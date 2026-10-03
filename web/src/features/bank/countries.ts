@@ -11,3 +11,7 @@ const COUNTRY_NAMES = new Intl.DisplayNames(undefined, { type: "region" })
 export function countryName(code: string): string {
   return COUNTRY_NAMES.of(code) ?? code
 }
+
+// Enable Banking's own pages, shown where CREAM hands the user over to it
+export const ENABLE_BANKING_TERMS_URL = "https://tilisy.enablebanking.com/terms"
+export const ENABLE_BANKING_PRIVACY_URL = "https://enablebanking.com/privacy/"

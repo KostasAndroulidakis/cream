@@ -16,6 +16,7 @@ import {
   type BankAccount,
   type BankConnection,
 } from "../api"
+import { BankLogo } from "./bank-logo"
 import { DisconnectMenu } from "./disconnect-menu"
 import { LinkAccountControl } from "./link-account-control"
 
@@ -26,19 +27,7 @@ const PROVIDER = "Enable Banking"
 function InstitutionLogo({ connection, className }: { connection: BankConnection; className?: string }) {
   const { data: banks } = useQuery(aspspsQueryOptions(connection.aspsp_country))
   const logo = banks?.find((bank) => bank.name === connection.aspsp_name)?.logo
-
-  if (logo) return <img src={logo} alt="" className={cn("size-8 shrink-0 rounded-full object-contain", className)} />
-  return (
-    <span
-      aria-hidden
-      className={cn(
-        "inline-grid size-8 shrink-0 place-items-center rounded-full bg-muted text-sm font-semibold text-muted-foreground",
-        className,
-      )}
-    >
-      {connection.aspsp_name.charAt(0).toUpperCase()}
-    </span>
-  )
+  return <BankLogo name={connection.aspsp_name} logo={logo} className={cn("size-8 text-sm", className)} />
 }
 
 /** The most recent sync of any of the connection's accounts. */
