@@ -118,6 +118,16 @@ Cards arrive with their features (e.g. net worth and spending in Slice 9).
 
 ---
 
+## Later
+
+Ideas agreed on but not scheduled into a slice yet.
+
+- **Transaction review like Monarch's:** a separate "needs review / reviewed" flag, independent of the
+  category, settable by hand or by rules. Hiding a transaction would then keep its review status. Today the
+  review inbox simply means "Uncategorized", and hiding a transaction takes it out of the inbox.
+
+---
+
 ## Known Gaps
 
 - `/statistics` still sums amounts across currencies (`/wallets/totals` is correct); fixed in Slice 9
