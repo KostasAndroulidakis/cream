@@ -27,7 +27,8 @@ export function VisibilityButton({ transaction }: { transaction: Transaction }) 
           ? userMessage(setHidden.error)
           : hidden
             ? "Show again"
-            : "Hide (still counts in the balance)"
+            : "Hide: leave it out of lists and statistics (it still counts in the balance). " +
+              "Money moved between your own accounts is a Transfer category instead."
       }
       disabled={setHidden.isPending}
       onClick={() => setHidden.mutate({ transactionId: transaction.id, hidden: !hidden })}
