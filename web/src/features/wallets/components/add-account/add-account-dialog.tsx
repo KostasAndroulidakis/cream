@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog"
 import { ConnectBankForm } from "@/features/bank/components/connect-bank-form"
 import type { WalletType } from "../../api"
 import { useAccountTypes } from "../../use-account-types"
+import { addFormLabel } from "../../wallet-types"
 import { CreateWalletForm } from "../create-wallet-form"
 import { ManualTypesStep } from "./manual-types-step"
 import { StartStep } from "./start-step"
@@ -75,7 +76,7 @@ export function AddAccountDialog() {
         {formType && (
           <>
             <StepHeader
-              title={`Add ${formType.label} Account`}
+              title={`Add ${addFormLabel(formType.type, formType.label)} Account`}
               description="The account's name, kind and what's in it today."
               onBack={() => setStep({ kind: "manual" })}
             />

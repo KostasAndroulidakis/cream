@@ -29,3 +29,15 @@ export const ACCOUNT_TYPE_ICONS: Record<WalletType, LucideIcon> = {
 }
 
 export const WALLET_TYPES = Object.keys(ACCOUNT_TYPE_ICONS) as [WalletType, ...WalletType[]]
+
+// What Monarch's "Add … Account" form calls a type, where it differs from the type's label
+// (Mortgage opens "Add Loans Account")
+const ADD_FORM_LABELS: Partial<Record<WalletType, string>> = { mortgage: "Loans" }
+
+/** The type's name in "Add … Account" and "My … Account". */
+export function addFormLabel(type: WalletType, label: string): string {
+  return ADD_FORM_LABELS[type] ?? label
+}
+
+/** Types whose Add form asks how to track them (Monarch: holdings or balances, by hand). */
+export const TRACKED_TYPES: ReadonlySet<WalletType> = new Set(["investment"])
