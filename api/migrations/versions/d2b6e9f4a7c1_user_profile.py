@@ -4,7 +4,7 @@ Adds the optional Settings › Profile fields to `users`: `display_name`, `birth
 Existing users start with none of them set.
 
 Revision ID: d2b6e9f4a7c1
-Revises: f1a7c3e9b2d4
+Revises: c9f4b2e8a6d1
 Create Date: 2026-10-03 16:00:00
 
 """
@@ -15,7 +15,7 @@ from alembic import op
 
 
 revision: str = "d2b6e9f4a7c1"
-down_revision: Union[str, Sequence[str], None] = "f1a7c3e9b2d4"
+down_revision: Union[str, Sequence[str], None] = "c9f4b2e8a6d1"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
