@@ -16,15 +16,28 @@ export const BULK_FIELD_LABELS = {
   date: "Date",
   notes: "Notes",
   visibility: "Hide transactions",
+  review: "Review status",
 } as const
 
-/** "Hide transactions" choices and what each sets. */
+/** The choices of a yes/no field ("No change" aside), each with the value it sets. */
+export type FlagChoices = Record<string, { label: string; value: boolean }>
+
+/** "Hide transactions" choices: the value is `is_hidden`. */
 export const VISIBILITY_CHOICES = {
-  hide: { label: "Hide", isHidden: true },
-  show: { label: "Show", isHidden: false },
-} as const
+  hide: { label: "Hide", value: true },
+  show: { label: "Show", value: false },
+} as const satisfies FlagChoices
 
-export type VisibilityChoice = keyof typeof VISIBILITY_CHOICES
+/** "Review status" choices: the value is `needs_review`. */
+export const REVIEW_CHOICES = {
+  "needs-review": { label: "Needs review", value: true },
+  reviewed: { label: "Reviewed", value: false },
+} as const satisfies FlagChoices
+
+// The label of the choice that sets this value, for the summary
+function flagChoiceLabel(choices: FlagChoices, value: boolean): string {
+  return Object.values(choices).find((choice) => choice.value === value)?.label ?? ""
+}
 
 /** What the user has picked in the bulk-edit panel, as the form holds it. */
 export type BulkEditDraft = {
@@ -33,7 +46,8 @@ export type BulkEditDraft = {
   // YYYY-MM-DD from the date input
   date: string
   notes: string
-  visibility: VisibilityChoice | typeof NO_CHANGE
+  visibility: keyof typeof VISIBILITY_CHOICES | typeof NO_CHANGE
+  review: keyof typeof REVIEW_CHOICES | typeof NO_CHANGE
 }
 
 export const EMPTY_DRAFT: BulkEditDraft = {
@@ -42,6 +56,7 @@ export const EMPTY_DRAFT: BulkEditDraft = {
   date: NO_CHANGE,
   notes: NO_CHANGE,
   visibility: NO_CHANGE,
+  review: NO_CHANGE,
 }
 
 /** The changes to send: only the fields the user changed. The one place that decides what changed. */
@@ -52,7 +67,8 @@ export function draftToChanges(draft: BulkEditDraft): BulkChanges {
   if (draft.categoryId !== NO_CATEGORY) changes.category_id = Number(draft.categoryId)
   if (draft.date !== NO_CHANGE) changes.occurred_at = dateInputToISO(draft.date)
   if (draft.notes.trim() !== NO_CHANGE) changes.description = draft.notes.trim()
-  if (draft.visibility !== NO_CHANGE) changes.is_hidden = VISIBILITY_CHOICES[draft.visibility].isHidden
+  if (draft.visibility !== NO_CHANGE) changes.is_hidden = VISIBILITY_CHOICES[draft.visibility].value
+  if (draft.review !== NO_CHANGE) changes.needs_review = REVIEW_CHOICES[draft.review].value
   return changes
 }
 
@@ -79,8 +95,10 @@ export function summarizeChanges(
     rows.push({ label: BULK_FIELD_LABELS.notes, value: changes.description })
   }
   if (changes.is_hidden != null) {
-    const choice = Object.values(VISIBILITY_CHOICES).find(({ isHidden }) => isHidden === changes.is_hidden)
-    rows.push({ label: BULK_FIELD_LABELS.visibility, value: choice?.label ?? "" })
+    rows.push({ label: BULK_FIELD_LABELS.visibility, value: flagChoiceLabel(VISIBILITY_CHOICES, changes.is_hidden) })
+  }
+  if (changes.needs_review != null) {
+    rows.push({ label: BULK_FIELD_LABELS.review, value: flagChoiceLabel(REVIEW_CHOICES, changes.needs_review) })
   }
   return rows
 }

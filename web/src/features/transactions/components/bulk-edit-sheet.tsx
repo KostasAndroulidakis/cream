@@ -28,13 +28,47 @@ import {
   hasChanges,
   NO_CHANGE,
   summarizeChanges,
+  REVIEW_CHOICES,
   VISIBILITY_CHOICES,
   type BulkEditDraft,
+  type FlagChoices,
 } from "../bulk-edit"
 import { HIDE_EXPLANATION } from "../hiding"
 
 const NO_CHANGE_LABEL = "No change"
 const FIELD_HEIGHT = "h-10"
+
+type FlagChoiceSelectProps<Choices extends FlagChoices> = {
+  id: string
+  choices: Choices
+  value: keyof Choices | typeof NO_CHANGE
+  onChange: (value: keyof Choices | typeof NO_CHANGE) => void
+}
+
+/** A yes/no field: "No change", then its choices (e.g. Hide / Show). */
+function FlagChoiceSelect<Choices extends FlagChoices>({
+  id,
+  choices,
+  value,
+  onChange,
+}: FlagChoiceSelectProps<Choices>) {
+  return (
+    <NativeSelect
+      id={id}
+      className={FIELD_HEIGHT}
+      value={String(value)}
+      // The options below are exactly "No change" and the choices
+      onChange={(event) => onChange(event.target.value as keyof Choices | typeof NO_CHANGE)}
+    >
+      <option value={NO_CHANGE}>{NO_CHANGE_LABEL}</option>
+      {Object.entries(choices).map(([choice, { label }]) => (
+        <option key={choice} value={choice}>
+          {label}
+        </option>
+      ))}
+    </NativeSelect>
+  )
+}
 
 type BulkEditFormProps = {
   transactions: Transaction[]
@@ -144,20 +178,21 @@ function BulkEditForm({ transactions, onCancel, onDone }: BulkEditFormProps) {
             </span>
           }
         >
-          <NativeSelect
+          <FlagChoiceSelect
             id="bulk-visibility"
-            className={FIELD_HEIGHT}
+            choices={VISIBILITY_CHOICES}
             value={draft.visibility}
-            // The options below are exactly the draft's allowed values
-            onChange={(event) => setField("visibility", event.target.value as BulkEditDraft["visibility"])}
-          >
-            <option value={NO_CHANGE}>{NO_CHANGE_LABEL}</option>
-            {Object.entries(VISIBILITY_CHOICES).map(([choice, { label }]) => (
-              <option key={choice} value={choice}>
-                {label}
-              </option>
-            ))}
-          </NativeSelect>
+            onChange={(value) => setField("visibility", value)}
+          />
+        </FormField>
+
+        <FormField id="bulk-review" label={BULK_FIELD_LABELS.review}>
+          <FlagChoiceSelect
+            id="bulk-review"
+            choices={REVIEW_CHOICES}
+            value={draft.review}
+            onChange={(value) => setField("review", value)}
+          />
         </FormField>
       </div>
 
