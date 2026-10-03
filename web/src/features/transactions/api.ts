@@ -115,3 +115,17 @@ export function useBulkUpdateTransactions() {
     onSuccess: useRefreshTransactions(),
   })
 }
+
+/** Delete several transactions entered by hand: all of them, or none if any came from a bank. */
+export function useBulkDeleteTransactions() {
+  return useMutation({
+    mutationFn: async (transactionIds: number[]): Promise<BulkResult> => {
+      const { data, error, response } = await api.POST("/api/v1/transactions/bulk-delete", {
+        body: { transaction_ids: transactionIds },
+      })
+      if (!data) throw toApiError(error, response)
+      return data
+    },
+    onSuccess: useRefreshTransactionsAndBalances(),
+  })
+}

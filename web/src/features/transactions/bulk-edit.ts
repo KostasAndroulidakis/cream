@@ -1,6 +1,7 @@
-import type { SummaryRow } from "@/components/confirm-changes-dialog"
+import type { SummaryRow } from "@/components/confirm-dialog"
 import { NO_CATEGORY } from "@/features/categories/grouping"
 import { dateInputToISO, formatLongDate, localDayKey } from "@/lib/dates"
+import type { Notice } from "@/lib/notify"
 import { pluralize } from "@/lib/text"
 import type { BulkChanges } from "./api"
 
@@ -75,10 +76,17 @@ export function summarizeChanges(
   return rows
 }
 
+// "1 transaction was deleted." / "3 transactions were affected."
+function affectedSentence(count: number, verb: string): string {
+  return `${pluralize(count, "transaction")} ${count === 1 ? "was" : "were"} ${verb}.`
+}
+
 /** The notification after a bulk edit, counting what the API actually changed. */
-export function bulkUpdateNotice(affected: number): { title: string; description: string } {
-  return {
-    title: "Transactions updated successfully",
-    description: `${pluralize(affected, "transaction")} ${affected === 1 ? "was" : "were"} affected.`,
-  }
+export function bulkUpdateNotice(affected: number): Notice {
+  return { title: "Transactions updated successfully", description: affectedSentence(affected, "affected") }
+}
+
+/** The notification after a bulk delete, counting what the API actually deleted. */
+export function bulkDeleteNotice(affected: number): Notice {
+  return { title: "Transactions deleted successfully", description: affectedSentence(affected, "deleted") }
 }

@@ -117,7 +117,7 @@ export function TransactionsCard() {
         open={isEditing}
         onOpenChange={setIsEditing}
         transactions={transactions.filter((transaction) => selection.selectedIds.has(transaction.id))}
-        onSaved={() => {
+        onDone={() => {
           // Back to the plain list, like after a save in Monarch
           setIsEditing(false)
           selection.cancel()
