@@ -5,6 +5,7 @@ import { userMessage } from "@/lib/api/errors"
 import { cn } from "@/lib/utils"
 import { useSetTransactionHidden, type Transaction } from "../api"
 import { transactionLabel } from "../display"
+import { HIDE_EXPLANATION } from "../hiding"
 import { REVEAL_ON_ROW_HOVER } from "../row-actions"
 
 /**
@@ -27,8 +28,7 @@ export function VisibilityButton({ transaction }: { transaction: Transaction }) 
           ? userMessage(setHidden.error)
           : hidden
             ? "Show again"
-            : "Hide: leave it out of lists and statistics (it still counts in the balance). " +
-              "Money moved between your own accounts is a Transfer category instead."
+            : `Hide. ${HIDE_EXPLANATION}`
       }
       disabled={setHidden.isPending}
       onClick={() => setHidden.mutate({ transactionId: transaction.id, hidden: !hidden })}

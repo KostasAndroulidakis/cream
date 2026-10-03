@@ -7,6 +7,8 @@ import { WALLETS_KEY } from "@/features/wallets/api"
 
 export type Transaction = Schemas["TransactionRead"]
 export type TransactionCreateInput = Schemas["TransactionCreate"]
+export type BulkChanges = Schemas["BulkTransactionChanges"]
+export type BulkResult = Schemas["BulkResult"]
 
 // Every transaction query lives under this prefix so one invalidation refreshes them all
 export const TRANSACTIONS_KEY = ["transactions"] as const
@@ -49,14 +51,17 @@ async function createTransaction(input: TransactionCreateInput): Promise<Transac
   return data
 }
 
+/** Refreshes every transaction list, for changes that leave balances as they are. */
+function useRefreshTransactions() {
+  const queryClient = useQueryClient()
+  return () => queryClient.invalidateQueries({ queryKey: TRANSACTIONS_KEY })
+}
+
 /** Refreshes transaction lists together with wallets, for changes that move balances. */
 function useRefreshTransactionsAndBalances() {
   const queryClient = useQueryClient()
-  return () =>
-    Promise.all([
-      queryClient.invalidateQueries({ queryKey: TRANSACTIONS_KEY }),
-      queryClient.invalidateQueries({ queryKey: WALLETS_KEY }),
-    ])
+  const refreshTransactions = useRefreshTransactions()
+  return () => Promise.all([refreshTransactions(), queryClient.invalidateQueries({ queryKey: WALLETS_KEY })])
 }
 
 export function useCreateTransaction() {
@@ -67,7 +72,6 @@ export type SetHiddenInput = { transactionId: number; hidden: boolean }
 
 /** Hide a transaction from lists and statistics, or show it again. */
 export function useSetTransactionHidden() {
-  const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async ({ transactionId, hidden }: SetHiddenInput): Promise<Transaction> => {
       const { data, error, response } = await api.PATCH("/api/v1/transactions/{transaction_id}", {
@@ -78,7 +82,7 @@ export function useSetTransactionHidden() {
       return data
     },
     // Hidden transactions still count in balances, so only transaction lists need refreshing
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: TRANSACTIONS_KEY }),
+    onSuccess: useRefreshTransactions(),
   })
 }
 
@@ -92,5 +96,22 @@ export function useDeleteTransaction() {
       if (!response.ok) throw toApiError(error, response)
     },
     onSuccess: useRefreshTransactionsAndBalances(),
+  })
+}
+
+export type BulkUpdateInput = { transactionIds: number[]; changes: BulkChanges }
+
+/** The same changes on several transactions: all of them, or none if the API refuses any. */
+export function useBulkUpdateTransactions() {
+  return useMutation({
+    mutationFn: async ({ transactionIds, changes }: BulkUpdateInput): Promise<BulkResult> => {
+      const { data, error, response } = await api.POST("/api/v1/transactions/bulk-update", {
+        body: { transaction_ids: transactionIds, changes },
+      })
+      if (!data) throw toApiError(error, response)
+      return data
+    },
+    // Category, notes, hiding and the dates of hand-entered transactions don't move balances
+    onSuccess: useRefreshTransactions(),
   })
 }

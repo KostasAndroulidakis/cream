@@ -117,6 +117,11 @@ export function TransactionsCard() {
         open={isEditing}
         onOpenChange={setIsEditing}
         transactions={transactions.filter((transaction) => selection.selectedIds.has(transaction.id))}
+        onSaved={() => {
+          // Back to the plain list, like after a save in Monarch
+          setIsEditing(false)
+          selection.cancel()
+        }}
       />
       {groups.map(({ day, transactions: dayTransactions, totals }) => (
         <section key={day} aria-label={formatLongDate(day)}>

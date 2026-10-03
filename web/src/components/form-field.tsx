@@ -4,7 +4,8 @@ import { Label } from "@/components/ui/label"
 
 type FormFieldProps = {
   id: string
-  label: string
+  // Usually text; may carry a small icon such as an info hint
+  label: ReactNode
   error?: string
   children: ReactNode
 }
