@@ -36,7 +36,7 @@ function AccountGroupCard({ group }: { group: AccountGroup }) {
           aria-hidden
         />
         <h2 className="flex-1 text-lg font-semibold tracking-tight">{group.info.label}</h2>
-        <AmountTotals totals={group.totals} className="text-lg font-semibold" />
+        <AmountTotals totals={group.totals} kind="balance" className="text-lg font-semibold" />
       </button>
       {open && (
         <ul id={listId} className="divide-y border-t px-6">

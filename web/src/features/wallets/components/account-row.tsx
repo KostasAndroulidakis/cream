@@ -24,7 +24,7 @@ export function AccountRow({ wallet, label }: AccountRowProps) {
         <p className="truncate font-medium">{wallet.name}</p>
         <p className="text-sm text-muted-foreground">{label}</p>
       </div>
-      <Amount value={wallet.balance} currency={wallet.currency} className="font-medium" />
+      <Amount value={wallet.balance} currency={wallet.currency} kind="balance" className="font-medium" />
     </li>
   )
 }

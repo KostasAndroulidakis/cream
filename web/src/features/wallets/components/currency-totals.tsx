@@ -18,7 +18,7 @@ export function CurrencyTotals() {
           key={currency}
           className="text-[clamp(2.25rem,6vw,3.5rem)] leading-none font-semibold tracking-tight tabular-nums"
         >
-          <Amount value={balance} currency={currency} />
+          <Amount value={balance} currency={currency} kind="balance" />
         </dd>
       ))}
     </dl>
