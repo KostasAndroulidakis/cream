@@ -13,10 +13,12 @@ import { isMoneyIn } from "@/lib/amount"
 import { formatLongDate } from "@/lib/dates"
 import { formatFlow } from "@/lib/money"
 import { cn } from "@/lib/utils"
-import { allTransactionsQueryOptions, type Transaction } from "../api"
+import type { Transaction } from "../api"
 import { groupByDay, type CurrencyTotal } from "../day-groups"
 import { transactionLabel } from "../display"
-import { useSelection, useSelectionShortcuts } from "../use-selection"
+import { useSelection, useSelectionShortcuts, type Selection } from "../use-selection"
+import { useTransactionView } from "../use-transaction-view"
+import { TRANSACTION_VIEWS } from "../views"
 import { BulkEditSheet } from "./bulk-edit-sheet"
 import { MerchantAvatar } from "./merchant-avatar"
 import { TransactionsToolbar } from "./transactions-toolbar"
@@ -85,34 +87,82 @@ function DayHeader({ day, totals }: { day: string; totals: CurrencyTotal[] }) {
   )
 }
 
-/** Every visible transaction, newest first, grouped by day, with "Edit multiple" selection on top. */
-export function TransactionsCard() {
-  const transactionsQuery = useInfiniteQuery(allTransactionsQueryOptions)
+type DayGroupsProps = {
+  transactions: Transaction[]
+  selection: Selection
+}
+
+/** The transactions under a header per day, each row a checkbox while selecting. */
+function DayGroups({ transactions, selection }: DayGroupsProps) {
   const { data: categories = [] } = useQuery(categoriesQueryOptions)
   const { data: wallets = [] } = useQuery(walletsQueryOptions)
-  const selection = useSelection()
-  const [isEditing, setIsEditing] = useState(false)
-
-  const pages = transactionsQuery.data?.pages
-  const transactions = useMemo(() => pages?.flat() ?? [], [pages])
-  const allIds = useMemo(() => transactions.map((transaction) => transaction.id), [transactions])
-  useSelectionShortcuts(selection, allIds, !isEditing)
-
-  if (transactionsQuery.isPending) {
-    return <ListSkeleton rows={SKELETON_ROWS} label="Loading transactions" rowClassName="h-14 px-6" />
-  }
-  if (transactionsQuery.isError) return <FormAlert message={userMessage(transactionsQuery.error)} />
-  if (transactions.length === 0) {
-    return <p className="px-6 py-10 text-center text-sm text-muted-foreground">No transactions yet.</p>
-  }
-
   const categoryById = categoriesById(categories)
   const walletsById = new Map(wallets.map((wallet) => [wallet.id, wallet]))
   const groups = groupByDay(transactions, (walletId) => walletsById.get(walletId)?.currency)
 
+  return groups.map(({ day, transactions: dayTransactions, totals }) => (
+    <section key={day} aria-label={formatLongDate(day)}>
+      <DayHeader day={day} totals={totals} />
+      <ul className="divide-y">
+        {dayTransactions.map((transaction) => {
+          const wallet = walletsById.get(transaction.wallet_id)
+          return (
+            <TransactionRow
+              key={transaction.id}
+              transaction={transaction}
+              categoryName={categoryById.get(transaction.category_id)?.name ?? ""}
+              walletName={wallet?.name ?? ""}
+              currency={wallet?.currency}
+              selection={
+                selection.isSelecting
+                  ? {
+                      selected: selection.selectedIds.has(transaction.id),
+                      onToggle: () => selection.toggle(transaction.id),
+                    }
+                  : undefined
+              }
+            />
+          )
+        })}
+      </ul>
+    </section>
+  ))
+}
+
+/** The chosen view's transactions, newest first, grouped by day, with the view and its actions on top. */
+export function TransactionsCard() {
+  const [view, setView] = useTransactionView()
+  const { query, emptyMessage, countsForReview } = TRANSACTION_VIEWS[view]
+  const transactionsQuery = useInfiniteQuery(query)
+  const selection = useSelection()
+  const [isEditing, setIsEditing] = useState(false)
+
+  const pages = transactionsQuery.data?.pages
+  const transactions = useMemo(() => pages?.flatMap((page) => page.items) ?? [], [pages])
+  const allIds = useMemo(() => transactions.map((transaction) => transaction.id), [transactions])
+  useSelectionShortcuts(selection, allIds, !isEditing)
+
+  function body() {
+    if (transactionsQuery.isPending) {
+      return <ListSkeleton rows={SKELETON_ROWS} label="Loading transactions" rowClassName="h-14 px-6" />
+    }
+    if (transactionsQuery.isError) return <FormAlert message={userMessage(transactionsQuery.error)} />
+    if (transactions.length === 0) {
+      return <p className="px-6 py-10 text-center text-sm text-muted-foreground">{emptyMessage}</p>
+    }
+    return <DayGroups transactions={transactions} selection={selection} />
+  }
+
   return (
     <div>
-      <TransactionsToolbar selection={selection} allIds={allIds} onEdit={() => setIsEditing(true)} />
+      <TransactionsToolbar
+        selection={selection}
+        allIds={allIds}
+        onEdit={() => setIsEditing(true)}
+        view={view}
+        onViewChange={setView}
+        reviewCount={countsForReview ? pages?.[0]?.total : undefined}
+      />
       <BulkEditSheet
         open={isEditing}
         onOpenChange={setIsEditing}
@@ -123,33 +173,7 @@ export function TransactionsCard() {
           selection.cancel()
         }}
       />
-      {groups.map(({ day, transactions: dayTransactions, totals }) => (
-        <section key={day} aria-label={formatLongDate(day)}>
-          <DayHeader day={day} totals={totals} />
-          <ul className="divide-y">
-            {dayTransactions.map((transaction) => {
-              const wallet = walletsById.get(transaction.wallet_id)
-              return (
-                <TransactionRow
-                  key={transaction.id}
-                  transaction={transaction}
-                  categoryName={categoryById.get(transaction.category_id)?.name ?? ""}
-                  walletName={wallet?.name ?? ""}
-                  currency={wallet?.currency}
-                  selection={
-                    selection.isSelecting
-                      ? {
-                          selected: selection.selectedIds.has(transaction.id),
-                          onToggle: () => selection.toggle(transaction.id),
-                        }
-                      : undefined
-                  }
-                />
-              )
-            })}
-          </ul>
-        </section>
-      ))}
+      {body()}
       {transactionsQuery.hasNextPage && (
         <div className="border-t px-6 py-4 text-center">
           <Button

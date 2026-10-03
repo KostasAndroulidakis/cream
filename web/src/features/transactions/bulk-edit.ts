@@ -95,6 +95,11 @@ export function bulkUpdateNotice(affected: number): Notice {
   return { title: "Transactions updated successfully", description: affectedSentence(affected, "affected") }
 }
 
+/** The notification after "Mark all as reviewed", counting what the API actually marked. */
+export function markedReviewedNotice(affected: number): Notice {
+  return { title: "Transactions marked as reviewed", description: affectedSentence(affected, "marked as reviewed") }
+}
+
 /** The notification after a bulk delete, counting what the API actually deleted. */
 export function bulkDeleteNotice(affected: number): Notice {
   return { title: "Transactions deleted successfully", description: affectedSentence(affected, "deleted") }

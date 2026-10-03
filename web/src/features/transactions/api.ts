@@ -27,23 +27,47 @@ export function recentTransactionsQueryOptions(limit: number, includeHidden: boo
   })
 }
 
-// Transactions page: loaded a page at a time, newest first
-const ALL_PAGE_SIZE = 100
+/** One page of a transactions list; `total` only where the API counts the whole list. */
+export type TransactionsPage = { items: Transaction[]; total?: number }
 
-export const allTransactionsQueryOptions = infiniteQueryOptions({
-  queryKey: [...TRANSACTIONS_KEY, "all"],
-  queryFn: async ({ pageParam }): Promise<Transaction[]> => {
-    const { data, error, response } = await api.GET("/api/v1/transactions", {
-      params: { query: { limit: ALL_PAGE_SIZE, offset: pageParam } },
+// Transactions page: loaded a page at a time, newest first
+const LIST_PAGE_SIZE = 100
+
+/** A list loaded a page at a time; `fetchPage` gets one page of it from the API. */
+function pagedTransactionsQueryOptions(
+  name: string,
+  fetchPage: (limit: number, offset: number) => Promise<TransactionsPage>,
+) {
+  return infiniteQueryOptions({
+    queryKey: [...TRANSACTIONS_KEY, "pages", name],
+    queryFn: ({ pageParam }) => fetchPage(LIST_PAGE_SIZE, pageParam),
+    initialPageParam: 0,
+    // A full page may have more after it; a short one is the end
+    getNextPageParam: (lastPage, allPages) =>
+      lastPage.items.length === LIST_PAGE_SIZE ? allPages.length * LIST_PAGE_SIZE : undefined,
+  })
+}
+
+/** Every visible transaction. */
+export const allTransactionsQueryOptions = pagedTransactionsQueryOptions("all", async (limit, offset) => {
+  const { data, error, response } = await api.GET("/api/v1/transactions", {
+    params: { query: { limit, offset } },
+  })
+  if (!data) throw toApiError(error, response)
+  return { items: data }
+})
+
+/** The review inbox: visible transactions that need review, with their total count. */
+export const needsReviewTransactionsQueryOptions = pagedTransactionsQueryOptions(
+  "needs-review",
+  async (limit, offset) => {
+    const { data, error, response } = await api.GET("/api/v1/transactions/needs-review", {
+      params: { query: { limit, offset } },
     })
     if (!data) throw toApiError(error, response)
     return data
   },
-  initialPageParam: 0,
-  // A full page may have more after it; a short one is the end
-  getNextPageParam: (lastPage, allPages) =>
-    lastPage.length === ALL_PAGE_SIZE ? allPages.length * ALL_PAGE_SIZE : undefined,
-})
+)
 
 async function createTransaction(input: TransactionCreateInput): Promise<Transaction> {
   const { data, error, response } = await api.POST("/api/v1/transactions", { body: input })
@@ -127,5 +151,18 @@ export function useBulkDeleteTransactions() {
       return data
     },
     onSuccess: useRefreshTransactionsAndBalances(),
+  })
+}
+
+/** Mark every transaction in the review inbox reviewed. */
+export function useMarkAllReviewed() {
+  return useMutation({
+    mutationFn: async (): Promise<BulkResult> => {
+      const { data, error, response } = await api.POST("/api/v1/transactions/needs-review/mark-all-reviewed")
+      if (!data) throw toApiError(error, response)
+      return data
+    },
+    // Reviewing doesn't move balances
+    onSuccess: useRefreshTransactions(),
   })
 }

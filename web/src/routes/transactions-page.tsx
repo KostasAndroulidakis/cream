@@ -8,7 +8,7 @@ export function TransactionsPage() {
         <h1 className="text-xl font-semibold tracking-tight">Transactions</h1>
         <CreateTransactionDialog />
       </header>
-      <section aria-label="All transactions" className="overflow-hidden rounded-xl border bg-card shadow-xs">
+      <section aria-label="Transactions list" className="overflow-hidden rounded-xl border bg-card shadow-xs">
         <TransactionsCard />
       </section>
     </div>
