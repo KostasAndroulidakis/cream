@@ -723,7 +723,7 @@ Optional read-only bank sync through Enable Banking (PSD2). Requires `CREAM_ENAB
 
 | Endpoint | Description |
 | --- | --- |
-| `GET /bank/aspsps?country=GR` | Banks available in a country |
+| `GET /bank/aspsps?country=GR` | Banks available in a country → `{name, country, logo, website, popular}`, the country's most popular first (Monarch's "Most popular"). Name and logo come from Enable Banking; `website` and `popular` from CREAM's catalog (`services/banking/institutions.py`), so unknown banks have neither |
 | `POST /bank/connections` | Start: `{aspsp_name, country}` → `{url}` (send the user there) |
 | `POST /bank/connections/complete` | Finish with the bank redirect's `{state, code}` → connection with accounts |
 | `GET /bank/connections` | Connections (active/expired) with their accounts |

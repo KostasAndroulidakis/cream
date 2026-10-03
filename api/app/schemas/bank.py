@@ -14,6 +14,10 @@ class AspspRead(BaseModel):
     name: str
     country: str
     logo: str | None = None
+    # From CREAM's catalog (Enable Banking gives neither): shown under the name, like Monarch's list
+    website: str | None = None
+    # Among the country's "Most popular" (listed first, in that order)
+    popular: bool = False
 
 
 class ConnectionStart(BaseModel):

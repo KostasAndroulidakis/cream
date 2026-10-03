@@ -15,6 +15,7 @@ from app.schemas.bank import (
 )
 from app.services.auth import get_current_user_id
 from app.services.banking import connections as bank_connections
+from app.services.banking.banks import available_banks
 from app.services.banking.client import BankClient, get_bank_client
 from app.services.banking.sync import sync_user_accounts
 
@@ -27,8 +28,8 @@ def list_banks(
     _user_id: int = Depends(get_current_user_id),
     client: BankClient = Depends(get_bank_client),
 ):
-    """Banks available for connection in a country."""
-    return [AspspRead(name=a["name"], country=a["country"], logo=a.get("logo")) for a in client.list_aspsps(country)]
+    """Banks available for connection in a country, the most popular first."""
+    return available_banks(country, client)
 
 
 @router.post("/connections", response_model=ConnectionStartResponse)

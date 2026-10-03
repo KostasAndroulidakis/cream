@@ -18,9 +18,10 @@ class FakeBankClient:
         self.fail_transactions = False
         # Currency of the account the bank shares
         self.accounts_currency = "EUR"
+        self.aspsp_names = ["Mock ASPSP"]
 
     def list_aspsps(self, country):
-        return [{"name": "Mock ASPSP", "country": country, "logo": "https://logo"}]
+        return [{"name": name, "country": country, "logo": "https://logo"} for name in self.aspsp_names]
 
     def start_authorization(self, aspsp_name, country, state, valid_until, redirect_url):
         self.started.append({"aspsp": aspsp_name, "state": state, "valid_until": valid_until})

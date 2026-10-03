@@ -57,7 +57,30 @@ class TestConnections:
     def test_list_banks(self, client, auth_headers, bank):
         response = client.get(f"{BANK_URL}/aspsps", params={"country": "GR"}, headers=auth_headers)
 
-        assert response.json() == [{"name": "Mock ASPSP", "country": "GR", "logo": "https://logo"}]
+        assert response.json() == [
+            {"name": "Mock ASPSP", "country": "GR", "logo": "https://logo", "website": None, "popular": False}
+        ]
+
+    def test_popular_banks_first_in_their_order_with_websites(self, client, auth_headers, bank):
+        bank.aspsp_names = [
+            "Attica Bank", "Eurobank Ergasias S.A.", "Mock ASPSP", "Piraeus Bank", "National Bank of Greece",
+        ]
+
+        banks = client.get(f"{BANK_URL}/aspsps", params={"country": "GR"}, headers=auth_headers).json()
+
+        assert [(b["name"], b["popular"]) for b in banks] == [
+            ("National Bank of Greece", True), ("Piraeus Bank", True), ("Eurobank Ergasias S.A.", True),
+            ("Attica Bank", False), ("Mock ASPSP", False),
+        ]
+        assert banks[2]["website"] == "https://www.eurobank.gr"
+        assert banks[3]["website"] == "https://www.atticabank.gr"
+
+    def test_no_popular_list_for_other_countries(self, client, auth_headers, bank):
+        bank.aspsp_names = ["Revolut"]
+
+        [revolut] = client.get(f"{BANK_URL}/aspsps", params={"country": "FI"}, headers=auth_headers).json()
+
+        assert (revolut["popular"], revolut["website"]) == (False, "https://www.revolut.com")
 
     def test_connect_stores_accounts_without_full_iban(self, client, auth_headers, bank):
         connection = connect(client, auth_headers, bank)
