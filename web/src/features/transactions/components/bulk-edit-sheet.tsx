@@ -2,7 +2,7 @@ import { useState, type FormEvent } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { Info, XIcon } from "lucide-react"
 
-import { FormAlert } from "@/components/form-alert"
+import { ConfirmChangesDialog } from "@/components/confirm-changes-dialog"
 import { FormField } from "@/components/form-field"
 import { NativeSelect } from "@/components/native-select"
 import { Button } from "@/components/ui/button"
@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Sheet, SheetClose, SheetContent, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { categoriesQueryOptions } from "@/features/categories/api"
 import { CategorySelect } from "@/features/categories/components/category-select"
-import { ALL_CATEGORY_TYPES, groupAssignableCategories } from "@/features/categories/grouping"
+import { ALL_CATEGORY_TYPES, categoriesById, groupAssignableCategories } from "@/features/categories/grouping"
 import { walletsQueryOptions } from "@/features/wallets/api"
 import { WalletsSummary } from "@/features/wallets/components/wallets-summary"
 import { userMessage } from "@/lib/api/errors"
@@ -18,10 +18,12 @@ import { todayInputValue } from "@/lib/dates"
 import { pluralize } from "@/lib/text"
 import { useBulkUpdateTransactions, type Transaction } from "../api"
 import {
+  BULK_FIELD_LABELS,
   draftToChanges,
   EMPTY_DRAFT,
   hasChanges,
   NO_CHANGE,
+  summarizeChanges,
   VISIBILITY_CHOICES,
   type BulkEditDraft,
 } from "../bulk-edit"
@@ -41,7 +43,9 @@ function BulkEditForm({ transactions, onCancel, onSaved }: BulkEditFormProps) {
   const { data: categories = [] } = useQuery(categoriesQueryOptions)
   const bulkUpdate = useBulkUpdateTransactions()
   const [draft, setDraft] = useState<BulkEditDraft>(EMPTY_DRAFT)
+  const [isConfirming, setIsConfirming] = useState(false)
   const changes = draftToChanges(draft)
+  const count = transactions.length
   // The bank sets the date of its transactions
   const hasBankTransactions = transactions.some((transaction) => transaction.is_imported)
 
@@ -49,18 +53,29 @@ function BulkEditForm({ transactions, onCancel, onSaved }: BulkEditFormProps) {
     setDraft((current) => ({ ...current, [field]: value }))
   }
 
+  // Save asks first; only "Apply" changes anything
   function onSubmit(event: FormEvent) {
     event.preventDefault()
+    bulkUpdate.reset()
+    setIsConfirming(true)
+  }
+
+  function apply() {
     bulkUpdate.mutate(
       { transactionIds: transactions.map((transaction) => transaction.id), changes },
-      { onSuccess: onSaved },
+      {
+        onSuccess: () => {
+          setIsConfirming(false)
+          onSaved()
+        },
+      },
     )
   }
 
   return (
     <form onSubmit={onSubmit} className="flex min-h-0 flex-1 flex-col">
       <div className="flex-1 space-y-6 overflow-y-auto px-6 py-6">
-        <FormField id="bulk-category" label="Category">
+        <FormField id="bulk-category" label={BULK_FIELD_LABELS.category}>
           <CategorySelect
             id="bulk-category"
             className={FIELD_HEIGHT}
@@ -71,7 +86,7 @@ function BulkEditForm({ transactions, onCancel, onSaved }: BulkEditFormProps) {
           />
         </FormField>
 
-        <FormField id="bulk-date" label="Date">
+        <FormField id="bulk-date" label={BULK_FIELD_LABELS.date}>
           <Input
             id="bulk-date"
             type="date"
@@ -89,7 +104,7 @@ function BulkEditForm({ transactions, onCancel, onSaved }: BulkEditFormProps) {
           )}
         </FormField>
 
-        <FormField id="bulk-notes" label="Notes">
+        <FormField id="bulk-notes" label={BULK_FIELD_LABELS.notes}>
           <Input
             id="bulk-notes"
             className={FIELD_HEIGHT}
@@ -103,7 +118,7 @@ function BulkEditForm({ transactions, onCancel, onSaved }: BulkEditFormProps) {
           id="bulk-visibility"
           label={
             <span className="inline-flex items-center gap-1.5">
-              Hide transactions
+              {BULK_FIELD_LABELS.visibility}
               <Info className="size-3.5 text-muted-foreground" aria-label={HIDE_EXPLANATION}>
                 <title>{HIDE_EXPLANATION}</title>
               </Info>
@@ -127,17 +142,31 @@ function BulkEditForm({ transactions, onCancel, onSaved }: BulkEditFormProps) {
         </FormField>
       </div>
 
-      <SheetFooter className="mt-0 gap-3 border-t px-6 py-4">
-        {bulkUpdate.isError && <FormAlert message={userMessage(bulkUpdate.error)} />}
-        <div className="flex justify-end gap-2">
-          <Button type="button" variant="outline" size="lg" onClick={onCancel}>
-            Cancel
-          </Button>
-          <Button type="submit" size="lg" disabled={!hasChanges(changes) || bulkUpdate.isPending}>
-            {bulkUpdate.isPending ? "Saving…" : "Save"}
-          </Button>
-        </div>
+      <SheetFooter className="mt-0 flex-row justify-end gap-2 border-t px-6 py-4">
+        <Button type="button" variant="outline" size="lg" onClick={onCancel}>
+          Cancel
+        </Button>
+        <Button type="submit" size="lg" disabled={!hasChanges(changes)}>
+          Save
+        </Button>
       </SheetFooter>
+
+      <ConfirmChangesDialog
+        open={isConfirming}
+        onOpenChange={setIsConfirming}
+        title="Does this look right?"
+        description={
+          <>
+            Confirm this looks right to you, you will be applying the following changes to{" "}
+            <strong>{pluralize(count, "transaction")}</strong>.
+          </>
+        }
+        rows={summarizeChanges(changes, (id) => categoriesById(categories).get(id)?.name ?? "")}
+        confirmLabel={count === 1 ? "Apply" : `Apply to all ${count}`}
+        isPending={bulkUpdate.isPending}
+        errorMessage={bulkUpdate.isError ? userMessage(bulkUpdate.error) : undefined}
+        onConfirm={apply}
+      />
     </form>
   )
 }

@@ -1,9 +1,18 @@
+import type { SummaryRow } from "@/components/confirm-changes-dialog"
 import { NO_CATEGORY } from "@/features/categories/grouping"
-import { dateInputToISO } from "@/lib/dates"
+import { dateInputToISO, formatLongDate, localDayKey } from "@/lib/dates"
 import type { BulkChanges } from "./api"
 
 /** The value of a bulk-edit field the user hasn't touched. */
 export const NO_CHANGE = ""
+
+/** Field names, shared by the form and the "Does this look right?" summary. */
+export const BULK_FIELD_LABELS = {
+  category: "Category",
+  date: "Date",
+  notes: "Notes",
+  visibility: "Hide transactions",
+} as const
 
 /** "Hide transactions" choices and what each sets. */
 export const VISIBILITY_CHOICES = {
@@ -41,4 +50,26 @@ export function draftToChanges(draft: BulkEditDraft): BulkChanges {
 
 export function hasChanges(changes: BulkChanges): boolean {
   return Object.keys(changes).length > 0
+}
+
+/** The changes as "field: new value" rows, for the user to confirm before applying them. */
+export function summarizeChanges(
+  changes: BulkChanges,
+  categoryName: (categoryId: number) => string,
+): SummaryRow[] {
+  const rows: SummaryRow[] = []
+  if (changes.category_id != null) {
+    rows.push({ label: BULK_FIELD_LABELS.category, value: categoryName(changes.category_id) })
+  }
+  if (changes.occurred_at != null) {
+    rows.push({ label: BULK_FIELD_LABELS.date, value: formatLongDate(localDayKey(changes.occurred_at)) })
+  }
+  if (changes.description != null) {
+    rows.push({ label: BULK_FIELD_LABELS.notes, value: changes.description })
+  }
+  if (changes.is_hidden != null) {
+    const choice = Object.values(VISIBILITY_CHOICES).find(({ isHidden }) => isHidden === changes.is_hidden)
+    rows.push({ label: BULK_FIELD_LABELS.visibility, value: choice?.label ?? "" })
+  }
+  return rows
 }
