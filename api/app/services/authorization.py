@@ -51,6 +51,13 @@ class CategoryTypeMismatchError(HTTPException):
         super().__init__(status_code=400, detail="Category type must match its parent's type")
 
 
+class ImportedTransactionError(HTTPException):
+    """Bank transactions can't be deleted: the next sync would only bring them back."""
+
+    def __init__(self):
+        super().__init__(status_code=409, detail="Transactions imported from a bank can't be deleted")
+
+
 class CategoryInUseError(HTTPException):
     """Category is referenced by transactions."""
 

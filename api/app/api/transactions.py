@@ -17,6 +17,7 @@ from app.services.authorization import (
     get_transaction as get_user_transaction,
     get_wallet as verify_wallet_ownership,
     get_assignable_category,
+    ImportedTransactionError,
     get_user_wallet_ids_subquery,
     verify_wallet_access,
 )
@@ -170,5 +171,7 @@ def delete_transaction(
     db: Session = Depends(get_db),
 ):
     transaction = get_user_transaction(transaction_id, user_id, db)
+    if transaction.is_imported:
+        raise ImportedTransactionError()
     db.delete(transaction)
     db.commit()

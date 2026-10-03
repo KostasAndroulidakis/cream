@@ -176,6 +176,17 @@ class TestSync:
         assert "expired" in results[0]["error"]
         assert client.get(f"{BANK_URL}/connections", headers=auth_headers).json()[0]["status"] == "expired"
 
+    def test_imported_transactions_cannot_be_deleted(self, client, auth_headers, bank, uncategorized):
+        connect_and_link(client, auth_headers, bank)
+        bank.transactions = [raw_transaction("t1", "40.00")]
+        sync(client, auth_headers)
+        [transaction] = client.get("/api/v1/transactions", headers=auth_headers).json()
+
+        response = client.delete(f"/api/v1/transactions/{transaction['id']}", headers=auth_headers)
+
+        assert response.status_code == 409
+        assert client.get(f"/api/v1/transactions/{transaction['id']}", headers=auth_headers).status_code == 200
+
     def test_unlinked_accounts_are_not_synced(self, client, auth_headers, bank, uncategorized):
         connect(client, auth_headers, bank)
 
