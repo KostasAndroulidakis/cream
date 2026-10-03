@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query"
 
 import { CheckboxField } from "@/components/checkbox-field"
 import { PageColumns } from "@/components/page-columns"
+import { PageHeader } from "@/components/page-header"
 import { Panel } from "@/components/panel"
 import { SystemStatus } from "@/features/health/components/system-status"
 import { CreateTransactionDialog } from "@/features/transactions/components/create-transaction-dialog"
@@ -18,11 +19,9 @@ export function HomePage() {
   const [showHidden, setShowHidden] = useState(false)
 
   return (
-    <div className="space-y-8">
-      <div className="flex flex-wrap items-end justify-between gap-6">
-        <CurrencyTotals />
-        <CreateTransactionDialog />
-      </div>
+    <div className="space-y-6">
+      <PageHeader title="Dashboard" actions={<CreateTransactionDialog />} />
+      <CurrencyTotals />
 
       <PageColumns>
         <Panel
