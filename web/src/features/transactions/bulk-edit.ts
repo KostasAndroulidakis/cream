@@ -1,5 +1,6 @@
 import type { SummaryRow } from "@/components/confirm-dialog"
 import { NO_CATEGORY } from "@/features/categories/grouping"
+import { tidyMerchantName } from "@/features/merchants/choices"
 import { dateInputToISO, formatLongDate, localDayKey } from "@/lib/dates"
 import type { Notice } from "@/lib/notify"
 import { pluralize } from "@/lib/text"
@@ -10,6 +11,7 @@ export const NO_CHANGE = ""
 
 /** Field names, shared by the form and the "Does this look right?" summary. */
 export const BULK_FIELD_LABELS = {
+  merchant: "Merchant",
   category: "Category",
   date: "Date",
   notes: "Notes",
@@ -26,6 +28,7 @@ export type VisibilityChoice = keyof typeof VISIBILITY_CHOICES
 
 /** What the user has picked in the bulk-edit panel, as the form holds it. */
 export type BulkEditDraft = {
+  merchantName: string
   categoryId: string
   // YYYY-MM-DD from the date input
   date: string
@@ -34,6 +37,7 @@ export type BulkEditDraft = {
 }
 
 export const EMPTY_DRAFT: BulkEditDraft = {
+  merchantName: NO_CHANGE,
   categoryId: NO_CATEGORY,
   date: NO_CHANGE,
   notes: NO_CHANGE,
@@ -43,6 +47,8 @@ export const EMPTY_DRAFT: BulkEditDraft = {
 /** The changes to send: only the fields the user changed. The one place that decides what changed. */
 export function draftToChanges(draft: BulkEditDraft): BulkChanges {
   const changes: BulkChanges = {}
+  const merchantName = tidyMerchantName(draft.merchantName)
+  if (merchantName !== NO_CHANGE) changes.merchant_name = merchantName
   if (draft.categoryId !== NO_CATEGORY) changes.category_id = Number(draft.categoryId)
   if (draft.date !== NO_CHANGE) changes.occurred_at = dateInputToISO(draft.date)
   if (draft.notes.trim() !== NO_CHANGE) changes.description = draft.notes.trim()
@@ -60,6 +66,9 @@ export function summarizeChanges(
   categoryName: (categoryId: number) => string,
 ): SummaryRow[] {
   const rows: SummaryRow[] = []
+  if (changes.merchant_name != null) {
+    rows.push({ label: BULK_FIELD_LABELS.merchant, value: changes.merchant_name })
+  }
   if (changes.category_id != null) {
     rows.push({ label: BULK_FIELD_LABELS.category, value: categoryName(changes.category_id) })
   }

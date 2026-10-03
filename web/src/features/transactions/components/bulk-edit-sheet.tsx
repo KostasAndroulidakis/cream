@@ -11,6 +11,7 @@ import { Sheet, SheetClose, SheetContent, SheetFooter, SheetHeader, SheetTitle }
 import { categoriesQueryOptions } from "@/features/categories/api"
 import { CategorySelect } from "@/features/categories/components/category-select"
 import { ALL_CATEGORY_TYPES, categoriesById, groupAssignableCategories } from "@/features/categories/grouping"
+import { MerchantCombobox } from "@/features/merchants/components/merchant-combobox"
 import { walletsQueryOptions } from "@/features/wallets/api"
 import { WalletsSummary } from "@/features/wallets/components/wallets-summary"
 import { userMessage } from "@/lib/api/errors"
@@ -84,6 +85,15 @@ function BulkEditForm({ transactions, onCancel, onDone }: BulkEditFormProps) {
   return (
     <form onSubmit={onSubmit} className="flex min-h-0 flex-1 flex-col">
       <div className="flex-1 space-y-6 overflow-y-auto px-6 py-6">
+        <FormField id="bulk-merchant" label={BULK_FIELD_LABELS.merchant}>
+          <MerchantCombobox
+            id="bulk-merchant"
+            className={FIELD_HEIGHT}
+            value={draft.merchantName}
+            onChange={(name) => setField("merchantName", name)}
+          />
+        </FormField>
+
         <FormField id="bulk-category" label={BULK_FIELD_LABELS.category}>
           <CategorySelect
             id="bulk-category"
