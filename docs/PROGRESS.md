@@ -21,6 +21,7 @@ CREAM is built in **vertical slices**: each slice delivers one thing a user can 
 | 9 | Insights | "I can see where my money went this month" | ⬜ |
 | 10 | Greek | "I can use CREAM in Greek" | ⬜ |
 | 11 | History import | "My older history is in CREAM too (CSV)" | ⬜ |
+| 12 | Dashboard | "My home page shows what I care about, the way I like it" | ⬜ |
 
 ---
 
@@ -83,6 +84,9 @@ CREAM is built in **vertical slices**: each slice delivers one thing a user can 
 ### 🔜 Slice 6: Manage records
 Edit and delete wallets and transactions; hide default categories you don't use.
 
+Done so far (API): bank transactions can't be deleted; transactions can be hidden (`is_hidden`): left out
+of lists, the review inbox and statistics, still part of the wallet balance.
+
 ## Planned
 
 ### ⬜ Slice 7: Transfers
@@ -104,6 +108,13 @@ Greek UI and category names, using the stable category keys.
 
 ### ⬜ Slice 11: History import
 CSV import for older history and for days when a bank connection is down.
+
+### ⬜ Slice 12: Dashboard
+App layout in the style of Monarch: sidebar navigation (Dashboard, Accounts, Transactions, Cash Flow,
+Reports, Budget, Recurring, Goals, Investments) and a dashboard of cards (budget, spending vs. last
+period, net worth, recent transactions, recurring, goals, investments), each with its own period picker.
+**Customize** button to choose and arrange the cards; **Settings** page. CREAM keeps its own name and logo.
+Cards arrive with their features (e.g. net worth and spending in Slice 9).
 
 ---
 

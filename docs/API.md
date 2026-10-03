@@ -397,6 +397,7 @@ List transactions for the user's wallets, newest first.
 **Query Parameters**:
 
 - `wallet_id` (optional): Filter by wallet
+- `include_hidden` (optional, default `false`): Also list hidden transactions
 - `limit` (optional, default 50, max 200): Page size
 - `offset` (optional, default 0): Items to skip
 
@@ -416,6 +417,7 @@ List transactions for the user's wallets, newest first.
     "merchant_category_code": "5411",
     "merchant_key": "sklavenitis",
     "is_imported": true,
+    "is_hidden": false,
     "created_at": "2025-01-15T14:35:00Z"
   }
 ]
@@ -425,6 +427,8 @@ List transactions for the user's wallets, newest first.
 bank's merchant category code) or `default` (nothing matched; waiting in the review inbox). Automatic
 categorization never changes a `manual` category. `merchant_key` is the normalized merchant of an imported
 transaction (counterparty, else its text; case and spacing ignored), or `null` when there is none.
+A hidden transaction (`is_hidden`) still counts in its wallet's balance, but is left out of lists, the
+review inbox and statistics.
 
 **Errors**:
 
@@ -479,7 +483,7 @@ The review inbox: the user's transactions in **Other → Uncategorized**, newest
 { "total": 12, "items": [ /* transaction objects */ ] }
 ```
 
-`total` counts every uncategorized transaction, not just this page.
+`total` counts every uncategorized transaction, not just this page. Hidden transactions are left out.
 
 #### GET /transactions/{id}
 
@@ -503,11 +507,13 @@ Update a transaction.
   "category_id": "integer",
   "amount": "string (decimal)",
   "description": "string | null",
-  "occurred_at": "string (ISO 8601)"
+  "occurred_at": "string (ISO 8601)",
+  "is_hidden": "boolean (not null)"
 }
 ```
 
 **Response** `200 OK`: Updated transaction object. Changing `category_id` makes `category_source` `manual`.
+`is_hidden` hides or shows the transaction; leaving it out keeps it as it is.
 
 **Errors**:
 
@@ -546,7 +552,8 @@ Future imports from the merchant follow the rule.
 
 #### DELETE /transactions/{id}
 
-Delete a transaction.
+Delete a transaction entered by hand. Bank transactions can't be deleted (the next sync would bring
+them back): hide them with `PATCH {"is_hidden": true}` instead.
 
 **Response** `204 No Content`
 
@@ -554,6 +561,7 @@ Delete a transaction.
 
 - `404`: Transaction not found
 - `403`: Access denied
+- `409`: The transaction was imported from a bank
 
 ---
 
@@ -602,7 +610,9 @@ Optional read-only bank sync through Enable Banking (PSD2). Requires `CREAM_ENAB
 
 #### GET /statistics
 
-Get overall statistics for the user.
+Get overall statistics for the user. Income, expenses and category totals leave out transfers between
+your own wallets and hidden transactions; balances include every transaction. The same applies to
+`/statistics/report`.
 
 **Response** `200 OK`:
 

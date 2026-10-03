@@ -131,6 +131,7 @@ Transaction
 ├── counterparty: who the money went to / came from (imports)
 ├── merchant_category_code: the bank's MCC (imports)
 ├── merchant_key: normalized merchant (imports), what merchant rules match on
+├── is_hidden: left out of lists and statistics, still part of the balance
 ├── created_at: record creation timestamp
 └── updated_at: last modification timestamp
 ```
@@ -289,6 +290,7 @@ wallet.balance = wallet.initial_balance + SUM(transactions.amount)
 | BR5.2 | Deleting a category is blocked if transactions reference it |
 | BR5.3 | Deleting a parent category deletes child categories |
 | BR5.4 | User account deletion deletes all owned data |
+| BR5.5 | Bank transactions can't be deleted (a sync would bring them back); they are hidden instead |
 
 ### BR6: Category Hierarchy Rules
 
@@ -311,6 +313,9 @@ wallet.balance = wallet.initial_balance + SUM(transactions.amount)
 | BR7.6 | Deleting a rule keeps the categories it set |
 
 ## Aggregations
+
+Income and expense aggregations leave out transfers between your own wallets and hidden transactions.
+Balances always include every transaction, so they match the bank.
 
 ### Total Balance
 
