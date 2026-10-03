@@ -14,6 +14,7 @@ from app.database import Base, TimestampMixin
 if TYPE_CHECKING:
     from app.models.wallet import Wallet
     from app.models.category import Category
+    from app.models.merchant import Merchant
 
 
 class CategorySource(str, Enum):
@@ -49,12 +50,15 @@ class Transaction(TimestampMixin, Base):
     merchant_category_code: Mapped[str | None] = mapped_column(String(4))
     # Normalized merchant identity of an imported transaction; merchant rules match on it
     merchant_key: Mapped[str | None] = mapped_column(String(255), index=True)
+    # The merchant the user sees; starts as the bank's, and the user can change it
+    merchant_id: Mapped[int | None] = mapped_column(ForeignKey("merchants.id", ondelete="SET NULL"), index=True)
     # Hidden from lists and statistics, but still part of the wallet balance (so it matches the bank).
     # Bank transactions are hidden instead of deleted: a deleted one would come back on the next sync.
     is_hidden: Mapped[bool] = mapped_column(default=False, server_default=false())
 
     wallet: Mapped["Wallet"] = relationship(back_populates="transactions")
     category: Mapped["Category"] = relationship(back_populates="transactions")
+    merchant: Mapped["Merchant | None"] = relationship()
 
     @property
     def is_imported(self) -> bool:
