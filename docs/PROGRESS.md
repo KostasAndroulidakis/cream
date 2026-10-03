@@ -82,6 +82,7 @@ CREAM is built in **vertical slices**: each slice delivers one thing a user can 
 ## Next
 
 ### 🔜 Slice 6: Manage records
+
 Edit and delete wallets and transactions; hide default categories you don't use.
 
 Done so far (API): bank transactions can't be deleted; transactions can be hidden (`is_hidden`): left out
@@ -90,26 +91,32 @@ of lists, the review inbox and statistics, still part of the wallet balance.
 ## Planned
 
 ### ⬜ Slice 7: Transfers
+
 Record a transfer between two wallets as one action; detect and pair matching in/out bank transactions.
 Only money moving between **your own** wallets is a `transfer` (left out of cash flow). Money sent to
 someone else is an expense; money someone sends you is income, even when the bank calls it a transfer.
 
 ### ⬜ Slice 8: Always in sync
+
 Scheduled background sync (respecting bank rate limits), reconnect flow before consent expires,
 Production (restricted mode) with real accounts, starting with the most stable banks (Revolut, N26).
 
 ### ⬜ Slice 9: Insights
+
 Monthly income vs expenses (cash flow), spending by category with charts, per-currency statistics.
 Cash flow leaves out own-wallet transfers and hidden transactions.
 Net worth in one currency: totals converted with exchange rates, next to the exact per-currency totals.
 
 ### ⬜ Slice 10: Greek
+
 Greek UI and category names, using the stable category keys.
 
 ### ⬜ Slice 11: History import
+
 CSV import for older history and for days when a bank connection is down.
 
 ### ⬜ Slice 12: Dashboard
+
 App layout in the style of Monarch: sidebar navigation (Dashboard, Accounts, Transactions, Cash Flow,
 Reports, Budget, Recurring, Goals, Investments) and a dashboard of cards (budget, spending vs. last
 period, net worth, recent transactions, recurring, goals, investments), each with its own period picker.
