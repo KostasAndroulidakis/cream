@@ -27,7 +27,7 @@ from app.services.authorization import (
 from app.services.categorization.assignment import assign_category
 from app.services.categorization.rules import categorize_transaction
 from app.services.helpers import apply_update
-from app.services.review import inbox_page
+from app.services.review import inbox_page, mark_all_reviewed
 from app.services.transactions import bulk_delete, bulk_update, ensure_editable
 from app.services.validation import raise_if_invalid, validate_transaction
 
@@ -77,6 +77,12 @@ def list_needs_review(
     """The review inbox: transactions that need review, newest first. Hidden ones are left out."""
     total, items = inbox_page(user_id, limit, offset, db)
     return {"total": total, "items": items}
+
+
+@router.post("/needs-review/mark-all-reviewed", response_model=BulkResult)
+def mark_inbox_reviewed(user_id: int = Depends(get_current_user_id), db: Session = Depends(get_db)):
+    """Mark every transaction in the review inbox reviewed. Hidden ones keep their status."""
+    return BulkResult(affected=mark_all_reviewed(user_id, db))
 
 
 # Bulk routes are declared before /{transaction_id} so their names aren't read as IDs

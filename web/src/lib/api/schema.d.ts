@@ -239,6 +239,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/transactions/needs-review/mark-all-reviewed": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Mark Inbox Reviewed
+         * @description Mark every transaction in the review inbox reviewed. Hidden ones keep their status.
+         */
+        post: operations["mark_inbox_reviewed_api_v1_transactions_needs_review_mark_all_reviewed_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/transactions/bulk-update": {
         parameters: {
             query?: never;
@@ -1630,6 +1650,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    mark_inbox_reviewed_api_v1_transactions_needs_review_mark_all_reviewed_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BulkResult"];
                 };
             };
         };

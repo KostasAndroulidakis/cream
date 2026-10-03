@@ -34,6 +34,7 @@ All endpoints except `/health`, `/auth/signup`, `/auth/login` and `/auth/logout`
 | `GET /api/v1/transactions` | List transactions |
 | `POST /api/v1/transactions` | Create transaction |
 | `GET /api/v1/transactions/needs-review` | Review inbox: transactions that need review |
+| `POST /api/v1/transactions/needs-review/mark-all-reviewed` | Mark every transaction in the inbox reviewed |
 | `POST /api/v1/transactions/bulk-update` | Same changes on several transactions (all or none) |
 | `POST /api/v1/transactions/bulk-delete` | Delete several transactions entered by hand (all or none) |
 | `GET /api/v1/transactions/{id}` | Get transaction |
@@ -493,6 +494,12 @@ user's preferences (by default, those that found no category); the user sets or 
 
 `total` counts every transaction that needs review, not just this page. Hidden transactions are left out
 but keep their status: shown again, they are back in the inbox.
+
+#### POST /transactions/needs-review/mark-all-reviewed
+
+Mark every transaction in the review inbox reviewed ("Mark all N as reviewed").
+
+**Response** `200 OK`: `{ "affected": 6 }`. Hidden transactions aren't in the inbox, so they keep their status.
 
 #### POST /transactions/bulk-update
 

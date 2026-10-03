@@ -117,3 +117,25 @@ class TestMarkReviewed:
         )
 
         assert response.status_code == 422
+
+
+MARK_ALL_URL = f"{REVIEW_INBOX_URL}/mark-all-reviewed"
+
+
+class TestMarkAllReviewed:
+    def test_empties_the_inbox_but_not_hidden_ones(self, client, auth_headers, bank, linked):
+        bank.transactions = [raw_transaction(f"t{n}", "1.00") for n in range(3)]
+        sync(client, auth_headers)
+        hidden_id, *_ = _inbox_ids(client, auth_headers)
+        _patch(client, auth_headers, hidden_id, {"is_hidden": True})
+
+        response = client.post(MARK_ALL_URL, headers=auth_headers)
+
+        assert response.json() == {"affected": 2} and _inbox_ids(client, auth_headers) == []
+        shown = _patch(client, auth_headers, hidden_id, {"is_hidden": False}).json()
+        assert shown["needs_review"] is True
+
+    def test_only_the_users_own(self, client, auth_headers, second_auth_headers, imported):
+        assert client.post(MARK_ALL_URL, headers=second_auth_headers).json() == {"affected": 0}
+
+        assert _inbox_ids(client, auth_headers) == [imported["id"]]
