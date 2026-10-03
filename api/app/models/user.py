@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import date
 from typing import TYPE_CHECKING
 
 from sqlalchemy import String
@@ -21,6 +22,11 @@ class User(TimestampMixin, Base):
     password_hash: Mapped[str] = mapped_column(String(255))
     first_name: Mapped[str] = mapped_column(String(100))
     last_name: Mapped[str] = mapped_column(String(100))
+    # Settings › Profile; all optional
+    display_name: Mapped[str | None] = mapped_column(String(100), default=None)
+    birthday: Mapped[date | None] = mapped_column(default=None)
+    # IANA name, e.g. "Europe/Athens"; none means the browser's own
+    timezone: Mapped[str | None] = mapped_column(String(64), default=None)
 
     wallets: Mapped[list["Wallet"]] = relationship(back_populates="user", cascade="all, delete-orphan")
     categories: Mapped[list["Category"]] = relationship(back_populates="user", cascade="all, delete-orphan")

@@ -20,6 +20,7 @@ All endpoints except `/health`, `/auth/signup`, `/auth/login` and `/auth/logout`
 | `POST /api/v1/auth/login` | User login (sets session cookie) |
 | `POST /api/v1/auth/logout` | End session (clears cookie) |
 | `GET /api/v1/auth/me` | Current authenticated user |
+| `PATCH /api/v1/auth/me` | Change own profile: names, display name, birthday, timezone (Settings › Profile) |
 | `GET /api/v1/wallets` | List user wallets |
 | `POST /api/v1/wallets` | Create wallet |
 | `GET /api/v1/wallets/totals` | Combined balance per currency |

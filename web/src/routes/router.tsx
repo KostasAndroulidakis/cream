@@ -9,6 +9,8 @@ import { HomePage } from "./home-page"
 import { LoginPage } from "./login-page"
 import { paths } from "./paths"
 import { ReviewPage } from "./review-page"
+import { SettingsLayout } from "./settings-layout"
+import { SettingsProfilePage } from "./settings-profile-page"
 import { SignupPage } from "./signup-page"
 import { TransactionsPage } from "./transactions-page"
 
@@ -24,6 +26,15 @@ export const router = createBrowserRouter([
           { path: paths.transactions, element: <TransactionsPage /> },
           { path: paths.review, element: <ReviewPage /> },
           { path: paths.connections, element: <ConnectionsPage /> },
+          {
+            path: paths.settings,
+            element: <SettingsLayout />,
+            children: [
+              // Settings opens on Profile, like Monarch
+              { index: true, element: <Navigate to={paths.settingsProfile} replace /> },
+              { path: paths.settingsProfile, element: <SettingsProfilePage /> },
+            ],
+          },
         ],
       },
       // Full-screen: the user lands here straight from the bank's site

@@ -155,6 +155,87 @@ class TestMe:
         assert response.status_code == 401
 
 
+class TestUpdateMe:
+    """Tests for PATCH /api/v1/auth/me (Settings › Profile)"""
+
+    def test_new_user_has_no_profile_extras(self, client, auth_headers):
+        data = client.get(ME_URL, headers=auth_headers).json()
+
+        assert data["display_name"] is None
+        assert data["birthday"] is None
+        assert data["timezone"] is None
+
+    def test_updates_profile(self, client, auth_headers):
+        changes = {
+            "first_name": "Kostas",
+            "last_name": "Androulidakis",
+            "display_name": "Kostas",
+            "birthday": "1990-05-17",
+            "timezone": "Europe/Athens",
+        }
+
+        response = client.patch(ME_URL, json=changes, headers=auth_headers)
+
+        assert response.status_code == 200
+        assert {key: response.json()[key] for key in changes} == changes
+        assert client.get(ME_URL, headers=auth_headers).json()["timezone"] == "Europe/Athens"
+
+    def test_fields_left_out_stay(self, client, auth_headers, test_user_data):
+        response = client.patch(ME_URL, json={"display_name": "Tester"}, headers=auth_headers)
+
+        data = response.json()
+        assert data["display_name"] == "Tester"
+        assert data["first_name"] == test_user_data["first_name"]
+        assert data["last_name"] == test_user_data["last_name"]
+
+    def test_null_or_blank_clears_optional_fields(self, client, auth_headers):
+        client.patch(
+            ME_URL,
+            json={"display_name": "Tester", "birthday": "1990-05-17", "timezone": "UTC"},
+            headers=auth_headers,
+        )
+
+        response = client.patch(
+            ME_URL, json={"display_name": "  ", "birthday": None, "timezone": None}, headers=auth_headers
+        )
+
+        data = response.json()
+        assert (data["display_name"], data["birthday"], data["timezone"]) == (None, None, None)
+
+    def test_names_are_trimmed(self, client, auth_headers):
+        response = client.patch(ME_URL, json={"first_name": "  Kostas "}, headers=auth_headers)
+
+        assert response.json()["first_name"] == "Kostas"
+
+    @pytest.mark.parametrize(
+        "changes",
+        [
+            {"first_name": ""},
+            {"first_name": "   "},
+            {"last_name": None},
+            {"display_name": "x" * 101},
+            {"birthday": "2999-01-01"},
+            {"birthday": "1850-01-01"},
+            {"timezone": "Mars/Olympus_Mons"},
+        ],
+    )
+    def test_rejects_invalid_changes(self, client, auth_headers, changes):
+        response = client.patch(ME_URL, json=changes, headers=auth_headers)
+
+        assert response.status_code == 422
+
+    def test_changes_only_own_profile(self, client, auth_headers, second_auth_headers, second_user_data):
+        client.patch(ME_URL, json={"first_name": "Changed"}, headers=auth_headers)
+
+        other = client.get(ME_URL, headers=second_auth_headers).json()
+        assert other["first_name"] == second_user_data["first_name"]
+
+    def test_requires_session(self, client):
+        response = client.patch(ME_URL, json={"first_name": "Nobody"})
+
+        assert response.status_code == 401
+
+
 class TestLogout:
     """Tests for POST /api/v1/auth/logout"""
 

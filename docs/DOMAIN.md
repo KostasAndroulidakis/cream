@@ -30,6 +30,9 @@ User
 ├── password_hash: securely hashed password
 ├── first_name: given name
 ├── last_name: family name
+├── display_name: what the app calls the user (optional, falls back to first_name)
+├── birthday: date of birth (optional, a past date)
+├── timezone: IANA timezone, e.g. Europe/Athens (optional, the browser's own when unset)
 ├── created_at: registration timestamp
 └── updated_at: last modification timestamp
 ```

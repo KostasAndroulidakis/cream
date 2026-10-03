@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import User
-from app.schemas import UserCreate, UserRead, LoginRequest
+from app.schemas import UserCreate, UserRead, UserUpdate, LoginRequest
 from app.services.auth import authenticate_user, create_access_token, create_user, get_current_user
 from app.services.session import clear_session_cookie, set_session_cookie
 
@@ -48,4 +48,14 @@ def logout(response: Response) -> None:
 @router.get("/me", response_model=UserRead)
 def me(user: User = Depends(get_current_user)):
     """Return the currently authenticated user."""
+    return user
+
+
+@router.patch("/me", response_model=UserRead)
+def update_me(changes: UserUpdate, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Change the current user's profile (Settings › Profile); fields left out stay as they are."""
+    for field, value in changes.model_dump(exclude_unset=True).items():
+        setattr(user, field, value)
+    db.commit()
+    db.refresh(user)
     return user

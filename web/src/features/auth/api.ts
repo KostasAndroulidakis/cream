@@ -9,6 +9,7 @@ import type { Schemas } from "@/lib/api/types"
 export type User = Schemas["UserRead"]
 export type LoginInput = Schemas["LoginRequest"]
 export type SignupInput = Schemas["UserCreate"]
+export type ProfileInput = Schemas["UserUpdate"]
 
 async function fetchCurrentUser(): Promise<User | null> {
   const { data, error, response } = await api.GET("/api/v1/auth/me")
@@ -29,6 +30,12 @@ async function signup(input: SignupInput): Promise<User> {
   if (!data) throw toApiError(error, response)
   // A new account starts signed in
   return login({ username: input.username, password: input.password })
+}
+
+async function updateProfile(input: ProfileInput): Promise<User> {
+  const { data, error, response } = await api.PATCH("/api/v1/auth/me", { body: input })
+  if (!data) throw toApiError(error, response)
+  return data
 }
 
 async function logout(): Promise<void> {
@@ -59,6 +66,16 @@ export function useLogin() {
 
 export function useSignup() {
   return useSessionMutation(signup)
+}
+
+/** Settings › Profile; the saved user replaces the cached one, so the whole app shows the change. */
+export function useUpdateProfile() {
+  return useSessionMutation(updateProfile)
+}
+
+/** What the app calls the user: their display name, or else their first name. */
+export function displayNameOf(user: User): string {
+  return user.display_name ?? user.first_name
 }
 
 export function useLogout() {

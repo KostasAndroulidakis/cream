@@ -4,6 +4,8 @@ export const paths = {
   transactions: "/transactions",
   review: "/review",
   connections: "/connections",
+  settings: "/settings",
+  settingsProfile: "/settings/profile",
   // Must match CREAM_ENABLEBANKING_REDIRECT_URL and the redirect URL registered at the provider
   connectionCallback: "/connections/callback",
   login: "/login",

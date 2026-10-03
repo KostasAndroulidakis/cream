@@ -1,7 +1,10 @@
 import { Bell, PanelLeft, Search, Settings } from "lucide-react"
+import { NavLink } from "react-router"
 
 import { ComingSoonIconButton } from "@/components/coming-soon-button"
-import { Button } from "@/components/ui/button"
+import { Button, buttonVariants } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
+import { paths } from "./paths"
 
 type SidebarToggleProps = {
   collapsed: boolean
@@ -25,13 +28,29 @@ export function SidebarToggle({ collapsed, onToggle }: SidebarToggleProps) {
   )
 }
 
+/** Opens Settings; stays highlighted on every settings page. */
+function SettingsLink() {
+  return (
+    <NavLink
+      to={paths.settings}
+      aria-label="Settings"
+      title="Settings"
+      className={({ isActive }) =>
+        cn(buttonVariants({ variant: "ghost", size: "icon" }), isActive && "bg-sidebar-accent text-foreground")
+      }
+    >
+      <Settings className="size-[1.125rem]" aria-hidden />
+    </NavLink>
+  )
+}
+
 /** Monarch's row next to the logo: search, notifications, settings, then the sidebar toggle. */
 export function SidebarTools(props: SidebarToggleProps) {
   return (
     <div className="flex items-center gap-0.5">
       <ComingSoonIconButton icon={Search} label="Search" />
       <ComingSoonIconButton icon={Bell} label="Notifications" />
-      <ComingSoonIconButton icon={Settings} label="Settings" />
+      <SettingsLink />
       <SidebarToggle {...props} />
     </div>
   )
