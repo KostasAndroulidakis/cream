@@ -62,6 +62,11 @@ CATALOG: tuple[KnownMerchant, ...] = (
     # Housemarket runs IKEA in Greece
     _known("IKEA", "ikea.gr", r"\bikea\b|\bhousemarket\b"),
     _known("Market In", "market-in.gr", r"\bmarket in\b"),
+    # Canva Pty Ltd, often cut short ("canvaptylim"); not every "canvas"
+    _known("Canva", "canva.com", r"\bcanva(\b|pty)"),
+    # PayPal itself (the company, or "Paypal *paypal"): money moved to or from the PayPal account
+    _known("PayPal", "paypal.com", r"^paypal (europe\b|paypal$)"),
+    # Any other "Paypal *…" is a shop paid through PayPal: it lends only the logo
     _known("PayPal", "paypal.com", r"^paypal\b", gathers_spellings=False),
     _bank("Alpha Bank", "Alpha Bank", r"\balpha bank\b"),
     _bank("Piraeus Bank", "Piraeus Bank", r"\bpiraeus bank\b"),

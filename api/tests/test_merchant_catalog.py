@@ -45,6 +45,7 @@ def test_bank_spellings_find_the_merchant(bank_text, name):
         "Antonios Androulidakis",
         "Mini_kiosk_ampelokhpoi",
         "Pet 4 U",
+        "Canvas Coffee",
     ],
 )
 def test_unknown_text_matches_nothing(bank_text):
@@ -64,6 +65,11 @@ def test_bank_websites_come_from_the_banks_catalog():
         # Go-betweens: the logo fits, but the text names an ATM or the shop paid through them
         ("Cash at Alpha Bank", None),
         ("Paypal *spotify", None),
+        ("Paypal *onlinedeliv", None),
+        ("Paypal *paypal", "PayPal"),
+        ("PAYPAL EUROPE S.A.R.L. ET CIE S.C.A", "PayPal"),
+        ("PAYPAL (EUROPE) S.A R.L. ET CIE, S.C.A.", "PayPal"),
+        ("Paypal *canvaptylim", "Canva"),
         ("Mini_kiosk_ampelokhpoi", None),
     ],
 )
