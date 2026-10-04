@@ -22,14 +22,14 @@ export function merchantsQueryOptions(order: MerchantOrder) {
   })
 }
 
-/** Edit merchant: rename it everywhere. Transactions show the merchant, so they refresh too. */
+/** Edit merchant: its name and website, everywhere. Transactions show the merchant, so they refresh too. */
 export function useUpdateMerchant() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: async ({ id, name }: { id: number; name: string }): Promise<Merchant> => {
+    mutationFn: async ({ id, ...changes }: { id: number } & Schemas["MerchantUpdate"]): Promise<Merchant> => {
       const { data, error, response } = await api.PATCH("/api/v1/merchants/{merchant_id}", {
         params: { path: { merchant_id: id } },
-        body: { name },
+        body: changes,
       })
       if (!data) throw toApiError(error, response)
       return data

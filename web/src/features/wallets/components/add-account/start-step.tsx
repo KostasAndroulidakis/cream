@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query"
 import { Bitcoin, Building2, ChartPie, TrendingUp, Upload } from "lucide-react"
 
 import { aspspsQueryOptions, connectionsQueryOptions } from "@/features/bank/api"
-import { BankLogo } from "@/features/bank/components/bank-logo"
+import { RoundLogo } from "@/components/round-logo"
 import { DEFAULT_BANK_COUNTRY } from "@/features/bank/countries"
 import { AddManualButton } from "./add-manual-button"
 import { OptionIcon, OptionRow } from "./option-row"
@@ -18,7 +18,7 @@ function BankLogos() {
   return (
     <span className="flex -space-x-2.5" aria-hidden>
       {banks.slice(0, LOGO_COUNT).map((bank) => (
-        <BankLogo key={bank.name} name={bank.name} logo={bank.logo} className="size-9 border-2 border-card" />
+        <RoundLogo key={bank.name} name={bank.name} src={bank.logo} className="size-9 border-2 border-card" />
       ))}
     </span>
   )

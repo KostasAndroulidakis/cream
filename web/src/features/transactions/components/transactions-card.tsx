@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import { AccountLogo } from "@/features/bank/components/account-logo"
 import { categoriesQueryOptions, type Category } from "@/features/categories/api"
 import { CategoryIcon } from "@/features/categories/components/category-icon"
-import { MerchantAvatar } from "@/features/merchants/components/merchant-avatar"
+import { MerchantLogo } from "@/features/merchants/components/merchant-logo"
 import { categoriesById } from "@/features/categories/grouping"
 import { walletsQueryOptions, type Wallet } from "@/features/wallets/api"
 import { userMessage } from "@/lib/api/errors"
@@ -63,7 +63,7 @@ function TransactionRow({ transaction, category, wallet, selection }: RowProps) 
             onChange={selection.onToggle}
           />
         )}
-        <MerchantAvatar name={merchant} />
+        <MerchantLogo name={merchant} website={transaction.merchant?.website} className="size-6 text-xs" />
         <div className="min-w-0">
           <p className="truncate">{merchant}</p>
           {/* Phones have no room for the category and account columns */}

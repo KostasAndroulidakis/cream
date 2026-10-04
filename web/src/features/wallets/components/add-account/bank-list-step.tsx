@@ -6,7 +6,7 @@ import { ListSkeleton } from "@/components/list-skeleton"
 import { NativeSelect } from "@/components/native-select"
 import { aspspsQueryOptions, type Aspsp } from "@/features/bank/api"
 import { BANK_COUNTRIES, DEFAULT_BANK_COUNTRY, countryName } from "@/features/bank/countries"
-import { BankLogo } from "@/features/bank/components/bank-logo"
+import { RoundLogo } from "@/components/round-logo"
 import { userMessage } from "@/lib/api/errors"
 import { AddManualButton } from "./add-manual-button"
 import { SearchField } from "./search-field"
@@ -30,7 +30,7 @@ function BankRow({ bank, onPick }: { bank: Aspsp; onPick: (bank: Aspsp) => void 
         onClick={() => onPick(bank)}
         className="flex w-full items-center gap-4 rounded-xl bg-muted/60 px-5 py-3.5 text-left transition-colors hover:bg-muted"
       >
-        <BankLogo name={bank.name} logo={bank.logo} />
+        <RoundLogo name={bank.name} src={bank.logo} />
         <span className="min-w-0">
           <span className="block truncate text-base font-medium">{bank.name}</span>
           {bank.website && <span className="block truncate text-sm text-muted-foreground">{bank.website}</span>}

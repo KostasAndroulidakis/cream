@@ -15,10 +15,13 @@ import { fieldA11y } from "@/lib/forms"
 import { notifySuccess } from "@/lib/notify"
 import { useUpdateMerchant, type MerchantSummary } from "../api"
 import { merchantSchema, type MerchantValues } from "../schemas"
-import { MerchantAvatar } from "./merchant-avatar"
+import { MerchantLogo } from "./merchant-logo"
 
 // Monarch's words; the Recurring section isn't built yet
 const RECURRING_HINT = `This merchant will show on the Recurring section with expected upcoming transactions. ${COMING_SOON}.`
+
+// CREAM's addition to Monarch's dialog: Plaid gives Monarch the logos; CREAM finds them by website
+const WEBSITE_HINT = "The logo comes from here. Leave it empty for CREAM's own, if it knows the merchant."
 
 type EditMerchantFormProps = {
   merchant: MerchantSummary
@@ -32,11 +35,14 @@ function EditMerchantForm({ merchant, onDone }: EditMerchantFormProps) {
     register,
     handleSubmit,
     formState: { errors, isDirty },
-  } = useForm<MerchantValues>({ resolver: zodResolver(merchantSchema), defaultValues: { name: merchant.name } })
+  } = useForm<MerchantValues>({
+    resolver: zodResolver(merchantSchema),
+    defaultValues: { name: merchant.name, website: merchant.website ?? "" },
+  })
 
-  const onSubmit = handleSubmit(({ name }) =>
+  const onSubmit = handleSubmit(({ name, website }) =>
     update.mutate(
-      { id: merchant.id, name },
+      { id: merchant.id, name, website },
       {
         onSuccess: (saved) => {
           notifySuccess({ title: `${saved.name} updated` })
@@ -68,13 +74,24 @@ function EditMerchantForm({ merchant, onDone }: EditMerchantFormProps) {
       {update.isError && <FormAlert message={userMessage(update.error)} />}
 
       <div className="flex items-center gap-3">
-        <MerchantAvatar name={merchant.name} className="size-14 text-lg" />
+        <MerchantLogo name={merchant.name} website={merchant.website} className="size-14 text-lg" />
         <ComingSoonButton>Choose photo</ComingSoonButton>
         <ComingSoonButton>Remove</ComingSoonButton>
       </div>
 
       <FormField id="merchant-name" label="Merchant name" error={errors.name?.message}>
         <Input id="merchant-name" {...fieldA11y("merchant-name", errors.name?.message)} {...register("name")} />
+      </FormField>
+
+      <FormField id="merchant-website" label="Website" error={errors.website?.message}>
+        <Input
+          id="merchant-website"
+          placeholder="e.g. wolt.com"
+          inputMode="url"
+          {...fieldA11y("merchant-website", errors.website?.message)}
+          {...register("website")}
+        />
+        <p className="text-sm text-muted-foreground">{WEBSITE_HINT}</p>
       </FormField>
 
       <SwitchCard

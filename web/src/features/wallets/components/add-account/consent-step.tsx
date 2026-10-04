@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button"
 import { DialogDescription, DialogTitle } from "@/components/ui/dialog"
 import { useStartConnection, type Aspsp } from "@/features/bank/api"
 import { ENABLE_BANKING_PRIVACY_URL, ENABLE_BANKING_TERMS_URL } from "@/features/bank/countries"
-import { BankLogo } from "@/features/bank/components/bank-logo"
+import { RoundLogo } from "@/components/round-logo"
 import { userMessage } from "@/lib/api/errors"
 
 // The service CREAM reaches banks through, where Monarch names Plaid
@@ -26,7 +26,7 @@ export function ConsentStep({ bank }: { bank: Aspsp }) {
           <span className="grid size-14 place-items-center rounded-2xl bg-primary text-xl font-semibold text-primary-foreground">
             C
           </span>
-          <BankLogo name={bank.name} logo={bank.logo} className="size-14 rounded-2xl border-2 border-card" />
+          <RoundLogo name={bank.name} src={bank.logo} className="size-14 rounded-2xl border-2 border-card" />
         </div>
         <DialogTitle className="text-3xl leading-tight font-medium tracking-tight">
           CREAM uses {PROVIDER} to connect your accounts

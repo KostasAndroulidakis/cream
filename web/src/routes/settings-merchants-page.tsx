@@ -13,6 +13,12 @@ export function SettingsMerchantsPage() {
           how a merchant displays throughout CREAM, and delete merchants you're not using.
         </p>
         <MerchantList />
+        {/* Logo.dev's free plan asks for this link wherever its logos show */}
+        <p className="text-sm text-muted-foreground">
+          <a href="https://logo.dev" target="_blank" rel="noreferrer" className="underline underline-offset-2">
+            Logos provided by Logo.dev
+          </a>
+        </p>
       </div>
     </section>
   )

@@ -11,7 +11,7 @@ import { merchantsQueryOptions, type MerchantOrder, type MerchantSummary } from 
 import { MERCHANT_ORDERS } from "../order"
 import { useMerchantOrder } from "../use-merchant-order"
 import { EditMerchantDialog } from "./edit-merchant-dialog"
-import { MerchantAvatar } from "./merchant-avatar"
+import { MerchantLogo } from "./merchant-logo"
 
 const SKELETON_ROWS = 6
 const ROW_HEIGHT = "h-[4.25rem]"
@@ -20,7 +20,7 @@ const ROW_HEIGHT = "h-[4.25rem]"
 function MerchantRow({ merchant }: { merchant: MerchantSummary }) {
   return (
     <li className="flex items-center gap-4 py-3">
-      <MerchantAvatar name={merchant.name} className="size-10 text-sm" />
+      <MerchantLogo name={merchant.name} website={merchant.website} className="text-sm" />
       <div className="min-w-0 flex-1">
         <p className="truncate font-medium">{merchant.name}</p>
         <p className="text-sm text-muted-foreground">{pluralize(merchant.transaction_count, "transaction")}</p>
