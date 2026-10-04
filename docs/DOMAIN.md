@@ -182,7 +182,7 @@ Transaction
 ├── merchant_id: the merchant the user sees (optional)
 ├── is_hidden: left out of lists and statistics, still part of the balance
 ├── needs_review: waiting in the review inbox (independent of category and hiding)
-├── transfer_pair_id: the other side of a transfer between the user's accounts (optional; each side points at the other)
+├── transfer_pair_id: the other side of a transfer between the user's accounts, or of a purchase paid through PayPal (BR9.6); each side points at the other
 ├── created_at: record creation timestamp
 └── updated_at: last modification timestamp
 ```
@@ -415,6 +415,7 @@ wallet.balance = wallet.initial_balance + SUM(transactions.amount)
 | BR9.3 | Both sides of a pair go to Transfers › Transfer (`category_source: transfer`) and point at each other |
 | BR9.4 | Only automatic categories (`default`, `mcc`) give way to a transfer; the user's own choices and rules stay |
 | BR9.5 | Lists show a pair booked the same day together, money in right above money out; pairs booked on different days stay on their own days |
+| BR9.6 | A purchase through PayPal with a bank card shows on both sides: PayPal's purchase ("Canva Pty Limited" −12.00) and the bank's line ("Paypal \*canvaptylim" −12.75). With PayPal linked, after every sync the two are paired: a bank line paid through PayPal and a PayPal outflow at most 3 days apart, the bank's amount equal or up to 10% more (conversion and card fees; the closest in time, then in amount). The bank's line stays the purchase (what was really paid); PayPal's becomes a hidden transfer, still in PayPal's balance. Hidden only when paired: shown again by the user, it stays shown. Only automatic categories on PayPal's side give way. A purchase on one side only stays as it is |
 
 ## Aggregations
 

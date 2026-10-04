@@ -106,9 +106,9 @@ someone else is an expense; money someone sends you is income, even when the ban
 | Step | Status |
 | --- | --- |
 | **T1** Pair the two sides: −X in one account and +X in another, at most 3 days apart (closest wins); both go to Transfers › Transfer (`category_source: transfer`), each keeps the other (`transfer_pair_id`); same-day pairs listed together; a side without any text shows the other account's name | ✅ |
-| **T2** Bank texts "Paypal \*…" become Transfer when PayPal is linked too (PayPal's own side holds the purchase, so it isn't counted twice) | 🔜 |
-| **T3** ATM withdrawals: Transfer, plus the money arriving in a manual **Cash** account (created when missing), where cash spending is entered by hand | ⬜ |
-| **T4** Transactions in other currencies are imported (most likely why "Paypal \*a148246" has no EUR purchase on PayPal's side), so T2 doesn't lose them | ⬜ |
+| **T2** A purchase through PayPal with a bank card counts once: the bank's "Paypal \*…" line is paired with PayPal's purchase (≤3 days, the bank's amount equal or up to 10% more for conversion and fees); the bank's line stays the purchase at what was really paid, PayPal's becomes a hidden transfer | ✅ |
+| **T3** ATM withdrawals: Transfer, plus the money arriving in a manual **Cash** account (created when missing), where cash spending is entered by hand | 🔜 |
+| **T4** Transactions in other currencies are imported (most likely why "Paypal \*a148246" has no EUR purchase on PayPal's side; it stays an expense on the bank's side meanwhile) | ⬜ |
 | Record a transfer between two accounts by hand as one action | ⬜ |
 
 ## Planned
@@ -177,7 +177,8 @@ Ideas agreed on but not scheduled into a slice yet.
 - Transfers are matched by amount and date only: a payment to someone else on the same day as an equal
   income from someone else in another account would pair wrongly (the user can change the category)
 - Unknown shops paid through PayPal keep the bank's text (e.g. "Paypal \*onlinedeliv") until merged or
-  renamed by hand
+  renamed by hand, even when paired with PayPal's purchase, which names the shop
+- Refunds through PayPal aren't paired yet: PayPal's refund and the bank's money back both count
 
 ## Requirements Coverage
 

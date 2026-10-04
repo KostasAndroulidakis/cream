@@ -36,8 +36,8 @@ uv run pytest tests/test_auth.py
 | Merchants | 33 | List, rename, website, Merge & delete, known spellings on import, gathering on sync |
 | Merchant catalog | 39 | Known merchants against real bank spellings, go-betweens |
 | Logos | 4 | Logos through the API |
-| Transfers | 17 | Pairing own-account transfers, user choices kept, list order, the other side's account |
-| **Total** | **439** | |
+| Transfers | 33 | Pairing own-account transfers, user choices kept, list order, the other side's account, purchases through PayPal |
+| **Total** | **455** | |
 
 ## Validation Rules Tested
 
@@ -77,5 +77,5 @@ api/tests/
 ├── test_merchants.py         # Merchants, Merge & delete, gathering
 ├── test_merchant_catalog.py  # Known merchants
 ├── test_logos.py             # Merchant logos
-└── test_transfers.py         # Own-account transfers
+└── test_transfers.py         # Own-account transfers, purchases through PayPal
 ```

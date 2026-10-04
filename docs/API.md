@@ -756,6 +756,10 @@ Optional read-only bank sync through Enable Banking (PSD2). Requires `CREAM_ENAB
   own choices and rules stay. Lists show a pair booked the same day together, money in right above money
   out (newest first: read upwards, the money leaves, then arrives). `transfer_account_name` names the
   account on the other side, for a side the bank sent without any text
+- Then, with PayPal linked, a purchase paid through PayPal with a bank card is paired: the bank's
+  "Paypal \*…" line with PayPal's purchase, at most 3 days apart, the bank's amount equal or up to 10% more
+  (conversion and fees). The bank's line stays the purchase; PayPal's goes to **Transfers → Transfer** and is
+  hidden (`is_hidden`), and each keeps the other (`transfer_pair_id`)
 - A known merchant's bank spellings import as that merchant ("efood*019cc…" → efood), unless the user gave
   the spelling another merchant; before importing, merchants still under such a spelling join it too. Banks'
   and PayPal's texts keep their own merchant

@@ -478,6 +478,18 @@ pair together (`services/transaction_order.py`); sides booked on different days 
 day totals and balances match the banks. Pairing goes by amount and date only, so a rare coincidence of
 equal amounts pairs wrongly until the user changes the category.
 
+**Purchases through PayPal** (`services/categorization/go_between_payments.py`): paid with a bank card,
+one purchase shows twice, PayPal's purchase and the bank's "Paypal \*…" line, and the bank's is larger
+when PayPal charged in another currency (Canva: 12.00 on PayPal, 12.62 + 0.13 fee at Revolut). After the
+pairing above, each such bank line is paired with PayPal's purchase (at most 3 days apart, the bank's
+amount equal or up to 10% more). The bank's line stays the purchase, since it holds what was paid; PayPal's
+becomes a transfer and is hidden, so the list shows the purchase once and PayPal's balance still matches.
+Monarch would count PayPal's side and file the bank's as a transfer, losing the conversion and fees; nor
+does CREAM invent a "+X into PayPal" line that neither side sent. Which texts are paid through PayPal
+comes from the merchant catalog (`KnownMerchant.account_institution`), so there's one pattern for PayPal.
+A bank line with no PayPal purchase to pair (e.g. one in another currency, not imported yet) stays an
+expense, so nothing is lost.
+
 ## Security Architecture
 
 ```text
