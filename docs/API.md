@@ -748,6 +748,9 @@ Optional read-only bank sync through Enable Banking (PSD2). Requires `CREAM_ENAB
   (Plaid's taxonomy as a guide), else **Other → Uncategorized**. Every sync also retries transactions still
   there; `categorized` counts both
 - New imports need review as the user's preferences say: by default only those left in Uncategorized
+- A known merchant's bank spellings import as that merchant ("efood*019cc…" → efood), unless the user gave
+  the spelling another merchant; before importing, merchants still under such a spelling join it too. Banks'
+  and PayPal's texts keep their own merchant
 - First sync asks Enable Banking for the `longest` history (all the bank still gives, often 1-3 years right
   after login; date_from two years back is only a hint) and sets the wallet's initial balance so it matches the bank; later syncs
   re-read the last 3 days to catch late bookings

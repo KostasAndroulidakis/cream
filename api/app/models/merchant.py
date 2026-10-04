@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from sqlalchemy import ForeignKey, String, UniqueConstraint
+from sqlalchemy import ForeignKey, String, UniqueConstraint, false
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base, TimestampMixin
@@ -19,6 +19,9 @@ class Merchant(TimestampMixin, Base):
     name: Mapped[str] = mapped_column(String(MERCHANT_MAX))
     # Set by the user in Edit merchant (a domain); else the catalog's, if it knows the merchant
     website: Mapped[str | None] = mapped_column(String(WEBSITE_MAX), default=None)
+    # The user chose the name (Edit merchant, or typed it in), so known merchants never gather it;
+    # False while it's a bank's text, e.g. "Wolt*Wolt*Athens"
+    named_by_user: Mapped[bool] = mapped_column(default=False, server_default=false())
     aliases: Mapped[list[MerchantAlias]] = relationship(back_populates="merchant", cascade="all, delete-orphan")
 
     @property

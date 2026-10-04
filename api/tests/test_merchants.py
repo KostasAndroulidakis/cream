@@ -227,3 +227,56 @@ class TestKnownSpellingsOnImport:
 
         assert ("Wolt", 5) in _list(client, auth_headers)
         assert "efood" not in [name for name, _ in _list(client, auth_headers)]
+
+
+@pytest.fixture
+def catalog_unaware(monkeypatch):
+    """Imports as before the catalog knew any merchant; `undo()` brings the catalog back."""
+    for target in ("app.services.merchants.known_merchant_name", "app.services.merchant_gathering.known_merchant_name"):
+        monkeypatch.setattr(target, lambda _text: None)
+    return monkeypatch
+
+
+class TestGatheringOnSync:
+    def test_merchants_imported_before_the_catalog_join_on_the_next_sync(
+        self, client, auth_headers, bank, uncategorized, catalog_unaware
+    ):
+        connect_and_link(client, auth_headers, bank)
+        _import(client, auth_headers, bank, ["Wolt*Wolt*Athens", "WOLT*Wolt*Patra"])
+        catalog_unaware.undo()
+
+        sync(client, auth_headers)
+
+        assert _list(client, auth_headers) == [("Wolt", 2)]
+        assert len(client.get("/api/v1/transactions", headers=auth_headers).json()) == 2
+
+    def test_they_join_the_merchant_already_named_so(self, client, auth_headers, bank, purchases, catalog_unaware):
+        _import(client, auth_headers, bank, ["Wolt*Wolt*Athens"])
+        catalog_unaware.undo()
+
+        sync(client, auth_headers)
+
+        assert _list(client, auth_headers) == [("Wolt", 4), ("Apple", 1), ("Bakery", 1)]
+
+    def test_a_name_the_user_gave_stays(self, client, auth_headers, bank, uncategorized, catalog_unaware):
+        connect_and_link(client, auth_headers, bank)
+        _import(client, auth_headers, bank, ["efood*1*Athens"])
+        _rename(client, auth_headers, _merchant_id(client, auth_headers, "efood*1*Athens"), "Efood Athens")
+        catalog_unaware.undo()
+
+        sync(client, auth_headers)
+
+        assert _list(client, auth_headers) == [("Efood Athens", 1)]
+
+    def test_a_name_the_user_typed_in_stays(self, client, auth_headers, purchases):
+        bakery_purchase = next(
+            t["id"]
+            for t in client.get("/api/v1/transactions", headers=auth_headers).json()
+            if t["merchant"]["name"] == "Bakery"
+        )
+        changes = {"transaction_ids": [bakery_purchase], "changes": {"merchant_name": "Wolt Market"}}
+        client.post("/api/v1/transactions/bulk-update", json=changes, headers=auth_headers)
+
+        sync(client, auth_headers)
+
+        assert ("Wolt Market", 1) in _list(client, auth_headers)

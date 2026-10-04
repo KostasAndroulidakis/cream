@@ -42,7 +42,9 @@ def bulk_update(transactions: list[Transaction], changes: Mapping[str, Any], use
     # Found or created once, then set on every transaction
     merchant_name = changes.get("merchant_name")
     merchant = (
-        MerchantDirectory.for_name(user_id, merchant_name, db).get_or_create(merchant_name, db)
+        MerchantDirectory.for_name(user_id, merchant_name, db).get_or_create(
+            merchant_name, db, named_by_user=True
+        )
         if merchant_name
         else None
     )

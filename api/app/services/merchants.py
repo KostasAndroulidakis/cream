@@ -54,18 +54,21 @@ class MerchantDirectory:
         if tidy_name is None:
             return cls(user_id, {})
         key = merchant_name_key(tidy_name)
-        merchant = _merchant_named(user_id, key, db)
+        merchant = merchant_named(user_id, key, db)
         return cls(user_id, {key: merchant} if merchant else {})
 
-    def get_or_create(self, name: str | None, db: Session) -> Merchant | None:
-        """The user's merchant known by this name (in any case or spacing), new if there is none yet."""
+    def get_or_create(self, name: str | None, db: Session, *, named_by_user: bool = False) -> Merchant | None:
+        """The user's merchant known by this name (in any case or spacing), new if there is none yet.
+
+        `named_by_user`: a new merchant's name is the user's choice (typed in), not a bank's text.
+        """
         tidy_name = tidy_merchant_name(name)
         if tidy_name is None:
             return None
         key = merchant_name_key(tidy_name)
         merchant = self._by_key.get(key)
         if merchant is None:
-            merchant = Merchant(user_id=self._user_id, name=tidy_name)
+            merchant = Merchant(user_id=self._user_id, name=tidy_name, named_by_user=named_by_user)
             merchant.aliases.append(MerchantAlias(user_id=self._user_id, key=key))
             db.add(merchant)
             self._by_key[key] = merchant
@@ -92,16 +95,36 @@ class MerchantDirectory:
         return merchant
 
 
-def _merchant_named(user_id: int, key: str, db: Session) -> Merchant | None:
+def merchant_named(user_id: int, key: str, db: Session) -> Merchant | None:
+    """The user's merchant that goes by this name key (see merchant_name_key), if any."""
     alias = db.scalar(select(MerchantAlias).where(MerchantAlias.user_id == user_id, MerchantAlias.key == key))
     return alias.merchant if alias else None
 
 
-def update_merchant(merchant: Merchant, name: str, website: str | None, db: Session) -> Merchant:
-    """Edit merchant: its name, and its website (empty: the catalog's, if it knows the merchant).
+def rename_merchant(merchant: Merchant, tidy_name: str, db: Session) -> None:
+    """Show the merchant under this (tidied) name. Its old names keep meaning it, so imports still find
+    it: the new name joins them. A name another merchant goes by is refused: that's a merge.
+    """
+    key = merchant_name_key(tidy_name)
+    owner = merchant_named(merchant.user_id, key, db)
+    if owner is not None and owner.id != merchant.id:
+        raise MerchantNameTakenError(owner.name)
+    if owner is None:
+        merchant.aliases.append(MerchantAlias(user_id=merchant.user_id, key=key))
+    merchant.name = tidy_name
 
-    The merchant's old names keep meaning it, so imports still find it: the new name becomes one of
-    its aliases. A name another merchant goes by is refused: that's a merge.
+
+def merge_into(source: Merchant, target: Merchant, db: Session) -> None:
+    """Everything tied to `source` (its transactions and its names) goes to `target`; `source` goes."""
+    db.execute(update(Transaction).where(Transaction.merchant_id == source.id).values(merchant_id=target.id))
+    for alias in list(source.aliases):
+        alias.merchant = target
+    db.delete(source)
+
+
+def update_merchant(merchant: Merchant, name: str, website: str | None, db: Session) -> Merchant:
+    """Edit merchant: its name (see rename_merchant), and its website (empty: the catalog's, if it knows
+    the merchant). A name the user gives is theirs: gathering known merchants leaves it alone.
     """
     try:
         domain = website_domain(website) if website and website.strip() else None
@@ -110,13 +133,9 @@ def update_merchant(merchant: Merchant, name: str, website: str | None, db: Sess
     tidy_name = tidy_merchant_name(name)
     if tidy_name is None:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail="Give the merchant a name")
-    key = merchant_name_key(tidy_name)
-    owner = _merchant_named(merchant.user_id, key, db)
-    if owner is not None and owner.id != merchant.id:
-        raise MerchantNameTakenError(owner.name)
-    if owner is None:
-        merchant.aliases.append(MerchantAlias(user_id=merchant.user_id, key=key))
-    merchant.name = tidy_name
+    if tidy_name != merchant.name:
+        rename_merchant(merchant, tidy_name, db)
+        merchant.named_by_user = True
     merchant.website = domain
     db.commit()
     db.refresh(merchant)
@@ -133,23 +152,16 @@ def delete_merchant(merchant: Merchant, move_to: Merchant | None, db: Session) -
         transaction_count = _transaction_count(merchant, db)
         if transaction_count:
             raise MerchantInUseError(transaction_count)
+        db.delete(merchant)
     elif move_to.id == merchant.id:
         raise SelfMergeError()
     else:
-        _move_relations(merchant, move_to, db)
-    db.delete(merchant)
+        merge_into(merchant, move_to, db)
     db.commit()
 
 
 def _transaction_count(merchant: Merchant, db: Session) -> int:
     return db.scalar(select(func.count(Transaction.id)).where(Transaction.merchant_id == merchant.id)) or 0
-
-
-def _move_relations(source: Merchant, target: Merchant, db: Session) -> None:
-    """Everything tied to `source` (its transactions and its names) now belongs to `target`."""
-    db.execute(update(Transaction).where(Transaction.merchant_id == source.id).values(merchant_id=target.id))
-    for alias in list(source.aliases):
-        alias.merchant = target
 
 
 def list_merchants(user_id: int, order: MerchantOrder, db: Session) -> list[MerchantSummary]:
