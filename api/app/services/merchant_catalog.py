@@ -2,7 +2,8 @@
 
 Enable Banking passes on only the bank's text ("efood*019cc465dd*Irakleio Atti"); Monarch gets names
 and logos from Plaid's enrichment. This catalog fills that gap for known merchants: the website gives
-the logo (see services/logos.py), and the name will tidy the bank's spellings into one merchant.
+the logo (see services/logos.py), and the name gathers the bank's spellings into one merchant on
+import ("efood*019cc…" and "Refund from efood" are both efood).
 Order matters: the first match wins (Apple before PayPal, for "Paypal *itunesappst").
 """
 
@@ -19,17 +20,22 @@ class KnownMerchant:
     website: str
     # Matched against the bank's text, normalized (see _normalize): lower case, words split by spaces
     pattern: re.Pattern[str]
+    # Whether the bank's texts it matches are all this merchant, and so import as it. Not for go-betweens
+    # (banks, payment services): there the logo fits, but the text names something else, e.g. an ATM
+    # ("Cash at Alpha Bank") or the shop paid through PayPal ("Paypal *spotify")
+    gathers_spellings: bool = True
 
 
-def _known(name: str, website: str, pattern: str) -> KnownMerchant:
-    return KnownMerchant(name, website, re.compile(pattern))
+def _known(name: str, website: str, pattern: str, *, gathers_spellings: bool = True) -> KnownMerchant:
+    return KnownMerchant(name, website, re.compile(pattern), gathers_spellings)
 
 
 def _bank(name: str, institution: str, pattern: str) -> KnownMerchant:
     """A bank as a merchant (e.g. "Cash at Alpha Bank"), with the website from the banks' catalog."""
     known = find_institution(institution)
     assert known is not None, institution
-    return _known(name, known.website.removeprefix("https://").removeprefix("www."), pattern)
+    website = known.website.removeprefix("https://").removeprefix("www.")
+    return _known(name, website, pattern, gathers_spellings=False)
 
 
 CATALOG: tuple[KnownMerchant, ...] = (
@@ -56,7 +62,7 @@ CATALOG: tuple[KnownMerchant, ...] = (
     # Housemarket runs IKEA in Greece
     _known("IKEA", "ikea.gr", r"\bikea\b|\bhousemarket\b"),
     _known("Market In", "market-in.gr", r"\bmarket in\b"),
-    _known("PayPal", "paypal.com", r"^paypal\b"),
+    _known("PayPal", "paypal.com", r"^paypal\b", gathers_spellings=False),
     _bank("Alpha Bank", "Alpha Bank", r"\balpha bank\b"),
     _bank("Piraeus Bank", "Piraeus Bank", r"\bpiraeus bank\b"),
     _bank("Eurobank", "Eurobank", r"\beurobank\b"),
@@ -71,3 +77,9 @@ def find_known_merchant(text: str) -> KnownMerchant | None:
     """The known merchant a bank's text or a merchant's name stands for, if any."""
     normalized = _normalize(text)
     return next((known for known in CATALOG if known.pattern.search(normalized)), None)
+
+
+def known_merchant_name(bank_text: str) -> str | None:
+    """The proper name to import the bank's text as, when it's one of a known merchant's spellings."""
+    known = find_known_merchant(bank_text)
+    return known.name if known is not None and known.gathers_spellings else None

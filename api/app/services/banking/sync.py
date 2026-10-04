@@ -64,7 +64,7 @@ def _new_transaction(
         counterparty=parsed.counterparty,
         merchant_category_code=parsed.merchant_category_code,
         merchant_key=key,
-        merchant=importer.merchants.get_or_create(merchant_name(parsed.counterparty, parsed.description), db),
+        merchant=importer.merchants.from_bank(merchant_name(parsed.counterparty, parsed.description), db),
         external_id=external_id,
     )
 

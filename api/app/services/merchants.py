@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from app.models import Merchant, MerchantAlias, Transaction
 from app.schemas.merchant import MerchantOrder, MerchantSummary
 from app.services.categorization.merchants import merchant_name_key, tidy_merchant_name
+from app.services.merchant_catalog import known_merchant_name
 from app.services.websites import InvalidWebsiteError, website_domain
 
 
@@ -67,6 +68,26 @@ class MerchantDirectory:
             merchant = Merchant(user_id=self._user_id, name=tidy_name)
             merchant.aliases.append(MerchantAlias(user_id=self._user_id, key=key))
             db.add(merchant)
+            self._by_key[key] = merchant
+        return merchant
+
+    def from_bank(self, bank_text: str | None, db: Session) -> Merchant | None:
+        """The merchant behind the bank's text, for an import.
+
+        A text the user already gave a merchant (by renaming or merging) stays theirs; else a known
+        merchant's spelling joins that merchant ("efood*019cc…" → efood); else it's a merchant of its own.
+        """
+        tidy_text = tidy_merchant_name(bank_text)
+        if tidy_text is None:
+            return None
+        key = merchant_name_key(tidy_text)
+        proper_name = known_merchant_name(tidy_text)
+        if key in self._by_key or proper_name is None:
+            return self.get_or_create(tidy_text, db)
+        merchant = self.get_or_create(proper_name, db)
+        if key not in self._by_key:
+            # The spelling now means this merchant, as if merged into it
+            merchant.aliases.append(MerchantAlias(user_id=self._user_id, key=key))
             self._by_key[key] = merchant
         return merchant
 

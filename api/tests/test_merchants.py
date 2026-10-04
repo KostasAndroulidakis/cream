@@ -190,3 +190,40 @@ class TestMergeAndDelete:
         wolt = _merchant_id(client, auth_headers, "Wolt")
 
         assert _delete(client, second_auth_headers, wolt).status_code == 403
+
+
+def _import(client, headers, bank, names):
+    bank.transactions = [
+        # Each text is its own transaction, also across imports
+        raw_transaction(name, "5.00", creditor={"name": name}, booking_date="2026-09-25")
+        for name in names
+    ]
+    sync(client, headers)
+
+
+class TestKnownSpellingsOnImport:
+    def test_a_known_merchants_spellings_import_as_one_merchant(self, client, auth_headers, bank, uncategorized):
+        connect_and_link(client, auth_headers, bank)
+
+        spellings = ["efood*019cc465dd*Irakleio Atti", "EFOOD*77ab*Athens", "Refund from efood"]
+
+        _import(client, auth_headers, bank, spellings)
+
+        assert _list(client, auth_headers) == [("efood", 3)]
+
+    def test_go_betweens_keep_the_banks_text(self, client, auth_headers, bank, uncategorized):
+        connect_and_link(client, auth_headers, bank)
+
+        _import(client, auth_headers, bank, ["Cash at Alpha Bank", "Paypal *spotify"])
+
+        assert _list(client, auth_headers, order="alphabetical") == [("Cash at Alpha Bank", 1), ("Paypal *spotify", 1)]
+
+    def test_a_spelling_the_user_merged_elsewhere_stays_there(self, client, auth_headers, bank, purchases):
+        _import(client, auth_headers, bank, ["efood*1*Athens"])
+        wolt = _merchant_id(client, auth_headers, "Wolt")
+        _delete(client, auth_headers, _merchant_id(client, auth_headers, "efood"), move_to=wolt)
+
+        _import(client, auth_headers, bank, ["efood*2*Athens"])
+
+        assert ("Wolt", 5) in _list(client, auth_headers)
+        assert "efood" not in [name for name, _ in _list(client, auth_headers)]

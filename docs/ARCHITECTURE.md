@@ -439,7 +439,9 @@ lists Monarch shows for real estate, vehicles, valuables and loans). The catalog
 names the user gives it), not by one key. Known merchants (efood, Wolt, Apple…) are listed in
 `services/merchant_catalog.py` with their website and a pattern for the banks' spellings. A merchant's logo
 comes from its website: the user's (Edit merchant), else the catalog's. Logos are fetched from Logo.dev by the
-API (`GET /logos/{domain}`), cached, and served to the browser.
+API (`GET /logos/{domain}`), cached, and served to the browser. On import, a known merchant's spelling joins
+that merchant ("efood*019cc…" → efood) unless the user already gave the spelling a merchant (rename, Merge &
+delete). Go-betweens (banks, PayPal) only lend their logo: their texts name an ATM or the shop paid through them.
 
 **Rationale**: Monarch gets clean names and logos from Plaid's enrichment; Enable Banking passes on only the
 bank's text, so CREAM needs its own. Aliases let a rename keep imports matching and let a merge move the names

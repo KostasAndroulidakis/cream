@@ -288,16 +288,16 @@ class TestSyncMerchants:
 
     def test_spellings_of_one_merchant_share_it_across_syncs(self, client, auth_headers, bank, uncategorized):
         connect_and_link(client, auth_headers, bank)
-        bank.transactions = [raw_transaction("t1", "4.00", creditor={"name": "SKLAVENITIS ATHENS"})]
+        bank.transactions = [raw_transaction("t1", "4.00", creditor={"name": "CORNER KIOSK ATHENS"})]
         sync(client, auth_headers)
-        bank.transactions.append(raw_transaction("t2", "6.00", creditor={"name": "Sklavenitis  Athens"}))
+        bank.transactions.append(raw_transaction("t2", "6.00", creditor={"name": "Corner Kiosk  Athens"}))
 
         sync(client, auth_headers)
 
         merchants = self._merchants(client, auth_headers)
-        assert merchants["SKLAVENITIS ATHENS"] == merchants["Sklavenitis  Athens"]
+        assert merchants["CORNER KIOSK ATHENS"] == merchants["Corner Kiosk  Athens"]
         # The first spelling seen names the merchant
-        assert merchants["SKLAVENITIS ATHENS"]["name"] == "SKLAVENITIS ATHENS"
+        assert merchants["CORNER KIOSK ATHENS"]["name"] == "CORNER KIOSK ATHENS"
 
     def test_merchants_are_per_user(self, client, registered_user, second_user_data, db_session):
         from app.services.merchants import MerchantDirectory

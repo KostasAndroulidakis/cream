@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.services.merchant_catalog import find_known_merchant
+from app.services.merchant_catalog import find_known_merchant, known_merchant_name
 
 
 @pytest.mark.parametrize(
@@ -53,3 +53,19 @@ def test_unknown_text_matches_nothing(bank_text):
 
 def test_bank_websites_come_from_the_banks_catalog():
     assert find_known_merchant("Cash at Alpha Bank").website == "alpha.gr"
+
+
+@pytest.mark.parametrize(
+    ("bank_text", "name"),
+    [
+        ("efood*019cc465dd377d69934*Irakleio Atti", "efood"),
+        ("Wolt*Wolt*Athens", "Wolt"),
+        ("Paypal *itunesappst Ap", "Apple"),
+        # Go-betweens: the logo fits, but the text names an ATM or the shop paid through them
+        ("Cash at Alpha Bank", None),
+        ("Paypal *spotify", None),
+        ("Mini_kiosk_ampelokhpoi", None),
+    ],
+)
+def test_import_names_gather_only_a_merchants_own_spellings(bank_text, name):
+    assert known_merchant_name(bank_text) == name
