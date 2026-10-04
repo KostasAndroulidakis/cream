@@ -919,7 +919,7 @@ export interface components {
          * @description Who chose a transaction's category. Automatic choices never override the user's.
          * @enum {string}
          */
-        CategorySource: "manual" | "rule" | "mcc" | "default";
+        CategorySource: "manual" | "rule" | "mcc" | "transfer" | "default";
         /**
          * CategoryTotal
          * @description Total amount for a single category.
@@ -1239,6 +1239,8 @@ export interface components {
             merchant: components["schemas"]["MerchantRead"] | null;
             /** Is Imported */
             is_imported: boolean;
+            /** Transfer Account Name */
+            transfer_account_name: string | null;
             /** Is Hidden */
             is_hidden: boolean;
             /** Needs Review */

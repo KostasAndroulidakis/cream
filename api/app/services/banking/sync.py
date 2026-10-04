@@ -17,6 +17,7 @@ from app.services.banking.client import BankClient
 from app.services.banking.mapping import ImportedTransaction, assign_external_ids, parse_transaction, pick_balance
 from app.services.categorization.auto import AutoCategorizer
 from app.services.categorization.merchants import merchant_key, merchant_name
+from app.services.categorization.transfers import match_transfers
 from app.services.merchant_gathering import gather_known_merchants
 from app.services.merchants import MerchantDirectory
 from app.services.preferences import get_preferences
@@ -174,4 +175,8 @@ def sync_user_accounts(user_id: int, client: BankClient, db: Session) -> list[Sy
     # Before the import: what the catalog learned also reaches the merchants already there
     gather_known_merchants(user_id, db)
     importer = Importer.for_user(user_id, db)
-    return [sync_account(account, client, importer, db) for account in accounts]
+    results = [sync_account(account, client, importer, db) for account in accounts]
+    # After every account: the two sides of a transfer usually come from different banks
+    match_transfers(user_id, db)
+    db.commit()
+    return results

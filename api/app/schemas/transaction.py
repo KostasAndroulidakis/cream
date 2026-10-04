@@ -43,6 +43,8 @@ class TransactionRead(BaseModel):
     merchant: MerchantRead | None
     # True when imported from a bank (not entered by hand)
     is_imported: bool
+    # For a transfer between the user's accounts: the account on the other side
+    transfer_account_name: str | None
     # Left out of lists and statistics, still part of the wallet balance
     is_hidden: bool
     # Waiting in the review inbox; independent of the category and of hiding

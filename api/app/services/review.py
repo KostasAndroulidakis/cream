@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.models import Transaction, UserPreferences
 from app.services.authorization import get_user_wallet_ids_subquery
 from app.services.categorization.auto import Decision
+from app.services.transaction_order import newest_first
 
 
 def needs_review_on_import(preferences: UserPreferences, decision: Decision) -> bool:
@@ -31,13 +32,7 @@ def inbox_page(user_id: int, limit: int, offset: int, db: Session) -> tuple[int,
     """Total count and one page (newest first) of the inbox."""
     condition = _in_inbox(user_id, db)
     total = db.scalar(select(func.count()).select_from(Transaction).where(*condition)) or 0
-    items = db.scalars(
-        select(Transaction)
-        .where(*condition)
-        .order_by(Transaction.occurred_at.desc(), Transaction.id.desc())
-        .offset(offset)
-        .limit(limit)
-    )
+    items = db.scalars(newest_first(select(Transaction).where(*condition)).offset(offset).limit(limit))
     return total, list(items)
 
 

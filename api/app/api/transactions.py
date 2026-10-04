@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, Query, status
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -28,6 +29,7 @@ from app.services.categorization.assignment import assign_category
 from app.services.categorization.rules import categorize_transaction
 from app.services.helpers import apply_update
 from app.services.review import inbox_page, mark_all_reviewed
+from app.services.transaction_order import newest_first
 from app.services.transactions import bulk_delete, bulk_update, ensure_editable
 from app.services.validation import raise_if_invalid, validate_transaction
 
@@ -50,20 +52,15 @@ def list_transactions(
     if wallet_id is not None:
         # Filter by specific wallet - verify ownership first
         verify_wallet_access(wallet_id, user_id, db)
-        query = db.query(Transaction).filter(Transaction.wallet_id == wallet_id)
+        query = select(Transaction).where(Transaction.wallet_id == wallet_id)
     else:
         # List all transactions - use subquery for efficiency
         wallet_ids_subquery = get_user_wallet_ids_subquery(user_id, db)
-        query = db.query(Transaction).filter(Transaction.wallet_id.in_(wallet_ids_subquery))
+        query = select(Transaction).where(Transaction.wallet_id.in_(wallet_ids_subquery))
     if not include_hidden:
-        query = query.filter(Transaction.is_visible)
+        query = query.where(Transaction.is_visible)
 
-    return (
-        query.order_by(Transaction.occurred_at.desc(), Transaction.id.desc())
-        .offset(offset)
-        .limit(limit)
-        .all()
-    )
+    return db.scalars(newest_first(query).offset(offset).limit(limit)).all()
 
 
 # Declared before /{transaction_id} so "needs-review" isn't read as an ID

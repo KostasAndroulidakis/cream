@@ -26,6 +26,8 @@ class CategorySource(str, Enum):
     RULE = "rule"
     # The bank's merchant category code (MCC)
     MCC = "mcc"
+    # Paired with its other side in another of the user's accounts (see categorization/transfers.py)
+    TRANSFER = "transfer"
     # Nothing matched on import: the transaction stays in Uncategorized
     DEFAULT = "default"
 
@@ -57,15 +59,26 @@ class Transaction(TimestampMixin, Base):
     is_hidden: Mapped[bool] = mapped_column(default=False, server_default=false())
     # Waiting in the review inbox until the user marks it reviewed; independent of category and hiding
     needs_review: Mapped[bool] = mapped_column(default=False, server_default=false())
+    # The other side of a transfer between the user's own accounts; each side points at the other
+    transfer_pair_id: Mapped[int | None] = mapped_column(ForeignKey("transactions.id", ondelete="SET NULL"))
 
     wallet: Mapped["Wallet"] = relationship(back_populates="transactions")
     category: Mapped["Category"] = relationship(back_populates="transactions")
     # Loaded together with the transaction: every transaction response shows its merchant
     merchant: Mapped["Merchant | None"] = relationship(lazy="joined")
+    # Loaded together too: a transfer side with no text of its own is shown by its pair's account
+    transfer_pair: Mapped["Transaction | None"] = relationship(
+        remote_side=[id], foreign_keys=[transfer_pair_id], lazy="joined", join_depth=1
+    )
 
     @property
     def is_imported(self) -> bool:
         return self.external_id is not None
+
+    @property
+    def transfer_account_name(self) -> str | None:
+        """For a transfer between the user's accounts: the account on the other side."""
+        return self.transfer_pair.wallet.name if self.transfer_pair is not None else None
 
     @hybrid_property
     def is_visible(self) -> bool:

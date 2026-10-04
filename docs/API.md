@@ -503,7 +503,8 @@ List transactions for the user's wallets, newest first.
 ```
 
 `category_source` says who chose the category: `manual` (the user), `rule` (a merchant rule), `mcc` (the
-bank's merchant category code) or `default` (nothing matched; left in Uncategorized). Automatic
+bank's merchant category code), `transfer` (paired with its other side in another of the user's accounts) or
+`default` (nothing matched; left in Uncategorized). Automatic
 categorization never changes a `manual` category. `merchant_key` is the normalized merchant of an imported
 transaction (counterparty, else its text; case and spacing ignored), or `null` when there is none.
 `merchant` is who the money went to or came from, as the user sees it: imported transactions start with
@@ -748,6 +749,13 @@ Optional read-only bank sync through Enable Banking (PSD2). Requires `CREAM_ENAB
   (Plaid's taxonomy as a guide), else **Other → Uncategorized**. Every sync also retries transactions still
   there; `categorized` counts both
 - New imports need review as the user's preferences say: by default only those left in Uncategorized
+- After every account is synced, transfers between the user's own accounts are paired: an outflow and an
+  inflow of the same amount in two different accounts, at most 3 days apart (the closest in time). Both go
+  to **Transfers → Transfer** (`category_source: transfer`), out of cash flow and budgets, and each side
+  keeps the other (`transfer_pair_id`). Only automatic categories (`default`, `mcc`) give way; the user's
+  own choices and rules stay. Lists show a pair booked the same day together, money in right above money
+  out (newest first: read upwards, the money leaves, then arrives). `transfer_account_name` names the
+  account on the other side, for a side the bank sent without any text
 - A known merchant's bank spellings import as that merchant ("efood*019cc…" → efood), unless the user gave
   the spelling another merchant; before importing, merchants still under such a spelling join it too. Banks'
   and PayPal's texts keep their own merchant
