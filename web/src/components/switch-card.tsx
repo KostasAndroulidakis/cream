@@ -9,10 +9,12 @@ type SwitchCardProps = {
   description: ReactNode
   checked: boolean
   onCheckedChange: (checked: boolean) => void
+  // A setting that isn't built yet: shown in its place, switched off
+  disabled?: boolean
 }
 
 /** Monarch's on/off setting: a bordered card with a title, what it does, and a switch on the right. */
-export function SwitchCard({ id, title, description, checked, onCheckedChange }: SwitchCardProps) {
+export function SwitchCard({ id, title, description, checked, onCheckedChange, disabled }: SwitchCardProps) {
   return (
     <div className="flex items-center gap-4 rounded-lg border px-4 py-3.5">
       <div className="flex-1 space-y-1">
@@ -21,7 +23,7 @@ export function SwitchCard({ id, title, description, checked, onCheckedChange }:
         </Label>
         <div className="text-sm text-muted-foreground">{description}</div>
       </div>
-      <Switch id={id} checked={checked} onCheckedChange={onCheckedChange} />
+      <Switch id={id} checked={checked} onCheckedChange={onCheckedChange} disabled={disabled} />
     </div>
   )
 }

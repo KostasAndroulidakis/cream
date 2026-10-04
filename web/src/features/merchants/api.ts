@@ -1,4 +1,4 @@
-import { queryOptions } from "@tanstack/react-query"
+import { queryOptions, useMutation, useQueryClient } from "@tanstack/react-query"
 
 import { TRANSACTIONS_KEY } from "@/features/transactions/api"
 import { api } from "@/lib/api/client"
@@ -19,5 +19,21 @@ export function merchantsQueryOptions(order: MerchantOrder) {
       if (!data) throw toApiError(error, response)
       return data
     },
+  })
+}
+
+/** Edit merchant: rename it everywhere. Transactions show the merchant, so they refresh too. */
+export function useUpdateMerchant() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ id, name }: { id: number; name: string }): Promise<Merchant> => {
+      const { data, error, response } = await api.PATCH("/api/v1/merchants/{merchant_id}", {
+        params: { path: { merchant_id: id } },
+        body: { name },
+      })
+      if (!data) throw toApiError(error, response)
+      return data
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: TRANSACTIONS_KEY }),
   })
 }

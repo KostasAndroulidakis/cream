@@ -1,8 +1,7 @@
 import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
-import { Pencil, Search } from "lucide-react"
+import { Search } from "lucide-react"
 
-import { ComingSoonButton } from "@/components/coming-soon-button"
 import { FormAlert } from "@/components/form-alert"
 import { ListSkeleton } from "@/components/list-skeleton"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -11,6 +10,7 @@ import { pluralize } from "@/lib/text"
 import { merchantsQueryOptions, type MerchantOrder, type MerchantSummary } from "../api"
 import { MERCHANT_ORDERS } from "../order"
 import { useMerchantOrder } from "../use-merchant-order"
+import { EditMerchantDialog } from "./edit-merchant-dialog"
 import { MerchantAvatar } from "./merchant-avatar"
 
 const SKELETON_ROWS = 6
@@ -25,9 +25,7 @@ function MerchantRow({ merchant }: { merchant: MerchantSummary }) {
         <p className="truncate font-medium">{merchant.name}</p>
         <p className="text-sm text-muted-foreground">{pluralize(merchant.transaction_count, "transaction")}</p>
       </div>
-      <ComingSoonButton icon={Pencil} className="h-8">
-        Edit
-      </ComingSoonButton>
+      <EditMerchantDialog merchant={merchant} />
     </li>
   )
 }
