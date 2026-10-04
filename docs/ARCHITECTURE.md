@@ -208,17 +208,20 @@ cream/
 │
 ├── api/                     # Python/FastAPI backend
 │   ├── app/
-│   │   ├── api/            # HTTP route handlers (auth, bank, categories, health, statistics, transactions, wallets)
+│   │   ├── api/            # HTTP route handlers (auth, bank, categories, health, logos, merchants, statistics, transactions, wallets)
 │   │   ├── models/         # SQLAlchemy ORM models: the schema's source of truth
 │   │   ├── schemas/        # Pydantic request/response schemas
 │   │   ├── services/       # Business logic
 │   │   │   ├── auth.py, session.py      # Passwords, JWT, session cookie
 │   │   │   ├── authorization.py         # Ownership and access checks
 │   │   │   ├── wallets.py, statistics.py, validation.py, health.py
-│   │   │   ├── transactions.py, merchants.py   # Edit rules (single and bulk), merchants
+│   │   │   ├── transactions.py, transaction_order.py  # Edit rules (single and bulk), list order
+│   │   │   ├── merchants.py, merchant_catalog.py, merchant_gathering.py  # Merchants, known ones, gathering
+│   │   │   ├── logos.py, websites.py    # Merchant logos (Logo.dev), website domains
+│   │   │   ├── account_types.py, net_worth.py, currencies.py  # Account catalog, net worth, EUR only
 │   │   │   ├── review.py, preferences.py       # Review inbox, user preferences
-│   │   │   ├── banking/                 # Enable Banking: client, mapping, connections, sync
-│   │   │   └── categorization/          # Merchant keys, MCC map, auto-categorizer, rules
+│   │   │   ├── banking/                 # Enable Banking: client, mapping, connections, sync, banks' catalog
+│   │   │   └── categorization/          # Merchant keys, MCC map, auto-categorizer, rules, transfers
 │   │   ├── config.py       # Settings from the root .env
 │   │   ├── database.py     # Engine, session, Base (global type rules)
 │   │   └── main.py         # FastAPI app entry point
@@ -231,7 +234,7 @@ cream/
     ├── src/
     │   ├── lib/            # API client + generated schema, query client, money/date/amount helpers
     │   ├── components/     # Shared UI; components/ui = shadcn/ui
-    │   ├── features/       # auth, wallets, transactions, categories, categorization, bank, health
+    │   ├── features/       # auth, profile, wallets, transactions, categories, categorization, merchants, bank, health
     │   └── routes/         # Pages, app layout, auth guards, router
     └── package.json
 ```
@@ -282,6 +285,8 @@ cream/
 
 - No undo functionality (by design)
 - Must be clear in UI that delete is permanent
+- Exception: bank imports can't be deleted, because the next sync would bring them back. They are
+  **hidden** instead (`is_hidden`): out of lists and statistics, still part of the balance
 
 ### ADR4: Single Currency per Wallet
 
@@ -362,6 +367,10 @@ owner's own accounts. Manual entry stays first-class.
   same-day repeats numbered (bank `entry_reference` values are reused and are not unique)
 - The first sync sets the wallet's initial balance so CREAM matches the bank exactly
 - The provider's private key stays outside the repository (`CREAM_ENABLEBANKING_KEY_PATH`)
+- Production runs in **restricted mode**: only accounts the owner links are readable, and the redirect
+  URL must be https (local dev server with a mkcert certificate)
+- The first sync asks for the `longest` history; banks allow only a few unattended refreshes a day (PSD2),
+  more return `429`
 
 ### ADR9: Rule-First Auto-Categorization with a Category Source
 
@@ -453,6 +462,21 @@ the user; a catalog of websites (not stored images) stays small and current.
 
 **Consequences**: Unknown merchants show their initial until the user gives them a website. Without
 `CREAM_LOGO_DEV_TOKEN` every merchant shows its initial.
+
+### ADR14: Transfers Are Paired by CREAM, Not Told by the Bank
+
+**Decision**: After every sync, CREAM pairs an outflow with an inflow of the same amount in another of the
+user's accounts, at most 3 days apart, and files both under Transfers › Transfer
+(`services/categorization/transfers.py`). Each side keeps the other (`transactions.transfer_pair_id`).
+
+**Rationale**: Monarch gets transfers from Plaid's categories and lets the user fix the rest; Enable
+Banking gives no such category. Pairing only the user's own accounts follows the rule that money sent to
+someone else is an expense, where a category guess often files such payments as transfers.
+
+**Consequences**: Only automatic categories give way, so the user's choices stay. Lists show a same-day
+pair together (`services/transaction_order.py`); sides booked on different days stay on their own days, so
+day totals and balances match the banks. Pairing goes by amount and date only, so a rare coincidence of
+equal amounts pairs wrongly until the user changes the category.
 
 ## Security Architecture
 

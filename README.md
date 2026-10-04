@@ -39,12 +39,16 @@ See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for details and decisions.
 ## Features
 
 - Signup / login with an `httpOnly` session cookie (the browser's JavaScript never sees the token)
-- Wallets (bank, cash, digital, stash), one currency each; totals shown **per currency**, never mixed
-- Income and expense transactions with Monarch's default categories (groups → categories)
-- Transfer category type: moves money between your wallets without counting as income or expense
-- Bank sync: connect a bank, link accounts to wallets, import booked transactions without duplicates
-- Auto-categorization: merchant rules learned from your choices, then the bank's merchant category code (MCC);
-  the rest waits in a **Review** inbox
+- A web app laid out like Monarch Money: sidebar, Accounts, Transactions, Review and Settings
+- Accounts (bank, cash, investments, real estate, vehicles, loans…) with Monarch's types, net worth over
+  time and a summary of assets and liabilities; EUR only for now
+- Transactions grouped by day, with Monarch's default categories; bulk edit, hide, delete (manual ones)
+- Bank sync (Enable Banking, read-only PSD2): connect a bank, link its accounts, import booked transactions
+  without duplicates, as far back as the bank allows
+- Auto-categorization: merchant rules learned from your choices, then the bank's merchant category code
+  (MCC); new transactions wait in a **Review** inbox, as your preferences say
+- Merchants: clean names for known merchants (efood, Wolt, Apple…), logos, rename, Merge & delete
+- Transfers between your own accounts are found and left out of cash flow
 - Expired sessions return to the login page automatically
 
 Progress and what's next: [`docs/PROGRESS.md`](docs/PROGRESS.md).
@@ -61,7 +65,7 @@ cream/
 │   │   ├── api/        # HTTP route handlers
 │   │   ├── models/     # SQLAlchemy ORM models (schema source of truth)
 │   │   ├── schemas/    # Pydantic request/response models
-│   │   └── services/   # Business logic (banking/ = Enable Banking; categorization/ = MCC map, rules, inbox)
+│   │   └── services/   # Business logic (banking/ = Enable Banking; categorization/ = MCC map, rules, transfers)
 │   ├── migrations/     # Alembic migrations
 │   ├── scripts/        # export_openapi.py (feeds the web type generator)
 │   └── tests/          # pytest suite
@@ -69,7 +73,7 @@ cream/
     └── src/
         ├── lib/        # API client + generated types, query client, money/date/amount helpers
         ├── components/ # Shared UI (shadcn/ui in components/ui)
-        ├── features/   # auth, wallets, transactions, categories, categorization, bank, health
+        ├── features/   # auth, profile, wallets, transactions, categories, categorization, merchants, bank, health
         └── routes/     # Pages, layout, guards, router
 ```
 
@@ -80,9 +84,11 @@ cream/
 
 ```text
 users ──1:N── wallets ──1:N── transactions ──N:1── categories (groups → categories, system + own)
-  │              ▲
+  │              ▲               │  └── transfer pair (another transaction)
+  │              │               └──N:1── merchants ──1:N── merchant_aliases
   ├──1:N── bank_connections ──1:N── bank_accounts ──(links to one wallet)
-  └──1:N── merchant_rules ──N:1── categories
+  ├──1:N── merchant_rules ──N:1── categories
+  └──1:1── user_preferences; category_positions / category_overrides (per-user order and hiding)
 ```
 
 | Table | Purpose |
@@ -90,8 +96,11 @@ users ──1:N── wallets ──1:N── transactions ──N:1── categ
 | users | Accounts and login |
 | wallets | Bank accounts, cash, digital wallets, stashes |
 | categories | System default groups/categories (stable `key`) and user categories |
-| transactions | Money in/out; imported ones carry `external_id`, counterparty, MCC and `merchant_key`; `category_source` says who chose the category |
+| transactions | Money in/out; imported ones carry `external_id`, counterparty, MCC and `merchant_key`; `category_source` says who chose the category; `transfer_pair_id` links the two sides of a transfer |
+| category_positions, category_overrides | The user's order of categories, and their changes to system ones (name, budget, hidden) |
+| merchants, merchant_aliases | Who the money went to, and every name that means them (banks' spellings, the user's names) |
 | merchant_rules | "This merchant always goes to this category", one per merchant per user |
+| user_preferences | How the app behaves for the user (e.g. which new transactions need review) |
 | bank_connections | One bank consent (PSD2, up to 180 days) |
 | bank_accounts | Accounts shared by a bank, linked to wallets |
 
@@ -172,8 +181,10 @@ Create a free account at [Logo.dev](https://www.logo.dev) and set its publishabl
 
 ## Future Features
 
-- Edit/delete wallets and transactions; transfers between wallets from the UI
+- A transaction's side panel, Split, and a rules editor like Monarch's (e.g. rename merchant)
+- ATM withdrawals into a Cash account; transactions in other currencies
 - Scheduled background sync and consent renewal
+- Investments (Freedom24, SnapTrade, CSV)
 - Greek translation
 - CSV import for older history
 - Budgets, recurring transactions, reports and charts

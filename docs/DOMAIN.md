@@ -6,7 +6,7 @@
 | ------ | ------------ |
 | **User** | A person who uses CREAM to track their finances |
 | **Wallet** | A container for money (bank account, cash, digital wallet). Called **Account** in the UI, as in Monarch; the API and code keep "wallet" so it isn't confused with a bank's own accounts |
-| **Transaction** | A single movement of money (income or expense) |
+| **Transaction** | A single movement of money (income, expense or transfer) |
 | **Category** | A classification for transactions (e.g., Food, Salary) |
 | **Balance** | The current amount of money in a wallet |
 | **Income** | Money received (positive transaction) |
@@ -15,6 +15,9 @@
 | **Merchant** | Who a transaction was with, under a name the user can change; imports start with the bank's counterparty, else the transaction text |
 | **MCC** | Merchant category code (ISO 18245) the bank reports for card payments, e.g. 5411 = grocery stores |
 | **Merchant rule** | The user's choice "this merchant always goes to this category" |
+| **Merchant alias** | One name that means a merchant: a bank's spelling ("Wolt*Wolt*Athens") or a name the user gave it |
+| **Known merchant** | A merchant in CREAM's catalog (efood, Wolt, Apple…): its proper name, website (for the logo) and the banks' spellings of it |
+| **Transfer** | Money moving between the user's own accounts; its two sides (out of one, into the other) are a **transfer pair** |
 
 ## Entities
 
@@ -138,10 +141,11 @@ deleted.
 | ------ | ------------- | ---------- |
 | `income` | Money received | Salary, Gifts, Refunds |
 | `expense` | Money spent | Food, Transport, Bills |
-| `transfer` | Money moving between your own wallets | Account transfer, Cash & ATM, Credit card payment |
+| `transfer` | Money moving between your own wallets | Transfer, Credit Card Payment, Balance Adjustments |
 
 Transfers change wallet balances but are **excluded** from income, expense and category statistics,
-so moving money between your own accounts is never counted twice.
+so moving money between your own accounts is never counted twice. CREAM files a transaction under
+Transfers › Transfer itself when it finds the other side in another of the user's accounts (BR9).
 
 **System Default Categories**:
 Categories with `user_id = NULL` are system defaults, visible to all users but not modifiable.
@@ -167,7 +171,7 @@ Transaction
 ├── id: unique identifier
 ├── wallet_id: wallet reference
 ├── category_id: category reference
-├── category_source: who chose the category (manual / rule / mcc / default)
+├── category_source: who chose the category (manual / rule / mcc / transfer / default)
 ├── amount: monetary value (Money)
 ├── description: optional note (the bank's text for imports)
 ├── occurred_at: when the transaction happened
@@ -178,6 +182,7 @@ Transaction
 ├── merchant_id: the merchant the user sees (optional)
 ├── is_hidden: left out of lists and statistics, still part of the balance
 ├── needs_review: waiting in the review inbox (independent of category and hiding)
+├── transfer_pair_id: the other side of a transfer between the user's accounts (optional; each side points at the other)
 ├── created_at: record creation timestamp
 └── updated_at: last modification timestamp
 ```
@@ -197,16 +202,31 @@ Merchant
 ├── id: unique identifier
 ├── user_id: owner reference
 ├── name: what the user sees, e.g. "Sklavenitis"
-├── key: normalized name (case and spacing ignored)
+├── website: the user's choice of where the logo comes from (a domain); else the catalog's
+├── named_by_user: the user chose the name (Edit merchant, or typed in); false while it's a bank's text
+├── aliases: the names that mean it (MerchantAlias)
 ├── created_at: creation timestamp
 └── updated_at: last modification timestamp
+
+MerchantAlias
+├── id: unique identifier
+├── user_id: owner reference
+├── merchant_id: the merchant it means
+└── key: normalized name (case and spacing ignored)
 ```
 
 **Invariants**:
 
-- At most one merchant per name (case and spacing ignored) per user
-- A bank import finds the user's merchant by the bank's name, or creates it (named as the bank first wrote it)
-- Deleting a merchant leaves its transactions without a merchant
+- A name (case and spacing ignored) means at most one merchant per user
+- A bank import finds the merchant by any of its aliases; else a known merchant's spelling joins that
+  merchant ("efood*019cc…" → efood); else a new merchant is created, named as the bank wrote it
+- Renaming keeps the old names as aliases, so imports still find the merchant; another merchant's name
+  is refused (that's a merge)
+- **Merge & delete** moves the merchant's transactions and aliases to another merchant, then deletes it;
+  a merchant with transactions can't be deleted without one to move them to
+- Before every sync, merchants still under a known merchant's bank spelling join that merchant; names the
+  user chose are never touched
+- Go-betweens (banks, PayPal) only lend their logo: their texts name an ATM or the shop paid through them
 
 ### Merchant Rule
 
@@ -302,6 +322,8 @@ Cardinality:
 - Category has many Transactions
 - Category may have one Parent Category
 - Category may have many Child Categories
+- User has many Merchants; a Merchant has many Aliases and many Transactions
+- A Transaction may have one transfer pair (another Transaction of the same user, in another Wallet)
 ```
 
 ## Business Rules
@@ -384,6 +406,16 @@ wallet.balance = wallet.initial_balance + SUM(transactions.amount)
 | BR8.2 | Only the user changes the review status after import: choosing a category or a rule categorizing it doesn't |
 | BR8.3 | The review inbox lists visible transactions that need review; hiding one keeps its status |
 
+### BR9: Transfer Rules
+
+| Rule | Description |
+| ------ | ------------- |
+| BR9.1 | Only money moving between the user's **own** accounts is a transfer; money sent to someone else is an expense, money someone sends is income |
+| BR9.2 | After every sync, an outflow and an inflow of the same amount in two different accounts of the user, at most 3 days apart, are a transfer pair (the closest in time wins; each side pairs once) |
+| BR9.3 | Both sides of a pair go to Transfers › Transfer (`category_source: transfer`) and point at each other |
+| BR9.4 | Only automatic categories (`default`, `mcc`) give way to a transfer; the user's own choices and rules stay |
+| BR9.5 | Lists show a pair booked the same day together, money in right above money out; pairs booked on different days stay on their own days |
+
 ## Aggregations
 
 Income and expense aggregations leave out transfers between your own wallets and hidden transactions.
@@ -445,7 +477,7 @@ category_count = COUNT(*) GROUP BY category_id
 - Transactions have no "pending" or "draft" state
 - Once created, a transaction is immediately active
 - Modifications update the `updated_at` timestamp
-- Deletion is permanent (no soft delete)
+- Deletion is permanent (no soft delete); bank imports can't be deleted, only hidden (BR5.5)
 
 ### Wallet Lifecycle
 
