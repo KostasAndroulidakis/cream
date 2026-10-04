@@ -38,6 +38,10 @@ class Settings(BaseSettings):
     # Later syncs re-read a few days back, to catch transactions booked late
     bank_sync_overlap_days: int = 3
 
+    # Logo.dev (merchant logos by website). Unset token = merchants show their initial.
+    logo_dev_token: str | None = None
+    logo_dev_url: str = "https://img.logo.dev"
+
     @computed_field
     @property
     def database_url(self) -> str:

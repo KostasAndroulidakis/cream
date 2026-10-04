@@ -5,6 +5,8 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base, TimestampMixin
 from app.services.categorization.merchants import MERCHANT_MAX
+from app.services.merchant_catalog import find_known_merchant
+from app.services.websites import WEBSITE_MAX
 
 
 class Merchant(TimestampMixin, Base):
@@ -15,7 +17,17 @@ class Merchant(TimestampMixin, Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
     name: Mapped[str] = mapped_column(String(MERCHANT_MAX))
+    # Set by the user in Edit merchant (a domain); else the catalog's, if it knows the merchant
+    website: Mapped[str | None] = mapped_column(String(WEBSITE_MAX), default=None)
     aliases: Mapped[list[MerchantAlias]] = relationship(back_populates="merchant", cascade="all, delete-orphan")
+
+    @property
+    def shown_website(self) -> str | None:
+        """The website its logo comes from: the user's, else the catalog's."""
+        if self.website:
+            return self.website
+        known = find_known_merchant(self.name)
+        return known.website if known else None
 
 
 class MerchantAlias(Base):

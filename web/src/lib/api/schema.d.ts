@@ -668,10 +668,30 @@ export interface paths {
         options?: never;
         head?: never;
         /**
-         * Update Merchant
-         * @description Edit merchant: rename it everywhere (409 if another merchant already goes by the name).
+         * Edit Merchant
+         * @description Edit merchant: its name everywhere (409 if another merchant goes by it) and its website.
          */
-        patch: operations["update_merchant_api_v1_merchants__merchant_id__patch"];
+        patch: operations["edit_merchant_api_v1_merchants__merchant_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/logos/{domain}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Logo
+         * @description A website's logo (e.g. a merchant's), or 404 so the app shows the initial instead.
+         */
+        get: operations["get_logo_api_v1_logos__domain__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
 }
@@ -999,6 +1019,8 @@ export interface components {
             id: number;
             /** Name */
             name: string;
+            /** Website */
+            website?: string | null;
         };
         /** MerchantRuleRead */
         MerchantRuleRead: {
@@ -1028,16 +1050,20 @@ export interface components {
             id: number;
             /** Name */
             name: string;
+            /** Website */
+            website?: string | null;
             /** Transaction Count */
             transaction_count: number;
         };
         /**
          * MerchantUpdate
-         * @description Edit merchant: the name it shows under everywhere.
+         * @description Edit merchant: the name it shows under everywhere, and its website (empty = the catalog's, if any).
          */
         MerchantUpdate: {
             /** Name */
             name: string;
+            /** Website */
+            website?: string | null;
         };
         /**
          * NetWorthHistory
@@ -2670,7 +2696,7 @@ export interface operations {
             };
         };
     };
-    update_merchant_api_v1_merchants__merchant_id__patch: {
+    edit_merchant_api_v1_merchants__merchant_id__patch: {
         parameters: {
             query?: never;
             header?: never;
@@ -2693,6 +2719,45 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["MerchantRead"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_logo_api_v1_logos__domain__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                domain: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                    "image/png": unknown;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {

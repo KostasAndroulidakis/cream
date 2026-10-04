@@ -5,7 +5,7 @@ from app.database import get_db
 from app.schemas import MerchantOrder, MerchantRead, MerchantSummary, MerchantUpdate
 from app.services.auth import get_current_user_id
 from app.services.authorization import get_merchant
-from app.services.merchants import list_merchants, rename_merchant
+from app.services.merchants import list_merchants, update_merchant
 
 router = APIRouter()
 
@@ -21,11 +21,11 @@ def list_user_merchants(
 
 
 @router.patch("/{merchant_id}", response_model=MerchantRead)
-def update_merchant(
+def edit_merchant(
     merchant_id: int,
     changes: MerchantUpdate,
     user_id: int = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
-    """Edit merchant: rename it everywhere (409 if another merchant already goes by the name)."""
-    return rename_merchant(get_merchant(merchant_id, user_id, db), changes.name, db)
+    """Edit merchant: its name everywhere (409 if another merchant goes by it) and its website."""
+    return update_merchant(get_merchant(merchant_id, user_id, db), changes.name, changes.website, db)

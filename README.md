@@ -138,6 +138,11 @@ users ──1:N── wallets ──1:N── transactions ──N:1── categ
 | `web/` | `npm run gen:api` | Regenerate TypeScript types after API changes |
 | `web/` | `npm run lint` / `npm run build` | Lint / type-check and build |
 
+### Merchant Logos (optional)
+
+Create a free account at [Logo.dev](https://www.logo.dev) and set its publishable key in `.env`:
+`CREAM_LOGO_DEV_TOKEN=pk_…`. Without it, merchants show their initial.
+
 ### Bank Sync (optional)
 
 1. Create an application at [Enable Banking](https://enablebanking.com) (Sandbox to develop, Production

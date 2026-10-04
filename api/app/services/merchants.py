@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from app.models import Merchant, MerchantAlias, Transaction
 from app.schemas.merchant import MerchantOrder, MerchantSummary
 from app.services.categorization.merchants import merchant_name_key, tidy_merchant_name
+from app.services.websites import InvalidWebsiteError, website_domain
 
 
 class MerchantNameTakenError(HTTPException):
@@ -61,11 +62,16 @@ def _merchant_named(user_id: int, key: str, db: Session) -> Merchant | None:
     return alias.merchant if alias else None
 
 
-def rename_merchant(merchant: Merchant, name: str, db: Session) -> Merchant:
-    """Show the merchant under a new name; its old names keep meaning it, so imports still find it.
+def update_merchant(merchant: Merchant, name: str, website: str | None, db: Session) -> Merchant:
+    """Edit merchant: its name, and its website (empty: the catalog's, if it knows the merchant).
 
-    The new name becomes one of its aliases. A name another merchant goes by is refused: that's a merge.
+    The merchant's old names keep meaning it, so imports still find it: the new name becomes one of
+    its aliases. A name another merchant goes by is refused: that's a merge.
     """
+    try:
+        domain = website_domain(website) if website and website.strip() else None
+    except InvalidWebsiteError as error:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(error)) from error
     tidy_name = tidy_merchant_name(name)
     if tidy_name is None:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail="Give the merchant a name")
@@ -76,6 +82,7 @@ def rename_merchant(merchant: Merchant, name: str, db: Session) -> Merchant:
     if owner is None:
         merchant.aliases.append(MerchantAlias(user_id=merchant.user_id, key=key))
     merchant.name = tidy_name
+    merchant.website = domain
     db.commit()
     db.refresh(merchant)
     return merchant
@@ -99,6 +106,8 @@ def list_merchants(user_id: int, order: MerchantOrder, db: Session) -> list[Merc
     else:
         query = query.order_by(by_name)
     return [
-        MerchantSummary(id=merchant.id, name=merchant.name, transaction_count=transactions)
+        MerchantSummary(
+            id=merchant.id, name=merchant.name, shown_website=merchant.shown_website, transaction_count=transactions
+        )
         for merchant, transactions in db.execute(query)
     ]

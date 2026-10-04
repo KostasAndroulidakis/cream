@@ -41,8 +41,12 @@ class TestMerchantList:
         assert client.get(MERCHANTS_URL, params={"order": "random"}, headers=auth_headers).status_code == 422
 
 
+def _update(client, headers, merchant_id, changes):
+    return client.patch(f"{MERCHANTS_URL}/{merchant_id}", json=changes, headers=headers)
+
+
 def _rename(client, headers, merchant_id, name):
-    return client.patch(f"{MERCHANTS_URL}/{merchant_id}", json={"name": name}, headers=headers)
+    return _update(client, headers, merchant_id, {"name": name})
 
 
 def _merchant_id(client, headers, name):
@@ -55,7 +59,8 @@ class TestRename:
 
         response = _rename(client, auth_headers, merchant_id, "  Wolt   Greece ")
 
-        assert response.json() == {"id": merchant_id, "name": "Wolt Greece"}
+        # Still Wolt to the catalog, so it keeps its website
+        assert response.json() == {"id": merchant_id, "name": "Wolt Greece", "website": "wolt.com"}
         assert ("Wolt Greece", 3) in _list(client, auth_headers)
 
     def test_bank_spelling_still_finds_the_renamed_merchant(self, client, auth_headers, bank, purchases):
@@ -92,3 +97,40 @@ class TestRename:
         response = _rename(client, second_auth_headers, merchant_id, "Mine")
 
         assert response.status_code == 403
+
+
+class TestWebsite:
+    def test_known_merchant_gets_the_catalogs_website(self, client, auth_headers, purchases):
+        websites = {m["name"]: m["website"] for m in client.get(MERCHANTS_URL, headers=auth_headers).json()}
+
+        assert websites == {"Wolt": "wolt.com", "Apple": None, "Bakery": None}
+
+    def test_users_website_is_kept_as_a_domain(self, client, auth_headers, purchases):
+        merchant_id = _merchant_id(client, auth_headers, "Bakery")
+
+        changes = {"name": "Bakery", "website": " https://www.My-Bakery.gr/el/menu "}
+
+        response = _update(client, auth_headers, merchant_id, changes)
+
+        assert response.json()["website"] == "my-bakery.gr"
+
+    def test_empty_website_falls_back_to_the_catalog(self, client, auth_headers, purchases):
+        merchant_id = _merchant_id(client, auth_headers, "Wolt")
+        _update(client, auth_headers, merchant_id, {"name": "Wolt", "website": "wolt.gr"})
+
+        response = _update(client, auth_headers, merchant_id, {"name": "Wolt", "website": ""})
+
+        assert response.json()["website"] == "wolt.com"
+
+    def test_transactions_carry_the_merchants_website(self, client, auth_headers, purchases):
+        transactions = client.get("/api/v1/transactions", headers=auth_headers).json()
+
+        assert {t["merchant"]["name"]: t["merchant"]["website"] for t in transactions}["Wolt"] == "wolt.com"
+
+    @pytest.mark.parametrize("website", ["not a website", "http://", "wolt"])
+    def test_invalid_website_refused(self, client, auth_headers, purchases, website):
+        merchant_id = _merchant_id(client, auth_headers, "Bakery")
+
+        response = _update(client, auth_headers, merchant_id, {"name": "Bakery", "website": website})
+
+        assert response.status_code == 422

@@ -712,8 +712,9 @@ transaction's merchant with `merchant_name` in `POST /transactions/bulk-update`.
 
 | Endpoint | Description |
 | --- | --- |
-| `GET /merchants?order=transaction_count` | The user's merchants that have transactions, with counts: `[{id, name, transaction_count}]`; `order` is `transaction_count` (most first, the default) or `alphabetical` |
-| `PATCH /merchants/{id}` | Rename `{name}` everywhere. The new name joins the merchant's aliases (the names that mean it, e.g. the bank's spellings), so imports keep finding it; a name another merchant goes by → 409 (merge instead) |
+| `GET /merchants?order=transaction_count` | The user's merchants that have transactions, with counts: `[{id, name, website, transaction_count}]` (`website`: the user's, else the catalog's for a known merchant); `order` is `transaction_count` (most first, the default) or `alphabetical` |
+| `PATCH /merchants/{id}` | Edit `{name, website}`. The name shows everywhere and joins the merchant's aliases (the names that mean it, e.g. the bank's spellings), so imports keep finding it; a name another merchant goes by → 409 (merge instead). `website` is kept as a domain (`https://www.Wolt.com/el` → `wolt.com`); empty = the catalog's |
+| `GET /logos/{domain}` | A website's logo (PNG, from Logo.dev, cached; the browser keeps it a week), or 404 so the app shows the initial |
 
 ---
 

@@ -433,6 +433,22 @@ lists Monarch shows for real estate, vehicles, valuables and loans). The catalog
   can't be linked (`can_link` tells the web)
 - Accounts created earlier in other currencies keep working and keep their own totals
 
+### ADR13: Merchants Have Aliases; Known Merchants Come From a Catalog
+
+**Decision**: A merchant is found by any of its aliases (`merchant_aliases`: the banks' spellings and the
+names the user gives it), not by one key. Known merchants (efood, Wolt, Apple…) are listed in
+`services/merchant_catalog.py` with their website and a pattern for the banks' spellings. A merchant's logo
+comes from its website: the user's (Edit merchant), else the catalog's. Logos are fetched from Logo.dev by the
+API (`GET /logos/{domain}`), cached, and served to the browser.
+
+**Rationale**: Monarch gets clean names and logos from Plaid's enrichment; Enable Banking passes on only the
+bank's text, so CREAM needs its own. Aliases let a rename keep imports matching and let a merge move the names
+along. Going through the API keeps the Logo.dev token on the server and tells the logo service nothing about
+the user; a catalog of websites (not stored images) stays small and current.
+
+**Consequences**: Unknown merchants show their initial until the user gives them a website. Without
+`CREAM_LOGO_DEV_TOKEN` every merchant shows its initial.
+
 ## Security Architecture
 
 ```text
