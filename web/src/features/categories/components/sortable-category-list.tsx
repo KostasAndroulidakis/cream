@@ -15,11 +15,10 @@ import { userMessage } from "@/lib/api/errors"
 import { notifyError } from "@/lib/notify"
 import { cn } from "@/lib/utils"
 import { useReorderCategories, type Category } from "../api"
+import { CategoryIcon } from "./category-icon"
 
 // A click (e.g. to open the category later) only becomes a drag after the pointer moves this far
 const DRAG_DISTANCE_PX = 4
-// Shown for categories that have no emoji
-const DEFAULT_ICON = "•"
 
 function CategoryRow({ category }: { category: Category }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: category.id })
@@ -38,9 +37,7 @@ function CategoryRow({ category }: { category: Category }) {
       {...listeners}
     >
       <GripVertical className="size-4 shrink-0 text-muted-foreground/60" aria-hidden />
-      <span aria-hidden className="w-5 text-center">
-        {category.icon ?? DEFAULT_ICON}
-      </span>
+      <CategoryIcon icon={category.icon} />
       <span className="truncate">{category.name}</span>
     </li>
   )

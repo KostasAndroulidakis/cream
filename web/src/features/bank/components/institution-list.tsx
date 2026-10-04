@@ -10,25 +10,17 @@ import { userMessage } from "@/lib/api/errors"
 import { timeAgo } from "@/lib/dates"
 import { cn } from "@/lib/utils"
 import {
-  aspspsQueryOptions,
   connectionsQueryOptions,
   useStartConnection,
   type BankAccount,
   type BankConnection,
 } from "../api"
-import { BankLogo } from "./bank-logo"
+import { InstitutionLogo } from "./institution-logo"
 import { DisconnectMenu } from "./disconnect-menu"
 import { LinkAccountControl } from "./link-account-control"
 
 // The service CREAM reaches banks through, where Monarch names Plaid or MX
 const PROVIDER = "Enable Banking"
-
-/** The bank's logo from the provider's list of banks, or its initial while that loads or has none. */
-function InstitutionLogo({ connection, className }: { connection: BankConnection; className?: string }) {
-  const { data: banks } = useQuery(aspspsQueryOptions(connection.aspsp_country))
-  const logo = banks?.find((bank) => bank.name === connection.aspsp_name)?.logo
-  return <BankLogo name={connection.aspsp_name} logo={logo} className={cn("size-8 text-sm", className)} />
-}
 
 /** The most recent sync of any of the connection's accounts. */
 function lastSynced(connection: BankConnection): string | null {

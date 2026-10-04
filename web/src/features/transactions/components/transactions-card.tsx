@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react"
+import { useMemo, useState, type ReactNode } from "react"
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query"
 
 import { Amount, AmountTotals } from "@/components/amount"
@@ -6,9 +6,11 @@ import { FormAlert } from "@/components/form-alert"
 import { ListSkeleton } from "@/components/list-skeleton"
 import { SelectionCheckbox } from "@/components/selection-checkbox"
 import { Button } from "@/components/ui/button"
-import { categoriesQueryOptions } from "@/features/categories/api"
+import { AccountLogo } from "@/features/bank/components/account-logo"
+import { categoriesQueryOptions, type Category } from "@/features/categories/api"
+import { CategoryIcon } from "@/features/categories/components/category-icon"
 import { categoriesById } from "@/features/categories/grouping"
-import { walletsQueryOptions } from "@/features/wallets/api"
+import { walletsQueryOptions, type Wallet } from "@/features/wallets/api"
 import { userMessage } from "@/lib/api/errors"
 import { formatLongDate } from "@/lib/dates"
 import { cn } from "@/lib/utils"
@@ -32,14 +34,24 @@ const ROW_GRID =
 
 type RowProps = {
   transaction: Transaction
-  categoryName: string
-  walletName: string
-  currency?: string
+  category?: Category
+  wallet?: Wallet
   // Set while selecting: the row becomes a checkbox
   selection?: { selected: boolean; onToggle: () => void }
 }
 
-function TransactionRow({ transaction, categoryName, walletName, currency, selection }: RowProps) {
+// One column's icon and text, the text cut short when it doesn't fit
+function IconCell({ icon, text, className }: { icon: ReactNode; text: string; className?: string }) {
+  return (
+    <div className={cn("min-w-0 items-center gap-2.5", className)}>
+      {icon}
+      <span className="truncate">{text}</span>
+    </div>
+  )
+}
+
+function TransactionRow({ transaction, category, wallet, selection }: RowProps) {
+  const categoryName = category?.name ?? ""
   const merchant = transactionLabel(transaction) ?? categoryName
   const cells = (
     <>
@@ -58,12 +70,20 @@ function TransactionRow({ transaction, categoryName, walletName, currency, selec
           <p className="truncate text-sm text-muted-foreground md:hidden">{categoryName}</p>
         </div>
       </div>
-      <p className="hidden truncate md:block">{categoryName}</p>
-      <p className="hidden truncate md:block">{walletName}</p>
+      <IconCell
+        icon={<CategoryIcon icon={category?.icon ?? null} />}
+        text={categoryName}
+        className="hidden md:flex"
+      />
+      <IconCell
+        icon={wallet && <AccountLogo wallet={wallet} className="size-6" />}
+        text={wallet?.name ?? ""}
+        className="hidden md:flex"
+      />
       {/* Not while selecting: a click there toggles the row's checkbox */}
       <div>{!selection && transaction.needs_review && <MarkReviewedButton transaction={transaction} />}</div>
       <p className="text-right">
-        <Amount value={transaction.amount} currency={currency} />
+        <Amount value={transaction.amount} currency={wallet?.currency} />
       </p>
     </>
   )
@@ -113,9 +133,8 @@ function DayGroups({ transactions, selection }: DayGroupsProps) {
             <TransactionRow
               key={transaction.id}
               transaction={transaction}
-              categoryName={categoryById.get(transaction.category_id)?.name ?? ""}
-              walletName={wallet?.name ?? ""}
-              currency={wallet?.currency}
+              category={categoryById.get(transaction.category_id)}
+              wallet={wallet}
               selection={
                 selection.isSelecting
                   ? {

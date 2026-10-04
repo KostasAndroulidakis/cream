@@ -51,7 +51,8 @@ export function AccountTypeIcon({ wallet, className }: { wallet: Wallet; classNa
     <span
       className={cn("grid size-10 shrink-0 place-items-center rounded-full bg-primary/8 text-primary", className)}
     >
-      <Icon className="size-5" aria-hidden />
+      {/* Half the badge, so the icon scales with it (a row's 40px badge, a transaction's 24px one) */}
+      <Icon className="size-1/2" aria-hidden />
     </span>
   )
 }
