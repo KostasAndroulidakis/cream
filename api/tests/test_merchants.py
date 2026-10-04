@@ -134,3 +134,59 @@ class TestWebsite:
         response = _update(client, auth_headers, merchant_id, {"name": "Bakery", "website": website})
 
         assert response.status_code == 422
+
+
+def _delete(client, headers, merchant_id, move_to=None):
+    params = {} if move_to is None else {"move_to": move_to}
+    return client.delete(f"{MERCHANTS_URL}/{merchant_id}", params=params, headers=headers)
+
+
+class TestMergeAndDelete:
+    def test_transactions_move_to_the_chosen_merchant(self, client, auth_headers, purchases):
+        apple, wolt = (_merchant_id(client, auth_headers, name) for name in ("Apple", "Wolt"))
+
+        assert _delete(client, auth_headers, apple, move_to=wolt).status_code == 204
+
+        assert _list(client, auth_headers) == [("Wolt", 4), ("Bakery", 1)]
+
+    def test_merged_names_keep_landing_on_the_chosen_merchant(self, client, auth_headers, bank, purchases):
+        apple, wolt = (_merchant_id(client, auth_headers, name) for name in ("Apple", "Wolt"))
+        _delete(client, auth_headers, apple, move_to=wolt)
+        bank.transactions = [raw_transaction("new", "9.00", creditor={"name": "APPLE"}, booking_date="2026-09-25")]
+
+        sync(client, auth_headers)
+
+        assert _list(client, auth_headers) == [("Wolt", 5), ("Bakery", 1)]
+
+    def test_merchant_with_transactions_needs_one_to_move_them_to(self, client, auth_headers, purchases):
+        response = _delete(client, auth_headers, _merchant_id(client, auth_headers, "Wolt"))
+
+        assert response.status_code == 409 and "3 transactions" in response.json()["detail"]
+        assert ("Wolt", 3) in _list(client, auth_headers)
+
+    def test_merchant_without_transactions_is_simply_deleted(self, client, auth_headers, purchases):
+        bakery = _merchant_id(client, auth_headers, "Bakery")
+        bakery_purchase = next(
+            t["id"] for t in client.get("/api/v1/transactions", headers=auth_headers).json()
+            if t["merchant"]["name"] == "Bakery"
+        )
+        changes = {"transaction_ids": [bakery_purchase], "changes": {"merchant_name": "Wolt"}}
+        client.post("/api/v1/transactions/bulk-update", json=changes, headers=auth_headers)
+
+        assert _delete(client, auth_headers, bakery).status_code == 204
+
+    def test_merging_into_itself_is_refused(self, client, auth_headers, purchases):
+        wolt = _merchant_id(client, auth_headers, "Wolt")
+
+        assert _delete(client, auth_headers, wolt, move_to=wolt).status_code == 422
+
+    def test_unknown_target_is_refused(self, client, auth_headers, purchases):
+        response = _delete(client, auth_headers, _merchant_id(client, auth_headers, "Wolt"), move_to=999_999)
+
+        assert response.status_code == 404
+        assert ("Wolt", 3) in _list(client, auth_headers)
+
+    def test_someone_elses_merchant_is_refused(self, client, auth_headers, second_auth_headers, purchases):
+        wolt = _merchant_id(client, auth_headers, "Wolt")
+
+        assert _delete(client, second_auth_headers, wolt).status_code == 403

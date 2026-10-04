@@ -48,6 +48,8 @@ All endpoints except `/health`, `/auth/signup`, `/auth/login` and `/auth/logout`
 | `GET /api/v1/rules` | List merchant rules |
 | `DELETE /api/v1/rules/{id}` | Delete a merchant rule |
 | `GET /api/v1/merchants` | List merchants |
+| `PATCH /api/v1/merchants/{id}` | Edit a merchant |
+| `DELETE /api/v1/merchants/{id}` | Merge & delete a merchant |
 | `GET /api/v1/statistics` | Aggregated statistics |
 | `GET /api/v1/statistics/report` | Period reports |
 
@@ -714,6 +716,7 @@ transaction's merchant with `merchant_name` in `POST /transactions/bulk-update`.
 | --- | --- |
 | `GET /merchants?order=transaction_count` | The user's merchants that have transactions, with counts: `[{id, name, website, transaction_count}]` (`website`: the user's, else the catalog's for a known merchant); `order` is `transaction_count` (most first, the default) or `alphabetical` |
 | `PATCH /merchants/{id}` | Edit `{name, website}`. The name shows everywhere and joins the merchant's aliases (the names that mean it, e.g. the bank's spellings), so imports keep finding it; a name another merchant goes by → 409 (merge instead). `website` is kept as a domain (`https://www.Wolt.com/el` → `wolt.com`); empty = the catalog's |
+| `DELETE /merchants/{id}?move_to={target_id}` | Merge & delete: the merchant's transactions and aliases move to `move_to`, then it's deleted (204), so later imports under its names land on the target. `move_to` may be left out only when it has no transactions (409 otherwise); itself → 422 |
 | `GET /logos/{domain}` | A website's logo (PNG, from Logo.dev, cached; the browser keeps it a week), or 404 so the app shows the initial |
 
 ---

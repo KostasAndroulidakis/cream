@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from fastapi import HTTPException, status
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session
 
 from app.models import Merchant, MerchantAlias, Transaction
@@ -18,6 +18,20 @@ class MerchantNameTakenError(HTTPException):
             status_code=status.HTTP_409_CONFLICT,
             detail=f"Another merchant is already called {name}. Use Merge & delete to combine them.",
         )
+
+
+class MerchantInUseError(HTTPException):
+    def __init__(self, transaction_count: int):
+        super().__init__(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"{transaction_count} transactions are still tied to this merchant. "
+            "Choose a merchant to move them to.",
+        )
+
+
+class SelfMergeError(HTTPException):
+    def __init__(self):
+        super().__init__(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail="A merchant can't merge into itself")
 
 
 class MerchantDirectory:
@@ -86,6 +100,35 @@ def update_merchant(merchant: Merchant, name: str, website: str | None, db: Sess
     db.commit()
     db.refresh(merchant)
     return merchant
+
+
+def delete_merchant(merchant: Merchant, move_to: Merchant | None, db: Session) -> None:
+    """Merge & delete: the merchant's transactions and names go to `move_to`, then it's deleted.
+
+    Its names keep meaning the merchant it merged into, so later imports land there too. Without a
+    merchant to move to, only a merchant with no transactions can go (as in Monarch).
+    """
+    if move_to is None:
+        transaction_count = _transaction_count(merchant, db)
+        if transaction_count:
+            raise MerchantInUseError(transaction_count)
+    elif move_to.id == merchant.id:
+        raise SelfMergeError()
+    else:
+        _move_relations(merchant, move_to, db)
+    db.delete(merchant)
+    db.commit()
+
+
+def _transaction_count(merchant: Merchant, db: Session) -> int:
+    return db.scalar(select(func.count(Transaction.id)).where(Transaction.merchant_id == merchant.id)) or 0
+
+
+def _move_relations(source: Merchant, target: Merchant, db: Session) -> None:
+    """Everything tied to `source` (its transactions and its names) now belongs to `target`."""
+    db.execute(update(Transaction).where(Transaction.merchant_id == source.id).values(merchant_id=target.id))
+    for alias in list(source.aliases):
+        alias.merchant = target
 
 
 def list_merchants(user_id: int, order: MerchantOrder, db: Session) -> list[MerchantSummary]:
