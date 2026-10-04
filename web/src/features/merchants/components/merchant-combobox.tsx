@@ -23,7 +23,8 @@ type MerchantComboboxProps = {
 
 /** Pick one of the user's merchants by typing part of its name, or create one with a new name. */
 export function MerchantCombobox({ id, value, onChange, className }: MerchantComboboxProps) {
-  const { data: merchants = [] } = useQuery(merchantsQueryOptions)
+  // By name, as a picker lists them
+  const { data: merchants = [] } = useQuery(merchantsQueryOptions("alphabetical"))
   const [typed, setTyped] = useState(value)
   const selected: MerchantChoice | null = value ? { name: value, isNew: false } : null
 

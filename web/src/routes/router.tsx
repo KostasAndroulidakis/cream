@@ -11,6 +11,7 @@ import { ReviewPage } from "./review-page"
 import { SettingsCategoriesPage } from "./settings-categories-page"
 import { SettingsInstitutionsPage } from "./settings-institutions-page"
 import { SettingsLayout } from "./settings-layout"
+import { SettingsMerchantsPage } from "./settings-merchants-page"
 import { SettingsProfilePage } from "./settings-profile-page"
 import { SignupPage } from "./signup-page"
 import { TransactionsPage } from "./transactions-page"
@@ -36,6 +37,7 @@ export const router = createBrowserRouter([
               { path: paths.settingsProfile, element: <SettingsProfilePage /> },
               { path: paths.settingsInstitutions, element: <SettingsInstitutionsPage /> },
               { path: paths.settingsCategories, element: <SettingsCategoriesPage /> },
+              { path: paths.settingsMerchants, element: <SettingsMerchantsPage /> },
             ],
           },
         ],

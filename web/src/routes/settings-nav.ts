@@ -33,7 +33,7 @@ export const SETTINGS_GROUPS: readonly SettingsGroup[] = [
       { label: "Preferences" },
       { label: "Institutions", to: paths.settingsInstitutions },
       { label: "Categories", to: paths.settingsCategories },
-      { label: "Merchants" },
+      { label: "Merchants", to: paths.settingsMerchants },
       // Merchant rules are on the Review page for now
       { label: "Rules", to: paths.review },
       { label: "Tags" },
