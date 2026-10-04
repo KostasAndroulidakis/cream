@@ -1,6 +1,8 @@
 from enum import StrEnum
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+
+from app.services.categorization.merchants import MERCHANT_MAX
 
 
 class MerchantRead(BaseModel):
@@ -21,3 +23,9 @@ class MerchantSummary(MerchantRead):
     """A merchant in Settings › Merchants: with how many of the user's transactions it has."""
 
     transaction_count: int
+
+
+class MerchantUpdate(BaseModel):
+    """Edit merchant: the name it shows under everywhere."""
+
+    name: str = Field(..., min_length=1, max_length=MERCHANT_MAX)

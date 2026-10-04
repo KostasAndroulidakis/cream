@@ -713,6 +713,7 @@ transaction's merchant with `merchant_name` in `POST /transactions/bulk-update`.
 | Endpoint | Description |
 | --- | --- |
 | `GET /merchants?order=transaction_count` | The user's merchants that have transactions, with counts: `[{id, name, transaction_count}]`; `order` is `transaction_count` (most first, the default) or `alphabetical` |
+| `PATCH /merchants/{id}` | Rename `{name}` everywhere. The new name joins the merchant's aliases (the names that mean it, e.g. the bank's spellings), so imports keep finding it; a name another merchant goes by → 409 (merge instead) |
 
 ---
 

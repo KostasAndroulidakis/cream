@@ -1,17 +1,26 @@
-"""The user's merchants: found by name, created the first time a name appears."""
+"""The user's merchants: found by any of their names, created the first time a name appears."""
 
 from __future__ import annotations
 
+from fastapi import HTTPException, status
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.models import Merchant, Transaction
+from app.models import Merchant, MerchantAlias, Transaction
 from app.schemas.merchant import MerchantOrder, MerchantSummary
 from app.services.categorization.merchants import merchant_name_key, tidy_merchant_name
 
 
+class MerchantNameTakenError(HTTPException):
+    def __init__(self, name: str):
+        super().__init__(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Another merchant is already called {name}. Use Merge & delete to combine them.",
+        )
+
+
 class MerchantDirectory:
-    """Holds one user's merchants in memory, so a sync makes no per-row queries."""
+    """Holds one user's merchants by alias in memory, so a sync makes no per-row queries."""
 
     def __init__(self, user_id: int, merchants_by_key: dict[str, Merchant]):
         self._user_id = user_id
@@ -19,8 +28,8 @@ class MerchantDirectory:
 
     @classmethod
     def for_user(cls, user_id: int, db: Session) -> MerchantDirectory:
-        merchants = db.scalars(select(Merchant).where(Merchant.user_id == user_id))
-        return cls(user_id, {merchant.key: merchant for merchant in merchants})
+        aliases = db.scalars(select(MerchantAlias).where(MerchantAlias.user_id == user_id))
+        return cls(user_id, {alias.key: alias.merchant for alias in aliases})
 
     @classmethod
     def for_name(cls, user_id: int, name: str, db: Session) -> MerchantDirectory:
@@ -29,21 +38,47 @@ class MerchantDirectory:
         if tidy_name is None:
             return cls(user_id, {})
         key = merchant_name_key(tidy_name)
-        merchant = db.scalar(select(Merchant).where(Merchant.user_id == user_id, Merchant.key == key))
+        merchant = _merchant_named(user_id, key, db)
         return cls(user_id, {key: merchant} if merchant else {})
 
     def get_or_create(self, name: str | None, db: Session) -> Merchant | None:
-        """The user's merchant with this name (in any case or spacing), new if there is none yet."""
+        """The user's merchant known by this name (in any case or spacing), new if there is none yet."""
         tidy_name = tidy_merchant_name(name)
         if tidy_name is None:
             return None
         key = merchant_name_key(tidy_name)
         merchant = self._by_key.get(key)
         if merchant is None:
-            merchant = Merchant(user_id=self._user_id, name=tidy_name, key=key)
+            merchant = Merchant(user_id=self._user_id, name=tidy_name)
+            merchant.aliases.append(MerchantAlias(user_id=self._user_id, key=key))
             db.add(merchant)
             self._by_key[key] = merchant
         return merchant
+
+
+def _merchant_named(user_id: int, key: str, db: Session) -> Merchant | None:
+    alias = db.scalar(select(MerchantAlias).where(MerchantAlias.user_id == user_id, MerchantAlias.key == key))
+    return alias.merchant if alias else None
+
+
+def rename_merchant(merchant: Merchant, name: str, db: Session) -> Merchant:
+    """Show the merchant under a new name; its old names keep meaning it, so imports still find it.
+
+    The new name becomes one of its aliases. A name another merchant goes by is refused: that's a merge.
+    """
+    tidy_name = tidy_merchant_name(name)
+    if tidy_name is None:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail="Give the merchant a name")
+    key = merchant_name_key(tidy_name)
+    owner = _merchant_named(merchant.user_id, key, db)
+    if owner is not None and owner.id != merchant.id:
+        raise MerchantNameTakenError(owner.name)
+    if owner is None:
+        merchant.aliases.append(MerchantAlias(user_id=merchant.user_id, key=key))
+    merchant.name = tidy_name
+    db.commit()
+    db.refresh(merchant)
+    return merchant
 
 
 def list_merchants(user_id: int, order: MerchantOrder, db: Session) -> list[MerchantSummary]:
@@ -52,6 +87,7 @@ def list_merchants(user_id: int, order: MerchantOrder, db: Session) -> list[Merc
     By transaction count, most first, or alphabetically; ties and equal counts go by name.
     """
     count = func.count(Transaction.id).label("transaction_count")
+    by_name = func.lower(Merchant.name)
     query = (
         select(Merchant, count)
         .join(Transaction, Transaction.merchant_id == Merchant.id)
@@ -59,9 +95,9 @@ def list_merchants(user_id: int, order: MerchantOrder, db: Session) -> list[Merc
         .group_by(Merchant.id)
     )
     if order is MerchantOrder.TRANSACTION_COUNT:
-        query = query.order_by(count.desc(), Merchant.key)
+        query = query.order_by(count.desc(), by_name)
     else:
-        query = query.order_by(Merchant.key)
+        query = query.order_by(by_name)
     return [
         MerchantSummary(id=merchant.id, name=merchant.name, transaction_count=transactions)
         for merchant, transactions in db.execute(query)

@@ -654,6 +654,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/merchants/{merchant_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update Merchant
+         * @description Edit merchant: rename it everywhere (409 if another merchant already goes by the name).
+         */
+        patch: operations["update_merchant_api_v1_merchants__merchant_id__patch"];
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1010,6 +1030,14 @@ export interface components {
             name: string;
             /** Transaction Count */
             transaction_count: number;
+        };
+        /**
+         * MerchantUpdate
+         * @description Edit merchant: the name it shows under everywhere.
+         */
+        MerchantUpdate: {
+            /** Name */
+            name: string;
         };
         /**
          * NetWorthHistory
@@ -2629,6 +2657,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MerchantSummary"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_merchant_api_v1_merchants__merchant_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                merchant_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MerchantUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MerchantRead"];
                 };
             };
             /** @description Validation Error */

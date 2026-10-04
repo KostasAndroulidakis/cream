@@ -6,7 +6,7 @@ Centralizes all ownership and access control checks to ensure SSOT.
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
-from app.models import Category, CategoryOverride, Transaction, Wallet
+from app.models import Category, CategoryOverride, Merchant, Transaction, Wallet
 
 
 class NotFoundError(HTTPException):
@@ -162,6 +162,16 @@ def get_transaction(transaction_id: int, user_id: int, db: Session) -> Transacti
         raise AccessDeniedError()
 
     return transaction
+
+
+def get_merchant(merchant_id: int, user_id: int, db: Session) -> Merchant:
+    """The user's merchant; NotFoundError if it doesn't exist, AccessDeniedError if it's someone else's."""
+    merchant = db.get(Merchant, merchant_id)
+    if merchant is None:
+        raise NotFoundError("Merchant")
+    if merchant.user_id != user_id:
+        raise AccessDeniedError()
+    return merchant
 
 
 def get_transactions(transaction_ids: list[int], user_id: int, db: Session) -> list[Transaction]:
