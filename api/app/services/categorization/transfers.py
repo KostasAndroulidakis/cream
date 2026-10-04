@@ -22,7 +22,7 @@ TRANSFER_KEY = "transfers.transfer"
 # Banks book the two sides up to a few days apart (PayPal → Revolut: often the next day)
 MATCH_WINDOW = timedelta(days=3)
 # Only automatic choices give way to a transfer, never the user's own or their rules'
-_REPLACEABLE_SOURCES = (CategorySource.DEFAULT, CategorySource.MCC)
+REPLACEABLE_SOURCES = (CategorySource.DEFAULT, CategorySource.MCC)
 
 
 def match_transfers(user_id: int, db: Session) -> int:
@@ -32,18 +32,20 @@ def match_transfers(user_id: int, db: Session) -> int:
     Each side remembers the other (`transfer_pair_id`). Returns how many transactions became transfers.
     A side whose pair arrives in a later sync is paired then.
     """
-    transfer_category_id = _transfer_category_id(user_id, db)
-    if transfer_category_id is None:
+    category_id = transfer_category_id(user_id, db)
+    if category_id is None:
         return 0
     candidates = db.scalars(
         select(Transaction)
         .where(
             Transaction.wallet_id.in_(get_user_wallet_ids_subquery(user_id, db)),
             or_(
-                Transaction.category_source.in_(_REPLACEABLE_SOURCES),
+                Transaction.category_source.in_(REPLACEABLE_SOURCES),
                 # Filed as a transfer before pairs were kept: paired again
-                (Transaction.category_source == CategorySource.TRANSFER) & Transaction.transfer_pair_id.is_(None),
+                Transaction.category_source == CategorySource.TRANSFER,
             ),
+            # Not paired yet; a purchase through PayPal and its bank line are a pair too (go_between_payments.py)
+            Transaction.transfer_pair_id.is_(None),
             Transaction.amount != 0,
         )
         .order_by(Transaction.occurred_at, Transaction.id)
@@ -56,18 +58,18 @@ def match_transfers(user_id: int, db: Session) -> int:
         if inflow is None:
             continue
         inflows.remove(inflow)
-        _pair(outflow, inflow, transfer_category_id)
+        _pair(outflow, inflow, category_id)
         paired += 2
     return paired
 
 
-def _pair(outflow: Transaction, inflow: Transaction, transfer_category_id: int) -> None:
+def _pair(outflow: Transaction, inflow: Transaction, category_id: int) -> None:
     for side, other in ((outflow, inflow), (inflow, outflow)):
-        assign_category(side, transfer_category_id, CategorySource.TRANSFER)
+        assign_category(side, category_id, CategorySource.TRANSFER)
         side.transfer_pair_id = other.id
 
 
-def _transfer_category_id(user_id: int, db: Session) -> int | None:
+def transfer_category_id(user_id: int, db: Session) -> int | None:
     """Transfers › Transfer, unless the user deleted it."""
     category_id = system_category_ids([TRANSFER_KEY], db).get(TRANSFER_KEY)
     return None if category_id is None or category_id in hidden_category_ids(user_id, db) else category_id

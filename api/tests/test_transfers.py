@@ -5,7 +5,18 @@ from decimal import Decimal
 
 import pytest
 
-from app.models import Category, CategoryOverride, CategorySource, CategoryType, Transaction
+from app.models import (
+    BankAccount,
+    BankConnection,
+    Category,
+    CategoryOverride,
+    CategorySource,
+    CategoryType,
+    ConnectionStatus,
+    Transaction,
+)
+from app.services.categorization.go_between_payments import MAX_PAYMENT_COST, match_go_between_payments
+from app.services.categorization.merchants import merchant_key
 from app.services.categorization.transfers import MATCH_WINDOW, TRANSFER_KEY, match_transfers
 from tests.bank_fakes import connect_and_link, raw_transaction, sync
 
@@ -31,13 +42,15 @@ def wallets(client, auth_headers):
 def add(db_session, uncategorized):
     """Add a transaction as an import leaves it: in Uncategorized, chosen by no one."""
 
-    def add_transaction(wallet_id, amount, when=DAY, source=CategorySource.DEFAULT):
+    def add_transaction(wallet_id, amount, when=DAY, source=CategorySource.DEFAULT, text=None):
         transaction = Transaction(
             wallet_id=wallet_id,
             category_id=uncategorized.id,
             category_source=source,
             amount=Decimal(amount),
             occurred_at=when,
+            description=text,
+            merchant_key=merchant_key(None, text),
         )
         db_session.add(transaction)
         db_session.commit()
@@ -209,3 +222,177 @@ def test_a_side_without_text_is_shown_by_its_pairs_account(
     names = {Decimal(t["amount"]): t["transfer_account_name"] for t in listed}
 
     assert names == {Decimal("-20.00"): "B", Decimal("20.00"): "A"}
+
+
+@pytest.fixture
+def link(db_session, registered_user):
+    """Link one of the user's accounts to a bank connection at the institution Enable Banking names."""
+
+    def link_wallet(wallet_id, aspsp_name, status=ConnectionStatus.ACTIVE):
+        connection = BankConnection(
+            user_id=registered_user["id"], aspsp_name=aspsp_name, aspsp_country="GR", status=status
+        )
+        connection.accounts.append(
+            BankAccount(uid=f"{aspsp_name}-{wallet_id}", name="Account", currency="EUR", wallet_id=wallet_id)
+        )
+        db_session.add(connection)
+        db_session.commit()
+
+    return link_wallet
+
+
+class TestGoBetweenPayments:
+    """A purchase through PayPal with a bank card: PayPal shows the purchase, the bank what it took."""
+
+    @pytest.fixture
+    def paypal(self, wallets, link):
+        """Account B is the user's PayPal."""
+        link(wallets[1], "PayPal")
+        return wallets[1]
+
+    def _match(self, db_session, user):
+        paired = match_go_between_payments(user["id"], db_session)
+        db_session.commit()
+        return paired
+
+    def test_the_bank_line_is_the_purchase_and_paypals_side_a_transfer(
+        self, db_session, registered_user, wallets, paypal, add, transfer_category
+    ):
+        """Canva: 12.00 on PayPal; Revolut took 12.75 (conversion and a fee), what it really cost."""
+        purchase = add(paypal, "-12.00", text="Canva Pty Limited")
+        bank_line = add(wallets[0], "-12.75", text="Paypal *canvaptylim")
+
+        assert self._match(db_session, registered_user) == 1
+
+        assert _is_transfer(purchase, transfer_category)
+        assert not _is_transfer(bank_line, transfer_category)
+        assert (purchase.transfer_pair_id, bank_line.transfer_pair_id) == (bank_line.id, purchase.id)
+
+    def test_the_list_shows_the_purchase_once(
+        self, client, auth_headers, db_session, registered_user, wallets, paypal, add, transfer_category
+    ):
+        """PayPal's side is hidden: still in PayPal's balance, out of the list."""
+        purchase = add(paypal, "-12.00", text="Canva Pty Limited")
+        add(wallets[0], "-12.75", text="Paypal *canvaptylim")
+        self._match(db_session, registered_user)
+
+        listed = client.get("/api/v1/transactions", headers=auth_headers).json()
+
+        assert purchase.is_hidden
+        assert [Decimal(t["amount"]) for t in listed] == [Decimal("-12.75")]
+
+    def test_shown_again_by_the_user_it_stays_shown(
+        self, db_session, registered_user, wallets, paypal, add, transfer_category
+    ):
+        purchase = add(paypal, "-12.00", text="Canva Pty Limited")
+        add(wallets[0], "-12.75", text="Paypal *canvaptylim")
+        self._match(db_session, registered_user)
+        purchase.is_hidden = False
+        db_session.commit()
+
+        self._match(db_session, registered_user)
+
+        assert not purchase.is_hidden
+
+    def test_the_same_amount(self, db_session, registered_user, wallets, paypal, add, transfer_category):
+        purchase = add(paypal, "-9.99", DAY + timedelta(days=1), text="Spotify AB")
+        add(wallets[0], "-9.99", text="Paypal *spotify")
+
+        self._match(db_session, registered_user)
+
+        assert _is_transfer(purchase, transfer_category)
+
+    @pytest.mark.parametrize("paid", ["-11.99", str(Decimal("-12.01") * (1 + MAX_PAYMENT_COST))])
+    def test_not_when_the_bank_took_less_or_far_more(
+        self, db_session, registered_user, wallets, paypal, add, transfer_category, paid
+    ):
+        add(paypal, "-12.00", text="Canva Pty Limited")
+        add(wallets[0], paid, text="Paypal *canvaptylim")
+
+        assert self._match(db_session, registered_user) == 0
+
+    def test_not_too_far_apart(self, db_session, registered_user, wallets, paypal, add, transfer_category):
+        add(paypal, "-12.00", DAY + MATCH_WINDOW + timedelta(hours=1), text="Canva Pty Limited")
+        add(wallets[0], "-12.75", text="Paypal *canvaptylim")
+
+        assert self._match(db_session, registered_user) == 0
+
+    def test_a_purchase_paypal_doesnt_show_stays_on_the_bank(
+        self, db_session, registered_user, wallets, paypal, add, transfer_category
+    ):
+        """E.g. "Paypal *a148246": the purchase is on the bank's side only, so it still counts."""
+        add(wallets[0], "-36.52", text="Paypal *a148246")
+
+        assert self._match(db_session, registered_user) == 0
+
+    def test_not_without_paypal_linked(self, db_session, registered_user, wallets, add, transfer_category):
+        add(wallets[1], "-12.00", text="Canva Pty Limited")
+        add(wallets[0], "-12.75", text="Paypal *canvaptylim")
+
+        assert self._match(db_session, registered_user) == 0
+
+    def test_only_a_line_paid_through_paypal(
+        self, db_session, registered_user, wallets, paypal, add, transfer_category
+    ):
+        add(paypal, "-12.00", text="Canva Pty Limited")
+        add(wallets[0], "-12.00", text="Canva")
+
+        assert self._match(db_session, registered_user) == 0
+
+    def test_the_closest_in_time(self, db_session, registered_user, wallets, paypal, add, transfer_category):
+        later = add(paypal, "-12.00", DAY + timedelta(days=2), text="Canva Pty Limited")
+        closer = add(paypal, "-12.00", DAY + timedelta(hours=1), text="Canva Pty Limited")
+        add(wallets[0], "-12.75", text="Paypal *canvaptylim")
+
+        self._match(db_session, registered_user)
+
+        assert _is_transfer(closer, transfer_category) and not _is_transfer(later, transfer_category)
+
+    @pytest.mark.parametrize("source", [CategorySource.MANUAL, CategorySource.RULE])
+    def test_the_users_own_choice_on_paypal_stays(
+        self, db_session, registered_user, wallets, paypal, add, transfer_category, source
+    ):
+        add(paypal, "-12.00", source=source, text="Canva Pty Limited")
+        add(wallets[0], "-12.75", text="Paypal *canvaptylim")
+
+        assert self._match(db_session, registered_user) == 0
+
+    def test_an_atm_at_a_linked_bank_is_not(
+        self, client, auth_headers, db_session, registered_user, wallets, link, add, transfer_category
+    ):
+        """The cash leaves through the bank's ATM; it doesn't go into the user's account there."""
+        alpha = client.post(WALLETS_URL, json={"name": "Alpha"}, headers=auth_headers).json()["id"]
+        link(alpha, "Alpha Bank")
+        add(alpha, "-50.00")
+        add(wallets[0], "-50.00", text="Cash at Alpha Bank")
+
+        assert self._match(db_session, registered_user) == 0
+
+    def test_a_paired_bank_line_isnt_paired_again_as_a_transfer(
+        self, client, auth_headers, db_session, registered_user, wallets, paypal, add, transfer_category
+    ):
+        third = client.post(WALLETS_URL, json={"name": "C"}, headers=auth_headers).json()["id"]
+        add(paypal, "-12.00", text="Canva Pty Limited")
+        bank_line = add(wallets[0], "-12.75", text="Paypal *canvaptylim")
+        self._match(db_session, registered_user)
+        add(third, "12.75")
+
+        assert _match(db_session, registered_user) == 0
+        assert not _is_transfer(bank_line, transfer_category)
+
+
+def test_sync_pairs_a_purchase_through_paypal(
+    client, auth_headers, db_session, bank, wallets, add, link, transfer_category
+):
+    # Expired, so the fake bank's lines are synced into the other account only
+    link(wallets[1], "PayPal", ConnectionStatus.EXPIRED)
+    purchase = add(wallets[1], "-12.00", text="Canva Pty Limited")
+    connect_and_link(client, auth_headers, bank)
+    bank.transactions = [raw_transaction("t1", "12.75", creditor={"name": "Paypal *canvaptylim"})]
+
+    sync(client, auth_headers)
+
+    db_session.refresh(purchase)
+    listed = client.get("/api/v1/transactions", headers=auth_headers).json()
+    assert _is_transfer(purchase, transfer_category)
+    assert next(t for t in listed if t["counterparty"] == "Paypal *canvaptylim")["category_source"] != "transfer"

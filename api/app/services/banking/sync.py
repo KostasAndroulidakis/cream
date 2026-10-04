@@ -16,6 +16,7 @@ from app.models import BankAccount, BankConnection, CategorySource, ConnectionSt
 from app.services.banking.client import BankClient
 from app.services.banking.mapping import ImportedTransaction, assign_external_ids, parse_transaction, pick_balance
 from app.services.categorization.auto import AutoCategorizer
+from app.services.categorization.go_between_payments import match_go_between_payments
 from app.services.categorization.merchants import merchant_key, merchant_name
 from app.services.categorization.transfers import match_transfers
 from app.services.merchant_gathering import gather_known_merchants
@@ -178,5 +179,7 @@ def sync_user_accounts(user_id: int, client: BankClient, db: Session) -> list[Sy
     results = [sync_account(account, client, importer, db) for account in accounts]
     # After every account: the two sides of a transfer usually come from different banks
     match_transfers(user_id, db)
+    # A purchase through PayPal with a card: the bank's line holds what was paid, PayPal's passes it on
+    match_go_between_payments(user_id, db)
     db.commit()
     return results

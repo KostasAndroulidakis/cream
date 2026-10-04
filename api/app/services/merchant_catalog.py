@@ -24,18 +24,28 @@ class KnownMerchant:
     # (banks, payment services): there the logo fits, but the text names something else, e.g. an ATM
     # ("Cash at Alpha Bank") or the shop paid through PayPal ("Paypal *spotify")
     gathers_spellings: bool = True
+    # The institution (its key in banking/institutions.py) holding the account the money moves to or
+    # from, when the user can link that account too (PayPal). Not for an ATM: there the money leaves as cash
+    account_institution: str | None = None
 
 
 def _known(name: str, website: str, pattern: str, *, gathers_spellings: bool = True) -> KnownMerchant:
     return KnownMerchant(name, website, re.compile(pattern), gathers_spellings)
 
 
-def _bank(name: str, institution: str, pattern: str) -> KnownMerchant:
-    """A bank as a merchant (e.g. "Cash at Alpha Bank"), with the website from the banks' catalog."""
+def _institution(
+    name: str, institution: str, pattern: str, *, gathers_spellings: bool = False, holds_the_money: bool = False
+) -> KnownMerchant:
+    """An institution as a merchant, with the website from the banks' catalog.
+
+    `holds_the_money`: the money moves to or from the user's account there (PayPal), rather than passing
+    through it (an ATM: "Cash at Alpha Bank").
+    """
     known = find_institution(institution)
     assert known is not None, institution
     website = known.website.removeprefix("https://").removeprefix("www.")
-    return _known(name, website, pattern, gathers_spellings=False)
+    account_institution = known.key if holds_the_money else None
+    return KnownMerchant(name, website, re.compile(pattern), gathers_spellings, account_institution)
 
 
 CATALOG: tuple[KnownMerchant, ...] = (
@@ -65,12 +75,12 @@ CATALOG: tuple[KnownMerchant, ...] = (
     # Canva Pty Ltd, often cut short ("canvaptylim"); not every "canvas"
     _known("Canva", "canva.com", r"\bcanva(\b|pty)"),
     # PayPal itself (the company, or "Paypal *paypal"): money moved to or from the PayPal account
-    _known("PayPal", "paypal.com", r"^paypal (europe\b|paypal$)"),
+    _institution("PayPal", "PayPal", r"^paypal (europe\b|paypal$)", gathers_spellings=True, holds_the_money=True),
     # Any other "Paypal *…" is a shop paid through PayPal: it lends only the logo
-    _known("PayPal", "paypal.com", r"^paypal\b", gathers_spellings=False),
-    _bank("Alpha Bank", "Alpha Bank", r"\balpha bank\b"),
-    _bank("Piraeus Bank", "Piraeus Bank", r"\bpiraeus bank\b"),
-    _bank("Eurobank", "Eurobank", r"\beurobank\b"),
+    _institution("PayPal", "PayPal", r"^paypal\b", holds_the_money=True),
+    _institution("Alpha Bank", "Alpha Bank", r"\balpha bank\b"),
+    _institution("Piraeus Bank", "Piraeus Bank", r"\bpiraeus bank\b"),
+    _institution("Eurobank", "Eurobank", r"\beurobank\b"),
 )
 
 
@@ -88,3 +98,20 @@ def known_merchant_name(bank_text: str) -> str | None:
     """The proper name to import the bank's text as, when it's one of a known merchant's spellings."""
     known = find_known_merchant(bank_text)
     return known.name if known is not None and known.gathers_spellings else None
+
+
+def account_institution(bank_text: str) -> str | None:
+    """The institution whose account (of the user's) the money moves to or from, e.g. "paypal" for
+    "Paypal *spotify"; None when the text names a shop, or an ATM the money leaves through as cash.
+
+    Looks past the first match: "Paypal *canvaptylim" is Canva as a merchant, yet paid from PayPal.
+    """
+    normalized = _normalize(bank_text)
+    return next(
+        (
+            known.account_institution
+            for known in CATALOG
+            if known.account_institution is not None and known.pattern.search(normalized)
+        ),
+        None,
+    )
