@@ -9,7 +9,7 @@ from app.schemas.wallet import (
     WalletUpdate,
 )
 from app.schemas.category import CategoryCreate, CategoryOrder, CategoryRead, CategoryUpdate
-from app.schemas.merchant import MerchantRead
+from app.schemas.merchant import MerchantOrder, MerchantRead, MerchantSummary
 from app.schemas.transaction import (
     BulkResult,
     BulkTransactionDelete,
@@ -38,7 +38,7 @@ __all__ = [
     "WalletCreate", "WalletRead", "WalletUpdate", "CurrencyTotal", "AccountTypeRead", "AccountsSummary", "NetWorthHistory",
     "CategoryCreate", "CategoryOrder", "CategoryRead", "CategoryUpdate",
     "TransactionCreate", "TransactionRead", "TransactionUpdate", "TransactionPage",
-    "BulkTransactionUpdate", "BulkTransactionDelete", "BulkResult", "MerchantRead",
+    "BulkTransactionUpdate", "BulkTransactionDelete", "BulkResult", "MerchantRead", "MerchantOrder", "MerchantSummary",
     "CategorizeRequest", "CategorizeResultRead", "MerchantRuleRead",
     "StatisticsResponse", "WalletBalance", "CategoryTotal",
     "ReportResponse", "ReportPeriod", "ReportSummary",

@@ -643,7 +643,7 @@ export interface paths {
         };
         /**
          * List User Merchants
-         * @description The user's merchants that have transactions, by name.
+         * @description The user's merchants that have transactions, with their counts: most used first, or by name.
          */
         get: operations["list_user_merchants_api_v1_merchants_get"];
         put?: never;
@@ -967,6 +967,12 @@ export interface components {
             /** Password */
             password: string;
         };
+        /**
+         * MerchantOrder
+         * @description How Settings › Merchants sorts the list (Monarch's choices).
+         * @enum {string}
+         */
+        MerchantOrder: "transaction_count" | "alphabetical";
         /** MerchantRead */
         MerchantRead: {
             /** Id */
@@ -992,6 +998,18 @@ export interface components {
              * Format: date-time
              */
             updated_at: string;
+        };
+        /**
+         * MerchantSummary
+         * @description A merchant in Settings › Merchants: with how many of the user's transactions it has.
+         */
+        MerchantSummary: {
+            /** Id */
+            id: number;
+            /** Name */
+            name: string;
+            /** Transaction Count */
+            transaction_count: number;
         };
         /**
          * NetWorthHistory
@@ -2595,7 +2613,9 @@ export interface operations {
     };
     list_user_merchants_api_v1_merchants_get: {
         parameters: {
-            query?: never;
+            query?: {
+                order?: components["schemas"]["MerchantOrder"];
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -2608,7 +2628,16 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["MerchantRead"][];
+                    "application/json": components["schemas"]["MerchantSummary"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

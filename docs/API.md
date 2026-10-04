@@ -712,7 +712,7 @@ transaction's merchant with `merchant_name` in `POST /transactions/bulk-update`.
 
 | Endpoint | Description |
 | --- | --- |
-| `GET /merchants` | The user's merchants that have transactions, by name: `[{id, name}]` |
+| `GET /merchants?order=transaction_count` | The user's merchants that have transactions, with counts: `[{id, name, transaction_count}]`; `order` is `transaction_count` (most first, the default) or `alphabetical` |
 
 ---
 

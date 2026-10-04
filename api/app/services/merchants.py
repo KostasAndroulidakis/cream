@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.models import Merchant, Transaction
+from app.schemas.merchant import MerchantOrder, MerchantSummary
 from app.services.categorization.merchants import merchant_name_key, tidy_merchant_name
 
 
@@ -45,8 +46,23 @@ class MerchantDirectory:
         return merchant
 
 
-def list_merchants(user_id: int, db: Session) -> list[Merchant]:
-    """The user's merchants that have transactions, by name (a merchant left with none drops out)."""
-    has_transactions = select(Transaction.id).where(Transaction.merchant_id == Merchant.id).exists()
-    query = select(Merchant).where(Merchant.user_id == user_id, has_transactions).order_by(Merchant.key)
-    return list(db.scalars(query))
+def list_merchants(user_id: int, order: MerchantOrder, db: Session) -> list[MerchantSummary]:
+    """The user's merchants that have transactions, with how many (a merchant left with none drops out).
+
+    By transaction count, most first, or alphabetically; ties and equal counts go by name.
+    """
+    count = func.count(Transaction.id).label("transaction_count")
+    query = (
+        select(Merchant, count)
+        .join(Transaction, Transaction.merchant_id == Merchant.id)
+        .where(Merchant.user_id == user_id)
+        .group_by(Merchant.id)
+    )
+    if order is MerchantOrder.TRANSACTION_COUNT:
+        query = query.order_by(count.desc(), Merchant.key)
+    else:
+        query = query.order_by(Merchant.key)
+    return [
+        MerchantSummary(id=merchant.id, name=merchant.name, transaction_count=transactions)
+        for merchant, transactions in db.execute(query)
+    ]
