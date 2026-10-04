@@ -37,3 +37,20 @@ export function useUpdateMerchant() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: TRANSACTIONS_KEY }),
   })
 }
+
+/**
+ * Merge & delete: the merchant's transactions (and its names) move to `moveTo`, then it's deleted.
+ * `moveTo` may be left out only for a merchant with no transactions.
+ */
+export function useDeleteMerchant() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ id, moveTo }: { id: number; moveTo?: number }): Promise<void> => {
+      const { error, response } = await api.DELETE("/api/v1/merchants/{merchant_id}", {
+        params: { path: { merchant_id: id }, query: { move_to: moveTo } },
+      })
+      if (!response.ok) throw toApiError(error, response)
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: TRANSACTIONS_KEY }),
+  })
+}

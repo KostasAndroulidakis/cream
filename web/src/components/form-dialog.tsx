@@ -24,7 +24,14 @@ export function FormDialog({ open, onOpenChange, title, description, onSubmit, c
           <DialogTitle className="text-xl font-medium">{title}</DialogTitle>
           <DialogDescription className="sr-only">{description}</DialogDescription>
         </div>
-        <form onSubmit={onSubmit} noValidate>
+        {/* React carries events up through portals: a dialog opened from another one submits only itself */}
+        <form
+          onSubmit={(event) => {
+            event.stopPropagation()
+            onSubmit(event)
+          }}
+          noValidate
+        >
           <FormDialogBody>{children}</FormDialogBody>
           <FormDialogFooter>{footer}</FormDialogFooter>
         </form>

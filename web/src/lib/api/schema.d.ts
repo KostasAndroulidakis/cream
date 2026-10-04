@@ -664,7 +664,13 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        delete?: never;
+        /**
+         * Merge And Delete Merchant
+         * @description Merge & delete: its transactions and names move to merchant `move_to`, then it's deleted.
+         *
+         *     `move_to` may be left out only when the merchant has no transactions (409 otherwise).
+         */
+        delete: operations["merge_and_delete_merchant_api_v1_merchants__merchant_id__delete"];
         options?: never;
         head?: never;
         /**
@@ -2684,6 +2690,37 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["MerchantSummary"][];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    merge_and_delete_merchant_api_v1_merchants__merchant_id__delete: {
+        parameters: {
+            query?: {
+                move_to?: number | null;
+            };
+            header?: never;
+            path: {
+                merchant_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {

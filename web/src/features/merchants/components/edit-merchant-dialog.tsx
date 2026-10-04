@@ -16,6 +16,7 @@ import { notifySuccess } from "@/lib/notify"
 import { useUpdateMerchant, type MerchantSummary } from "../api"
 import { merchantSchema, type MerchantValues } from "../schemas"
 import { MerchantLogo } from "./merchant-logo"
+import { MergeAndDeleteButton } from "./merge-and-delete-button"
 
 // Monarch's words; the Recurring section isn't built yet
 const RECURRING_HINT = `This merchant will show on the Recurring section with expected upcoming transactions. ${COMING_SOON}.`
@@ -61,7 +62,7 @@ function EditMerchantForm({ merchant, onDone }: EditMerchantFormProps) {
       onSubmit={onSubmit}
       footer={
         <>
-          <ComingSoonButton className="text-destructive">Merge & delete</ComingSoonButton>
+          <MergeAndDeleteButton merchant={merchant} onDeleted={onDone} />
           <Button type="button" variant="outline" className="ml-auto" onClick={onDone}>
             Cancel
           </Button>
